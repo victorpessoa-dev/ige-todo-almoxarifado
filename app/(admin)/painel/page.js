@@ -171,8 +171,8 @@ function RelogioSlide() {
         <h2 className="text-4xl font-bold text-foreground">Relogio Local</h2>
       </div>
 
-      <div className="text-center">
-        <div className="text-8xl font-bold text-foreground tracking-wider mb-4">
+      <div className="text-center w-full max-w-full overflow-hidden">
+        <div className="font-bold text-foreground tracking-wider mb-4 text-[clamp(3rem,10vw,8rem)] leading-none">
           {hours}:{minutes}:{seconds}
         </div>
         <p className="text-2xl text-muted-foreground capitalize">{dateString}</p>
@@ -208,7 +208,6 @@ export default function PainelPage() {
     setIsFullscreen(!isFullscreen)
   }
 
-  // Auto-slide every 5 seconds
   useEffect(() => {
     const timer = setInterval(() => {
       nextSlide()
