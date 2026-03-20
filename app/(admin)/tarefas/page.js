@@ -308,7 +308,6 @@ export default function TarefasPage() {
         </Dialog>
       </div>
 
-      {/* Tarefas Pendentes */}
       <div className="flex flex-col gap-4">
         <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
           <Circle className="h-5 w-5" />
@@ -330,7 +329,6 @@ export default function TarefasPage() {
         )}
       </div>
 
-      {/* Tarefas Concluidas */}
       {tarefasConcluidas.length > 0 && (
         <div className="flex flex-col gap-4">
           <button

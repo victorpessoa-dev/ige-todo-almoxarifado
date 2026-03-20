@@ -32,22 +32,18 @@ export default function AdminLayout({ children }) {
     <DataProvider>
       <div className="flex min-h-screen">
 
-        {/* Desktop */}
         <div className="hidden md:flex">
           <Sidebar />
         </div>
 
-        {/* Mobile */}
         {sidebarOpen && (
           <div className="fixed inset-0 z-50 flex md:hidden">
 
-            {/* Overlay */}
             <div
               className="fixed inset-0 bg-black/50"
               onClick={() => setSidebarOpen(false)}
             />
 
-            {/* Sidebar */}
             <div className="relative z-50">
               <Sidebar onNavigate={() => setSidebarOpen(false)} />
             </div>
