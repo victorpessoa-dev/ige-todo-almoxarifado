@@ -33,20 +33,29 @@ export function DataProvider({ children }) {
   // ================= TAREFAS =================
 
   async function addTarefa(form) {
+    const {
+      data: { user }
+    } = await supabase.auth.getUser()
+
     const { data, error } = await supabase
       .from('tarefas')
       .insert({
+        user_id: user.id,
         titulo: form.titulo,
         descricao: form.descricao || null,
+        responsavel: form.responsavel || null,
         status: form.status,
         prioridade: form.prioridade
       })
       .select()
       .single()
 
-    if (!error) {
-      setTarefas(prev => [data, ...prev])
+    if (error) {
+      console.error(error)
+      return
     }
+
+    setTarefas(prev => [data, ...prev])
   }
 
   async function updateTarefa(id, updates) {
@@ -70,20 +79,29 @@ export function DataProvider({ children }) {
   // ================= LEMBRETES =================
 
   async function addLembrete(form) {
+    const {
+      data: { user }
+    } = await supabase.auth.getUser()
+
     const { data, error } = await supabase
       .from('lembretes')
       .insert({
+        user_id: user.id,
         titulo: form.titulo,
-        descricao: form.descricao || null,
+        conteudo: form.conteudo || null,
+        destinatario: form.destinatario || null,
         status: form.status,
         prioridade: form.prioridade
       })
       .select()
       .single()
 
-    if (!error) {
-      setLembretes(prev => [data, ...prev])
+    if (error) {
+      console.error(error)
+      return
     }
+
+    setLembretes(prev => [data, ...prev])
   }
 
   async function updateLembrete(id, updates) {
