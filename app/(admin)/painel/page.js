@@ -236,25 +236,6 @@ export default function PainelPage() {
       <div className="fixed inset-0 z-50 bg-background flex flex-col">
         <div className="flex-1 relative overflow-hidden">
           {slides[currentSlide].component}
-
-          <Button
-            variant="ghost"
-            size="icon"
-            className="absolute left-4 top-1/2 -translate-y-1/2 h-12 w-12 rounded-full bg-background/80 hover:bg-background border border-border"
-            onClick={prevSlide}
-          >
-            <ChevronLeft className="h-6 w-6" />
-          </Button>
-
-          <Button
-            variant="ghost"
-            size="icon"
-            className="absolute right-4 top-1/2 -translate-y-1/2 h-12 w-12 rounded-full bg-background/80 hover:bg-background border border-border"
-            onClick={nextSlide}
-          >
-            <ChevronRight className="h-6 w-6" />
-          </Button>
-
           <Button
             variant="ghost"
             size="icon"
@@ -291,24 +272,6 @@ export default function PainelPage() {
     <div className="h-[calc(100vh-3rem)] flex flex-col">
       <div className="flex-1 relative bg-card rounded-xl border border-border overflow-hidden">
         {slides[currentSlide].component}
-
-        <Button
-          variant="ghost"
-          size="icon"
-          className="absolute left-4 top-1/2 -translate-y-1/2 h-12 w-12 rounded-full bg-background/80 hover:bg-background"
-          onClick={prevSlide}
-        >
-          <ChevronLeft className="h-6 w-6" />
-        </Button>
-
-        <Button
-          variant="ghost"
-          size="icon"
-          className="absolute right-4 top-1/2 -translate-y-1/2 h-12 w-12 rounded-full bg-background/80 hover:bg-background"
-          onClick={nextSlide}
-        >
-          <ChevronRight className="h-6 w-6" />
-        </Button>
 
         <Button
           variant="ghost"
