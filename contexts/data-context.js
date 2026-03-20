@@ -33,6 +33,7 @@ export function DataProvider({ children }) {
   // ================= TAREFAS =================
 
   async function addTarefa(form) {
+<<<<<<< HEAD
     const {
       data: { user }
     } = await supabase.auth.getUser()
@@ -44,18 +45,31 @@ export function DataProvider({ children }) {
         titulo: form.titulo,
         descricao: form.descricao || null,
         responsavel: form.responsavel || null,
+=======
+    const { data, error } = await supabase
+      .from('tarefas')
+      .insert({
+        titulo: form.titulo,
+        descricao: form.descricao || null,
+>>>>>>> d217098d83d14402d8845d61eecd9800e89e593a
         status: form.status,
         prioridade: form.prioridade
       })
       .select()
       .single()
 
+<<<<<<< HEAD
     if (error) {
       console.error(error)
       return
     }
 
     setTarefas(prev => [data, ...prev])
+=======
+    if (!error) {
+      setTarefas(prev => [data, ...prev])
+    }
+>>>>>>> d217098d83d14402d8845d61eecd9800e89e593a
   }
 
   async function updateTarefa(id, updates) {
@@ -79,6 +93,7 @@ export function DataProvider({ children }) {
   // ================= LEMBRETES =================
 
   async function addLembrete(form) {
+<<<<<<< HEAD
     const {
       data: { user }
     } = await supabase.auth.getUser()
@@ -90,18 +105,31 @@ export function DataProvider({ children }) {
         titulo: form.titulo,
         conteudo: form.conteudo || null,
         destinatario: form.destinatario || null,
+=======
+    const { data, error } = await supabase
+      .from('lembretes')
+      .insert({
+        titulo: form.titulo,
+        descricao: form.descricao || null,
+>>>>>>> d217098d83d14402d8845d61eecd9800e89e593a
         status: form.status,
         prioridade: form.prioridade
       })
       .select()
       .single()
 
+<<<<<<< HEAD
     if (error) {
       console.error(error)
       return
     }
 
     setLembretes(prev => [data, ...prev])
+=======
+    if (!error) {
+      setLembretes(prev => [data, ...prev])
+    }
+>>>>>>> d217098d83d14402d8845d61eecd9800e89e593a
   }
 
   async function updateLembrete(id, updates) {
