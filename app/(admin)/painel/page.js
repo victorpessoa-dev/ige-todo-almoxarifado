@@ -7,7 +7,6 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { ListTodo, StickyNote, Clock, Maximize2, Minimize2, User } from 'lucide-react'
-import { useEffect, useState } from "react";
 
 function useIsSmallScreen(breakpoint = 768) {
   const [isSmall, setIsSmall] = useState(false);
@@ -162,7 +161,7 @@ function LembretesSlide({ lembretes }) {
   const pendentes = sortByPriority(lembretes.filter(l => l.status !== 'concluido'))
 
   const isSmallScreen = useIsSmallScreen(768);
-  
+
   const ITEMS_PER_PAGE = isSmallScreen ? 8 : 4;
   const pages = chunkArray(pendentes, ITEMS_PER_PAGE)
 
