@@ -6,6 +6,7 @@ import { useAuth } from '@/contexts/auth-context'
 import { DataProvider } from '@/contexts/data-context'
 import { Sidebar } from '@/components/sidebar'
 import { Menu } from 'lucide-react'
+import Image from 'next/image'
 
 export default function AdminLayout({ children }) {
   const { isAuthenticated, isLoading } = useAuth()
