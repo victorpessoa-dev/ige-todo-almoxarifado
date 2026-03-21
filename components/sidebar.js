@@ -30,7 +30,7 @@ export function Sidebar({ onNavigate }) {
 
   return (
     <aside className="w-64 bg-sidebar text-sidebar-foreground flex flex-col h-full">
-      <div className="p-6 border-b border-sidebar-border ">
+      <div className="px-4 py-12 border-b border-sidebar-border">
         <Image src="/ige-supergesso.png" alt="Logo" width={200} height={150} className="mx-auto mb-2" />
         <p className="text-lg text-sidebar-foreground/70 text-center">Tarefas e Lembretes</p>
       </div>

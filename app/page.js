@@ -17,10 +17,9 @@ export default function LoginPage() {
   const { login, isAuthenticated, isLoading } = useAuth()
   const router = useRouter()
 
-  // ✅ Redirecionamento seguro
   useEffect(() => {
     if (!isLoading && isAuthenticated) {
-      router.replace('/painel') // replace = mais profissional que push
+      router.replace('/painel') 
     }
   }, [isAuthenticated, isLoading, router])
 
@@ -36,7 +35,6 @@ export default function LoginPage() {
     }
   }
 
-  // ✅ Loading controlado corretamente
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -45,7 +43,6 @@ export default function LoginPage() {
     )
   }
 
-  // ✅ Evita render antes do redirect
   if (isAuthenticated) {
     return null
   }
@@ -54,8 +51,7 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-muted p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <Image src="/ige-supergesso.png" alt="Logo" width={150} height={150} className="mx-auto mb-2" />
-          <CardTitle className="text-2xl font-bold">Acesso Admin</CardTitle>
+          <Image src="/ige-supergesso.png" alt="Logo"  width={200} height={150} className="mx-auto mb-2" />
           <CardDescription>Entre com seu email e senha</CardDescription>
         </CardHeader>
 
@@ -97,7 +93,7 @@ export default function LoginPage() {
             </Button>
 
             <p className="text-xs text-center text-muted-foreground mt-2">
-              Use seu usuário do Supabase
+             Acesso Admin
             </p>
 
           </form>

@@ -57,7 +57,7 @@ export default function AdminLayout({ children }) {
             <button onClick={() => setSidebarOpen(true)}>
               <Menu className="h-6 w-6" />
             </button>
-            <span className="font-semibold">Menu</span>
+            <Image src="/ige-supergesso.png" alt="Logo" width={100} height={75} className="mx-auto" />
           </div>
 
           <div className="p-6">
