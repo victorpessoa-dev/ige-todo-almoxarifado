@@ -148,8 +148,8 @@ function TarefasSlide({ tarefas }) {
         </div>
       )}
 
-      <div className="mt-4 text-muted-foreground">
-        <p className="text-lg">
+      <div className="mt-2 text-muted-foreground">
+        <p className="text-md">
           Página {page + 1} / {pages.length} • Total: {pendentes.length}
         </p>
       </div>
@@ -200,8 +200,8 @@ function LembretesSlide({ lembretes }) {
         </div>
       )}
 
-      <div className="mt-4 text-muted-foreground">
-        <p className="text-lg">
+      <div className="mt-2 text-muted-foreground">
+        <p className="text-md">
           Página {page + 1} / {pages.length} • Total: {pendentes.length}
         </p>
       </div>
@@ -353,10 +353,6 @@ export default function PainelPage() {
             </button>
           ))}
         </div>
-
-        <p className="text-center text-xs text-muted-foreground pb-2 bg-muted/50">
-          F para sair do fullscreen | ESC para sair
-        </p>
       </div>
     )
   }
@@ -390,10 +386,6 @@ export default function PainelPage() {
           </button>
         ))}
       </div>
-
-      <p className="text-center text-xs text-muted-foreground pb-2">
-        F para fullscreen
-      </p>
     </div>
   )
 }
