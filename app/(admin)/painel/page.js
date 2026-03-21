@@ -7,9 +7,24 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { ListTodo, StickyNote, Clock, Maximize2, Minimize2, User } from 'lucide-react'
-import { useMediaQuery } from "react-responsive";
+import { useEffect, useState } from "react";
 
+function useIsSmallScreen(breakpoint = 768) {
+  const [isSmall, setIsSmall] = useState(false);
 
+  useEffect(() => {
+    const media = window.matchMedia(`(max-width: ${breakpoint}px)`);
+
+    const update = () => setIsSmall(media.matches);
+
+    update();
+    media.addEventListener("change", update);
+
+    return () => media.removeEventListener("change", update);
+  }, [breakpoint]);
+
+  return isSmall;
+}
 
 function getStatusInfo(status) {
   return STATUS_OPTIONS.find(s => s.value === status) || STATUS_OPTIONS[0]
@@ -94,9 +109,9 @@ function chunkArray(array, size) {
 function TarefasSlide({ tarefas }) {
   const pendentes = sortByPriority(tarefas.filter(t => t.status !== 'concluido'))
 
-  const isMobile = useMediaQuery({ maxWidth: 768 });
+  const isSmallScreen = useIsSmallScreen(768);
+  const ITEMS_PER_PAGE = isSmallScreen ? 8 : 4;
 
-  const ITEMS_PER_PAGE = isMobile ? 8 : 4;
   const pages = chunkArray(pendentes, ITEMS_PER_PAGE)
 
   const [page, setPage] = useState(0)
@@ -146,9 +161,9 @@ function TarefasSlide({ tarefas }) {
 function LembretesSlide({ lembretes }) {
   const pendentes = sortByPriority(lembretes.filter(l => l.status !== 'concluido'))
 
-  const isMobile = useMediaQuery({ maxWidth: 768 });
-
-  const ITEMS_PER_PAGE = isMobile ? 8 : 4;
+  const isSmallScreen = useIsSmallScreen(768);
+  
+  const ITEMS_PER_PAGE = isSmallScreen ? 8 : 4;
   const pages = chunkArray(pendentes, ITEMS_PER_PAGE)
 
   const [page, setPage] = useState(0)
