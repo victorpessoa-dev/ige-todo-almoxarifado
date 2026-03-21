@@ -128,7 +128,7 @@ function TarefasSlide({ tarefas }) {
   const currentItems = pages[page] || []
 
   return (
-    <div className="flex flex-col items-center h-full p-8">
+    <div className="flex flex-col items-center h-full px-8 py-4 m-0">
       <div className="flex items-center gap-3 mb-6">
         <ListTodo className="h-10 w-10 text-primary" />
         <h2 className="text-4xl font-bold text-foreground">Tarefas</h2>
@@ -180,7 +180,7 @@ function LembretesSlide({ lembretes }) {
   const currentItems = pages[page] || []
 
   return (
-    <div className="flex flex-col items-center h-full p-8">
+    <div className="flex flex-col items-center h-full px-8 py-4 m-0">
       <div className="flex items-center gap-3 mb-6">
         <StickyNote className="h-10 w-10 text-primary" />
         <h2 className="text-4xl font-bold text-foreground">Lembretes</h2>
