@@ -105,7 +105,7 @@ export function DataProvider({ children }) {
 
     const interval = setInterval(() => {
       loadData()
-    }, 2000)
+    }, 12000)
 
     return () => clearInterval(interval)
   }, [])

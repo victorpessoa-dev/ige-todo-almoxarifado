@@ -10,7 +10,6 @@ export function AuthProvider({ children }) {
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    // Pega sessão atual
     const getSession = async () => {
       const { data } = await supabase.auth.getSession()
       setUser(data.session?.user ?? null)
@@ -19,7 +18,6 @@ export function AuthProvider({ children }) {
 
     getSession()
 
-    // Escuta mudanças de login/logout
     const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null)
     })
@@ -29,7 +27,6 @@ export function AuthProvider({ children }) {
     }
   }, [])
 
-  // LOGIN
   const login = async (email, password) => {
     const { error } = await supabase.auth.signInWithPassword({
       email,
@@ -44,7 +41,6 @@ export function AuthProvider({ children }) {
     return true
   }
 
-  // LOGOUT
   const logout = async () => {
     await supabase.auth.signOut()
   }
