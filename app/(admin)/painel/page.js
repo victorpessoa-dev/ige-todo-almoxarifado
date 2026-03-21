@@ -8,21 +8,31 @@ import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { ListTodo, StickyNote, Clock, Maximize2, Minimize2, User } from 'lucide-react'
 
-function useIsSmallScreen(breakpoint = 768) {
-  const [isSmall, setIsSmall] = useState(false);
+function useItemsPerPage() {
+  const [items, setItems] = useState(4);
 
   useEffect(() => {
-    const media = window.matchMedia(`(max-width: ${breakpoint}px)`);
+    if (typeof window === "undefined") return;
 
-    const update = () => setIsSmall(media.matches);
+    const update = () => {
+      const width = window.innerWidth;
+
+      if (width < 768) {
+        setItems(8); 
+      } else if (width < 1024) {
+        setItems(6); 
+      } else {
+        setItems(6); 
+      }
+    };
 
     update();
-    media.addEventListener("change", update);
+    window.addEventListener("resize", update);
 
-    return () => media.removeEventListener("change", update);
-  }, [breakpoint]);
+    return () => window.removeEventListener("resize", update);
+  }, []);
 
-  return isSmall;
+  return items;
 }
 
 function getStatusInfo(status) {
@@ -106,26 +116,36 @@ function chunkArray(array, size) {
 }
 
 function TarefasSlide({ tarefas }) {
-  const pendentes = sortByPriority(tarefas.filter(t => t.status !== 'concluido'))
+    const pendentes = useMemo(() => {
+    return sortByPriority(
+      tarefas.filter((l) => l.status !== "concluido")
+    );
+  }, [tarefas]);
 
-  const isSmallScreen = useIsSmallScreen(768);
-  const ITEMS_PER_PAGE = isSmallScreen ? 8 : 4;
+  const ITEMS_PER_PAGE = useItemsPerPage();
 
-  const pages = chunkArray(pendentes, ITEMS_PER_PAGE)
+  const pages = useMemo(() => {
+    return chunkArray(pendentes, ITEMS_PER_PAGE);
+  }, [pendentes, ITEMS_PER_PAGE]);
 
-  const [page, setPage] = useState(0)
+  const [page, setPage] = useState(0);
 
   useEffect(() => {
-    if (pages.length <= 1) return
+    if (pages.length <= 1) return;
 
     const interval = setInterval(() => {
-      setPage(prev => (prev + 1) % pages.length)
-    }, 10000)
+      setPage((prev) => (prev + 1) % pages.length);
+    }, 10000);
 
-    return () => clearInterval(interval)
-  }, [pages.length])
+    return () => clearInterval(interval);
+  }, [pages.length]);
 
-  const currentItems = pages[page] || []
+  useEffect(() => {
+    setPage(0);
+  }, [ITEMS_PER_PAGE]);
+
+  const safePage = page >= pages.length ? 0 : page;
+  const currentItems = pages[safePage] || [];
 
   return (
     <div className="flex flex-col items-center h-full px-8 py-4 m-0">
@@ -158,26 +178,36 @@ function TarefasSlide({ tarefas }) {
 }
 
 function LembretesSlide({ lembretes }) {
-  const pendentes = sortByPriority(lembretes.filter(l => l.status !== 'concluido'))
+  const pendentes = useMemo(() => {
+    return sortByPriority(
+      lembretes.filter((l) => l.status !== "concluido")
+    );
+  }, [lembretes]);
 
-  const isSmallScreen = useIsSmallScreen(768);
+  const ITEMS_PER_PAGE = useItemsPerPage();
 
-  const ITEMS_PER_PAGE = isSmallScreen ? 8 : 4;
-  const pages = chunkArray(pendentes, ITEMS_PER_PAGE)
+  const pages = useMemo(() => {
+    return chunkArray(pendentes, ITEMS_PER_PAGE);
+  }, [pendentes, ITEMS_PER_PAGE]);
 
-  const [page, setPage] = useState(0)
+  const [page, setPage] = useState(0);
 
   useEffect(() => {
-    if (pages.length <= 1) return
+    if (pages.length <= 1) return;
 
     const interval = setInterval(() => {
-      setPage(prev => (prev + 1) % pages.length)
-    }, 10000)
+      setPage((prev) => (prev + 1) % pages.length);
+    }, 10000);
 
-    return () => clearInterval(interval)
-  }, [pages.length])
+    return () => clearInterval(interval);
+  }, [pages.length]);
 
-  const currentItems = pages[page] || []
+  useEffect(() => {
+    setPage(0);
+  }, [ITEMS_PER_PAGE]);
+
+  const safePage = page >= pages.length ? 0 : page;
+  const currentItems = pages[safePage] || [];
 
   return (
     <div className="flex flex-col items-center h-full px-8 py-4 m-0">
