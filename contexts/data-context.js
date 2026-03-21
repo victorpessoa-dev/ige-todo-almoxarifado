@@ -26,18 +26,12 @@ export function DataProvider({ children }) {
     setIsLoaded(true)
   }
 
-  useEffect(() => {
-    loadData()
-  }, [])
-
-  // ================= TAREFAS =================
-
   async function addTarefa(form) {
     const {
       data: { user }
     } = await supabase.auth.getUser()
 
-    const { data, error } = await supabase
+    const { error } = await supabase
       .from('tarefas')
       .insert({
         user_id: user.id,
@@ -47,44 +41,35 @@ export function DataProvider({ children }) {
         status: form.status,
         prioridade: form.prioridade
       })
-      .select()
-      .single()
 
-    if (error) {
-      console.error(error)
-      return
-    }
-
-    setTarefas(prev => [data, ...prev])
+    if (error) console.error(error)
   }
 
   async function updateTarefa(id, updates) {
-    const { data } = await supabase
+    const { error } = await supabase
       .from('tarefas')
       .update(updates)
       .eq('id', id)
-      .select()
-      .single()
 
-    if (data) {
-      setTarefas(prev => prev.map(t => t.id === id ? data : t))
-    }
+    if (error) console.error(error)
   }
 
   async function deleteTarefa(id) {
-    await supabase.from('tarefas').delete().eq('id', id)
-    setTarefas(prev => prev.filter(t => t.id !== id))
+    const { error } = await supabase
+      .from('tarefas')
+      .delete()
+      .eq('id', id)
+
+    if (error) console.error(error)
   }
 
-  // ================= LEMBRETES =================
 
   async function addLembrete(form) {
-
     const {
       data: { user }
     } = await supabase.auth.getUser()
 
-    const { data, error } = await supabase
+    const { error } = await supabase
       .from('lembretes')
       .insert({
         user_id: user.id,
@@ -94,45 +79,50 @@ export function DataProvider({ children }) {
         status: form.status,
         prioridade: form.prioridade
       })
-      .select()
-      .single()
 
-    if (error) {
-      console.error(error)
-      return
-    }
-
-    setLembretes(prev => [data, ...prev])
+    if (error) console.error(error)
   }
 
   async function updateLembrete(id, updates) {
-    const { data } = await supabase
+    const { error } = await supabase
       .from('lembretes')
       .update(updates)
       .eq('id', id)
-      .select()
-      .single()
 
-    if (data) {
-      setLembretes(prev => prev.map(l => l.id === id ? data : l))
-    }
+    if (error) console.error(error)
   }
 
   async function deleteLembrete(id) {
-    await supabase.from('lembretes').delete().eq('id', id)
-    setLembretes(prev => prev.filter(l => l.id !== id))
+    const { error } = await supabase
+      .from('lembretes')
+      .delete()
+      .eq('id', id)
+
+    if (error) console.error(error)
   }
+  useEffect(() => {
+    loadData()
+
+    const interval = setInterval(() => {
+      loadData()
+    }, 2000)
+
+    return () => clearInterval(interval)
+  }, [])
 
   return (
     <DataContext.Provider value={{
       tarefas,
       lembretes,
+
       addTarefa,
       updateTarefa,
       deleteTarefa,
+
       addLembrete,
       updateLembrete,
       deleteLembrete,
+
       isLoaded
     }}>
       {children}

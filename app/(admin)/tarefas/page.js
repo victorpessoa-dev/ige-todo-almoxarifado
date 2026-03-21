@@ -13,12 +13,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { toast } from 'sonner'
 import { Plus, Pencil, Trash2, CheckCircle2, Circle, Clock, ChevronDown, ChevronUp, Calendar } from 'lucide-react'
 
-// Funcao para agrupar itens por data
 function groupByDate(items) {
   const groups = {}
 
   items.forEach(item => {
-    const date = new Date(item.created_at) // ✅ corrigido
+    const date = new Date(item.created_at)
     const dateKey = date.toLocaleDateString('pt-BR', {
       weekday: 'long',
       year: 'numeric',
@@ -145,48 +144,77 @@ export default function TarefasPage() {
     const statusInfo = getStatusInfo(tarefa.status)
 
     return (
-      <Card className={`transition-all ${isConcluido ? 'opacity-70 bg-muted/30' : `hover:shadow-lg ${prioridadeInfo.shadow}`}`}>
+      <Card
+        className={`transition-all ${isConcluido
+          ? 'opacity-70 bg-muted/30'
+          : `hover:shadow-lg ${prioridadeInfo.shadow}`
+          }`}
+      >
         <CardContent className="p-4">
-          <div className="flex items-start justify-between gap-4">
-            <div className="flex items-start gap-3 flex-1">
+          <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
+
+            <div className="flex items-start gap-3 flex-1 w-full">
               <button
-                onClick={() => isConcluido ? handleStatusChange(tarefa.id, 'a_fazer') : handleConcluir(tarefa.id)}
+                onClick={() =>
+                  isConcluido
+                    ? handleStatusChange(tarefa.id, 'a_fazer')
+                    : handleConcluir(tarefa.id)
+                }
                 className="mt-1 hover:scale-110 transition-transform"
-                title={isConcluido ? 'Reabrir tarefa' : 'Marcar como concluida'}
+                title={
+                  isConcluido
+                    ? 'Reabrir tarefa'
+                    : 'Marcar como concluida'
+                }
               >
                 {getStatusIcon(tarefa.status)}
               </button>
+
               <div className="flex-1">
-                <h3 className={`font-semibold text-foreground ${isConcluido ? 'line-through text-muted-foreground' : ''}`}>
+                <h3
+                  className={`font-semibold text-foreground break-words ${isConcluido
+                    ? 'line-through text-muted-foreground'
+                    : ''
+                    }`}
+                >
                   {tarefa.titulo}
                 </h3>
+
                 {tarefa.descricao && (
-                  <p className="text-sm text-muted-foreground mt-1">{tarefa.descricao}</p>
+                  <p className="text-sm text-muted-foreground mt-1 whitespace-pre-wrap break-words">
+                    {tarefa.descricao}
+                  </p>
                 )}
+
                 <div className="flex flex-wrap items-center gap-2 mt-3">
                   <Badge className={prioridadeInfo.color}>
                     {prioridadeInfo.label}
                   </Badge>
+
                   {!isConcluido && (
                     <Badge variant="outline" className={statusInfo.color}>
                       {statusInfo.label}
                     </Badge>
                   )}
+
                   {tarefa.responsavel && (
-                    <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded">
+                    <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded break-words">
                       Para: {tarefa.responsavel}
                     </span>
                   )}
                 </div>
               </div>
             </div>
-            <div className="flex items-center gap-1">
+
+            <div className="flex items-center gap-4 w-full sm:w-auto justify-end">
               {!isConcluido && (
                 <Select
                   value={tarefa.status}
-                  onValueChange={(value) => handleStatusChange(tarefa.id, value)}
+                  onValueChange={(value) =>
+                    handleStatusChange(tarefa.id, value)
+                  }
                 >
-                  <SelectTrigger className="w-[130px] h-8 text-xs">
+                  <SelectTrigger className="w-full sm:w-[130px] h-8 text-xs">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -198,10 +226,22 @@ export default function TarefasPage() {
                   </SelectContent>
                 </Select>
               )}
-              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleEdit(tarefa)}>
+
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8"
+                onClick={() => handleEdit(tarefa)}
+              >
                 <Pencil className="h-4 w-4" />
               </Button>
-              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleDelete(tarefa.id)}>
+
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8"
+                onClick={() => handleDelete(tarefa.id)}
+              >
                 <Trash2 className="h-4 w-4 text-destructive" />
               </Button>
             </div>
@@ -217,7 +257,7 @@ export default function TarefasPage() {
         <Calendar className="h-4 w-4" />
         <span className="font-medium capitalize">{dateLabel}</span>
       </div>
-      <div className="flex flex-col gap-3 pl-6 border-l-2 border-muted">
+      <div className={`flex flex-col gap-3 pl-6 border-l-2 ${isConcluido ? 'border-muted/50' : 'border-muted'} ${!isConcluido ? 'outline-' : ''}`}>
         {items.map((tarefa) => (
           <TarefaCard key={tarefa.id} tarefa={tarefa} isConcluido={isConcluido} />
         ))}
@@ -308,46 +348,48 @@ export default function TarefasPage() {
         </Dialog>
       </div>
 
-      <div className="flex flex-col gap-4">
-        <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
-          <Circle className="h-5 w-5" />
-          Pendentes ({tarefasPendentes.length})
-        </h2>
-        {tarefasPendentesGrouped.length === 0 ? (
-          <Card>
-            <CardContent className="flex flex-col items-center justify-center py-8">
-              <p className="text-muted-foreground">Nenhuma tarefa pendente</p>
-              <p className="text-sm text-muted-foreground">Clique em "Nova Tarefa" para comecar</p>
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="flex flex-col gap-6">
-            {tarefasPendentesGrouped.map(([dateLabel, items]) => (
-              <DateGroup key={dateLabel} dateLabel={dateLabel} items={items} />
-            ))}
-          </div>
-        )}
-      </div>
-
-      {tarefasConcluidas.length > 0 && (
+      <div className="flex flex-col gap-6 max-h-[85vh] overflow-y-auto pr-2 scroll-smooth scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent">
         <div className="flex flex-col gap-4">
-          <button
-            onClick={() => setShowConcluidos(!showConcluidos)}
-            className="flex items-center gap-2 text-lg font-semibold text-foreground hover:text-primary transition-colors w-fit"
-          >
-            <CheckCircle2 className="h-5 w-5 text-green-600" />
-            Concluidos ({tarefasConcluidas.length})
-            {showConcluidos ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-          </button>
-          {showConcluidos && (
+          <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
+            <Circle className="h-5 w-5" />
+            Pendentes ({tarefasPendentes.length})
+          </h2>
+          {tarefasPendentesGrouped.length === 0 ? (
+            <Card>
+              <CardContent className="flex flex-col items-center justify-center py-8">
+                <p className="text-muted-foreground">Nenhuma tarefa pendente</p>
+                <p className="text-sm text-muted-foreground">Clique em "Nova Tarefa" para comecar</p>
+              </CardContent>
+            </Card>
+          ) : (
             <div className="flex flex-col gap-6">
-              {tarefasConcluidasGrouped.map(([dateLabel, items]) => (
-                <DateGroup key={dateLabel} dateLabel={dateLabel} items={items} isConcluido />
+              {tarefasPendentesGrouped.map(([dateLabel, items]) => (
+                <DateGroup key={dateLabel} dateLabel={dateLabel} items={items} />
               ))}
             </div>
           )}
         </div>
-      )}
+
+        {tarefasConcluidas.length > 0 && (
+          <div className="flex flex-col gap-4">
+            <button
+              onClick={() => setShowConcluidos(!showConcluidos)}
+              className="flex items-center gap-2 text-lg font-semibold text-foreground hover:text-primary transition-colors w-fit"
+            >
+              <CheckCircle2 className="h-5 w-5 text-green-600" />
+              Concluidos ({tarefasConcluidas.length})
+              {showConcluidos ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+            </button>
+            {showConcluidos && (
+              <div className="flex flex-col gap-6">
+                {tarefasConcluidasGrouped.map(([dateLabel, items]) => (
+                  <DateGroup key={dateLabel} dateLabel={dateLabel} items={items} isConcluido />
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
     </div>
   )
 }

@@ -25,7 +25,7 @@ export function Sidebar({ onNavigate }) {
   }
 
   const handleClick = () => {
-    if (onNavigate) onNavigate() // 👈 fecha no mobile
+    if (onNavigate) onNavigate()
   }
 
   return (

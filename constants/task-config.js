@@ -3,25 +3,25 @@ export const PRIORIDADE_OPTIONS = [
         value: 'urgente',
         label: 'Urgente',
         color: 'bg-red-200 text-red-800',
-        border: 'border-red-600'
+        outline: 'outline-red-600'
     },
     {
         value: 'alto',
         label: 'Alto',
         color: 'bg-orange-200 text-orange-800',
-        border: 'border-orange-500'
+        outline: 'outline-orange-500'
     },
     {
         value: 'medio',
         label: 'Médio',
         color: 'bg-yellow-200 text-yellow-800',
-        border: 'border-yellow-500'
+        outline: 'outline-yellow-500'
     },
     {
         value: 'baixo',
         label: 'Baixo',
         color: 'bg-green-200 text-green-800',
-        border: 'border-green-500'
+        outline: 'outline-green-500'
     }
 ]
 

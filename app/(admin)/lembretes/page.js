@@ -145,63 +145,109 @@ export default function LembretesPage() {
     const statusInfo = getStatusInfo(lembrete.status)
 
     return (
-      <Card className={`transition-all ${isConcluido ? 'opacity-70 bg-muted/30' : `hover:shadow-lg ${prioridadeInfo.shadow}`}`}>
+      <Card
+        className={`transition-all ${isConcluido
+          ? 'opacity-70 bg-muted/30'
+          : `hover:shadow-lg ${prioridadeInfo.shadow}`
+          }`}
+      >
         <CardContent className="p-4">
-          <div className="flex items-start justify-between gap-4">
-            <div className="flex items-start gap-3 flex-1">
+          <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
+
+            {/* ESQUERDA */}
+            <div className="flex items-start gap-3 flex-1 w-full">
               <button
-                onClick={() => isConcluido ? handleStatusChange(lembrete.id, 'a_fazer') : handleConcluir(lembrete.id)}
+                onClick={() =>
+                  isConcluido
+                    ? handleStatusChange(lembrete.id, 'a_fazer')
+                    : handleConcluir(lembrete.id)
+                }
                 className="mt-1 hover:scale-110 transition-transform"
-                title={isConcluido ? 'Reabrir lembrete' : 'Marcar como concluido'}
+                title={
+                  isConcluido
+                    ? 'Reabrir lembrete'
+                    : 'Marcar como concluido'
+                }
               >
                 {getStatusIcon(lembrete.status)}
               </button>
+
               <div className="flex-1">
-                <h3 className={`font-semibold text-foreground ${isConcluido ? 'line-through text-muted-foreground' : ''}`}>
+                <h3
+                  className={`font-semibold text-foreground break-words ${isConcluido
+                    ? 'line-through text-muted-foreground'
+                    : ''
+                    }`}
+                >
                   {lembrete.titulo}
                 </h3>
+
                 {lembrete.conteudo && (
-                  <p className="text-sm text-muted-foreground mt-1 whitespace-pre-wrap">{lembrete.conteudo}</p>
+                  <p className="text-sm text-muted-foreground mt-1 whitespace-pre-wrap break-words">
+                    {lembrete.conteudo}
+                  </p>
                 )}
+
                 <div className="flex flex-wrap items-center gap-2 mt-3">
                   <Badge className={prioridadeInfo.color}>
                     {prioridadeInfo.label}
                   </Badge>
+
                   {!isConcluido && (
                     <Badge variant="outline" className={statusInfo.color}>
                       {statusInfo.label}
                     </Badge>
                   )}
+
                   {lembrete.destinatario && (
-                    <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded">
+                    <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded break-words">
                       Para: {lembrete.destinatario}
                     </span>
                   )}
                 </div>
               </div>
             </div>
-            <div className="flex items-center gap-1">
+
+            {/* DIREITA */}
+            <div className="flex items-center gap-1 w-full sm:w-auto justify-end">
               {!isConcluido && (
                 <Select
                   value={lembrete.status}
-                  onValueChange={(value) => handleStatusChange(lembrete.id, value)}
+                  onValueChange={(value) =>
+                    handleStatusChange(lembrete.id, value)
+                  }
                 >
-                  <SelectTrigger className="w-[130px] h-8 text-xs">
+                  <SelectTrigger className="w-full sm:w-[130px] h-8 text-xs">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
                     {STATUS_OPTIONS.map((option) => (
-                      <SelectItem key={option.value} value={option.value}>
+                      <SelectItem
+                        key={option.value}
+                        value={option.value}
+                      >
                         {option.label}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               )}
-              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleEdit(lembrete)}>
+
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8"
+                onClick={() => handleEdit(lembrete)}
+              >
                 <Pencil className="h-4 w-4" />
               </Button>
-              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleDelete(lembrete.id)}>
+
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8"
+                onClick={() => handleDelete(lembrete.id)}
+              >
                 <Trash2 className="h-4 w-4 text-destructive" />
               </Button>
             </div>
@@ -308,46 +354,48 @@ export default function LembretesPage() {
         </Dialog>
       </div>
 
-      <div className="flex flex-col gap-4">
-        <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
-          <StickyNote className="h-5 w-5" />
-          Pendentes ({lembretesPendentes.length})
-        </h2>
-        {lembretesPendentesGrouped.length === 0 ? (
-          <Card>
-            <CardContent className="flex flex-col items-center justify-center py-8">
-              <p className="text-muted-foreground">Nenhum lembrete pendente</p>
-              <p className="text-sm text-muted-foreground">Clique em "Novo Lembrete" para comecar</p>
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="flex flex-col gap-6">
-            {lembretesPendentesGrouped.map(([dateLabel, items]) => (
-              <DateGroup key={dateLabel} dateLabel={dateLabel} items={items} />
-            ))}
-          </div>
-        )}
-      </div>
-
-      {lembretesConcluidos.length > 0 && (
+      <div className="flex flex-col gap-6 max-h-[85vh] overflow-y-auto pr-2 scroll-smooth scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent">
         <div className="flex flex-col gap-4">
-          <button
-            onClick={() => setShowConcluidos(!showConcluidos)}
-            className="flex items-center gap-2 text-lg font-semibold text-foreground hover:text-primary transition-colors w-fit"
-          >
-            <CheckCircle2 className="h-5 w-5 text-green-600" />
-            Concluidos ({lembretesConcluidos.length})
-            {showConcluidos ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-          </button>
-          {showConcluidos && (
+          <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
+            <StickyNote className="h-5 w-5" />
+            Pendentes ({lembretesPendentes.length})
+          </h2>
+          {lembretesPendentesGrouped.length === 0 ? (
+            <Card>
+              <CardContent className="flex flex-col items-center justify-center py-8">
+                <p className="text-muted-foreground">Nenhum lembrete pendente</p>
+                <p className="text-sm text-muted-foreground">Clique em "Novo Lembrete" para comecar</p>
+              </CardContent>
+            </Card>
+          ) : (
             <div className="flex flex-col gap-6">
-              {lembretesConcluidosGrouped.map(([dateLabel, items]) => (
-                <DateGroup key={dateLabel} dateLabel={dateLabel} items={items} isConcluido />
+              {lembretesPendentesGrouped.map(([dateLabel, items]) => (
+                <DateGroup key={dateLabel} dateLabel={dateLabel} items={items} />
               ))}
             </div>
           )}
         </div>
-      )}
+
+        {lembretesConcluidos.length > 0 && (
+          <div className="flex flex-col gap-4">
+            <button
+              onClick={() => setShowConcluidos(!showConcluidos)}
+              className="flex items-center gap-2 text-lg font-semibold text-foreground hover:text-primary transition-colors w-fit"
+            >
+              <CheckCircle2 className="h-5 w-5 text-green-600" />
+              Concluidos ({lembretesConcluidos.length})
+              {showConcluidos ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+            </button>
+            {showConcluidos && (
+              <div className="flex flex-col gap-6">
+                {lembretesConcluidosGrouped.map(([dateLabel, items]) => (
+                  <DateGroup key={dateLabel} dateLabel={dateLabel} items={items} isConcluido />
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
     </div>
   )
 }

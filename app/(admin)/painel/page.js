@@ -6,7 +6,7 @@ import { PRIORIDADE_OPTIONS, STATUS_OPTIONS, sortByPriority } from '@/constants/
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { ChevronLeft, ChevronRight, ListTodo, StickyNote, Clock, Maximize2, Minimize2, User } from 'lucide-react'
+import { ListTodo, StickyNote, Clock, Maximize2, Minimize2, User } from 'lucide-react'
 
 function getStatusInfo(status) {
   return STATUS_OPTIONS.find(s => s.value === status) || STATUS_OPTIONS[0]
@@ -80,8 +80,33 @@ function LembreteCard({ lembrete }) {
   )
 }
 
+function chunkArray(array, size) {
+  const result = []
+  for (let i = 0; i < array.length; i += size) {
+    result.push(array.slice(i, i + size))
+  }
+  return result
+}
+
 function TarefasSlide({ tarefas }) {
   const pendentes = sortByPriority(tarefas.filter(t => t.status !== 'concluido'))
+
+  const ITEMS_PER_PAGE = 8
+  const pages = chunkArray(pendentes, ITEMS_PER_PAGE)
+
+  const [page, setPage] = useState(0)
+
+  useEffect(() => {
+    if (pages.length <= 1) return
+
+    const interval = setInterval(() => {
+      setPage(prev => (prev + 1) % pages.length)
+    }, 10000)
+
+    return () => clearInterval(interval)
+  }, [pages.length])
+
+  const currentItems = pages[page] || []
 
   return (
     <div className="flex flex-col items-center h-full p-8">
@@ -95,9 +120,9 @@ function TarefasSlide({ tarefas }) {
           <p className="text-xl text-muted-foreground">Nenhuma tarefa pendente</p>
         </div>
       ) : (
-        <div className="w-full max-w-5xl flex-1 overflow-y-auto">
+        <div className="w-full max-w-5xl flex-1 overflow-hidden">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {pendentes.map((tarefa) => (
+            {currentItems.map((tarefa) => (
               <TarefaCard key={tarefa.id} tarefa={tarefa} />
             ))}
           </div>
@@ -105,7 +130,9 @@ function TarefasSlide({ tarefas }) {
       )}
 
       <div className="mt-4 text-muted-foreground">
-        <p className="text-lg">Total pendente: {pendentes.length} tarefa(s)</p>
+        <p className="text-lg">
+          Página {page + 1} / {pages.length} • Total: {pendentes.length}
+        </p>
       </div>
     </div>
   )
@@ -113,6 +140,23 @@ function TarefasSlide({ tarefas }) {
 
 function LembretesSlide({ lembretes }) {
   const pendentes = sortByPriority(lembretes.filter(l => l.status !== 'concluido'))
+
+  const ITEMS_PER_PAGE = 8
+  const pages = chunkArray(pendentes, ITEMS_PER_PAGE)
+
+  const [page, setPage] = useState(0)
+
+  useEffect(() => {
+    if (pages.length <= 1) return
+
+    const interval = setInterval(() => {
+      setPage(prev => (prev + 1) % pages.length)
+    }, 10000)
+
+    return () => clearInterval(interval)
+  }, [pages.length])
+
+  const currentItems = pages[page] || []
 
   return (
     <div className="flex flex-col items-center h-full p-8">
@@ -126,9 +170,9 @@ function LembretesSlide({ lembretes }) {
           <p className="text-xl text-muted-foreground">Nenhum lembrete pendente</p>
         </div>
       ) : (
-        <div className="w-full max-w-5xl flex-1 overflow-y-auto">
+        <div className="w-full max-w-5xl flex-1 overflow-hidden">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {pendentes.map((lembrete) => (
+            {currentItems.map((lembrete) => (
               <LembreteCard key={lembrete.id} lembrete={lembrete} />
             ))}
           </div>
@@ -136,7 +180,9 @@ function LembretesSlide({ lembretes }) {
       )}
 
       <div className="mt-4 text-muted-foreground">
-        <p className="text-lg">Total pendente: {pendentes.length} lembrete(s)</p>
+        <p className="text-lg">
+          Página {page + 1} / {pages.length} • Total: {pendentes.length}
+        </p>
       </div>
     </div>
   )
@@ -165,7 +211,8 @@ function RelogioSlide() {
   const dateString = time.toLocaleDateString('pt-BR', dateOptions)
 
   return (
-    <div className="flex flex-col items-center justify-center h-full p-8">
+    <div className="flex flex-col items-center justify-center h-full p-12 overflow-hidden">
+
       <div className="flex items-center gap-3 mb-8">
         <Clock className="h-10 w-10 text-primary" />
         <h2 className="text-4xl font-bold text-foreground">Relogio Local</h2>
@@ -175,14 +222,36 @@ function RelogioSlide() {
         <div className="font-bold text-foreground tracking-wider mb-4 text-[clamp(3rem,10vw,8rem)] leading-none">
           {hours}:{minutes}:{seconds}
         </div>
-        <p className="text-2xl text-muted-foreground capitalize">{dateString}</p>
+        <p className="text-2xl sm:text-xl text-muted-foreground capitalize">
+          {dateString}
+        </p>
       </div>
-    </div>
+      <div className="text-center mt-10 text-muted-foreground">
+        {(() => {
+          const hour = time.getHours()
+
+          const isAberto =
+            (hour >= 8 && hour < 9) ||
+            (hour >= 14 && hour < 15)
+
+          return (
+            <div className="flex flex-col items-center">
+              <span
+                className={`px-8 py-2 rounded-full text-white font-semibold text-3xl sm:text-5xl xl:text-8xl ${isAberto ? 'bg-green-600' : 'bg-red-600'
+                  }`}
+              >
+                {isAberto ? 'ABERTO' : 'FECHADO'}
+              </span>
+            </div>
+          )
+        })()}
+      </div>
+    </div >
   )
 }
 
 export default function PainelPage() {
-  const { tarefas, lembretes, isLoaded } = useData()
+  const { tarefas, lembretes, isLoaded, reloadData } = useData()
   const [currentSlide, setCurrentSlide] = useState(0)
   const [isFullscreen, setIsFullscreen] = useState(false)
 
@@ -208,10 +277,14 @@ export default function PainelPage() {
     setIsFullscreen(!isFullscreen)
   }
 
+  const refreshData = () => {
+    reloadData()
+  }
+
   useEffect(() => {
     const timer = setInterval(() => {
       nextSlide()
-    }, 5000)
+    }, 15000)
     return () => clearInterval(timer)
   }, [nextSlide])
 
@@ -282,7 +355,7 @@ export default function PainelPage() {
         </Button>
       </div>
 
-      <div className="flex items-center justify-center gap-4 py-4">
+      <div className="flex items-center justify-center gap-4 py-4 overflow-hidden">
         {slides.map((slide, index) => (
           <button
             key={index}

@@ -37,7 +37,7 @@
   --sidebar-accent-foreground: #FFFFFF;
   --sidebar-border: #1A5A9A;
   --sidebar-ring: #FFFFFF;
-  
+
   --urgente: #E30613;
   --alto: #F97316;
   --medio: #EAB308;
@@ -45,38 +45,57 @@
 }
 
 .dark {
-  --background: #1A1A1A;
-  --foreground: #F5F5F5;
-  --card: #262626;
-  --card-foreground: #F5F5F5;
-  --popover: #262626;
-  --popover-foreground: #F5F5F5;
-  --primary: #1E73BE;
+  --background: #0F172A;
+  /* fundo principal (azul escuro elegante) */
+  --foreground: #E5E7EB;
+
+  --card: #111827;
+  /* leve contraste com fundo */
+  --card-foreground: #E5E7EB;
+
+  --popover: #111827;
+  --popover-foreground: #E5E7EB;
+
+  --primary: #3B82F6;
+  /* azul mais vivo no dark */
   --primary-foreground: #FFFFFF;
-  --secondary: #333333;
-  --secondary-foreground: #F5F5F5;
-  --muted: #333333;
-  --muted-foreground: #A0A0A0;
-  --accent: #E30613;
+
+  --secondary: #1F2933;
+  --secondary-foreground: #E5E7EB;
+
+  --muted: #1F2937;
+  --muted-foreground: #9CA3AF;
+
+  --accent: #EF4444;
+  /* vermelho mais moderno */
   --accent-foreground: #FFFFFF;
-  --destructive: #E30613;
+
+  --destructive: #EF4444;
   --destructive-foreground: #FFFFFF;
-  --border: #404040;
-  --input: #404040;
-  --ring: #1E73BE;
-  --chart-1: #1E73BE;
-  --chart-2: #E30613;
-  --chart-3: #F5F5F5;
-  --chart-4: #333333;
-  --chart-5: #1A5A9A;
-  --sidebar: #1E73BE;
-  --sidebar-foreground: #FFFFFF;
-  --sidebar-primary: #FFFFFF;
-  --sidebar-primary-foreground: #1E73BE;
-  --sidebar-accent: #1A5A9A;
-  --sidebar-accent-foreground: #FFFFFF;
-  --sidebar-border: #1A5A9A;
-  --sidebar-ring: #FFFFFF;
+
+  --border: #1F2937;
+  --input: #1F2937;
+
+  --ring: #3B82F6;
+
+  --chart-1: #3B82F6;
+  --chart-2: #EF4444;
+  --chart-3: #E5E7EB;
+  --chart-4: #1F2937;
+  --chart-5: #2563EB;
+
+  --sidebar: #020617;
+  /* quase preto (contraste forte) */
+  --sidebar-foreground: #E5E7EB;
+
+  --sidebar-primary: #3B82F6;
+  --sidebar-primary-foreground: #FFFFFF;
+
+  --sidebar-accent: #1E293B;
+  --sidebar-accent-foreground: #E5E7EB;
+
+  --sidebar-border: #1E293B;
+  --sidebar-ring: #3B82F6;
 }
 
 @theme inline {
@@ -118,7 +137,7 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
-  
+
   --color-urgente: var(--urgente);
   --color-alto: var(--alto);
   --color-medio: var(--medio);
@@ -129,6 +148,7 @@
   * {
     @apply border-border outline-ring/50;
   }
+
   body {
     @apply bg-background text-foreground;
   }
