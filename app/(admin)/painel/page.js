@@ -59,7 +59,7 @@ function TarefaCard({ tarefa }) {
       </CardHeader>
       <CardContent className="pt-0">
         {tarefa.descricao && (
-          <p className="text-sm text-muted-foreground mb-3 line-clamp-2">{tarefa.descricao}</p>
+          <p className="text-sm text-muted-foreground mb-3 whitespace-pre-line break-words">{tarefa.descricao}</p>
         )}
         <div className="flex items-center justify-between gap-2">
           {tarefa.responsavel && (
@@ -91,7 +91,7 @@ function LembreteCard({ lembrete }) {
       </CardHeader>
       <CardContent className="pt-0">
         {lembrete.conteudo && (
-          <p className="text-sm text-muted-foreground mb-3 line-clamp-2">{lembrete.conteudo}</p>
+          <p className="text-sm text-muted-foreground mb-3 whitespace-pre-line break-words">{lembrete.conteudo}</p>
         )}
         <div className="flex items-center justify-between gap-2">
           {lembrete.destinatario && (
