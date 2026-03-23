@@ -18,11 +18,11 @@ function useItemsPerPage() {
       const width = window.innerWidth;
 
       if (width < 768) {
-        setItems(8); 
+        setItems(4); 
       } else if (width < 1024) {
         setItems(6); 
       } else {
-        setItems(6); 
+        setItems(9); 
       }
     };
 
