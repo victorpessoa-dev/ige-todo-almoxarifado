@@ -6,14 +6,14 @@ import { useAuth } from '@/contexts/auth-context'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import Image from 'next/image'
-import { LayoutDashboard, ListTodo, StickyNote, LogOut } from 'lucide-react'
+import { LayoutDashboard, ListTodo, StickyNote, LogOut, TriangleAlert } from 'lucide-react'
 
 const menuItems = [
   { href: '/painel', label: 'Painel', icon: LayoutDashboard },
   { href: '/tarefas', label: 'Tarefas', icon: ListTodo },
   { href: '/lembretes', label: 'Lembretes', icon: StickyNote },
-  { href: '/alerta', label: 'Alerta', icon: StickyNote },
-]
+  { href: '/alerta', label: 'Alerta', icon: TriangleAlert },
+  ]
 
 export function Sidebar({ onNavigate }) {
   const pathname = usePathname()
