@@ -26,7 +26,7 @@ function useAutoScroll(ref, onEnd, active) {
 
       while (isRunning) {
         el.scrollBy({
-          top: 120,
+          top: 200,
           behavior: 'smooth'
         })
 
@@ -219,7 +219,7 @@ function RelogioSlide({ onEnd }) {
 
     const timeout = setTimeout(() => {
       onEnd?.()
-    }, 8000)
+    }, 10000)
 
     return () => {
       clearInterval(timer)
