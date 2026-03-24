@@ -287,6 +287,20 @@ export default function PainelPage() {
     },
   ]
 
+  const [isFullscreen, setIsFullscreen] = useState(false)
+
+  const toggleFullscreen = () => {
+    setIsFullscreen(prev => !prev)
+  }
+
+  const prevSlide = useCallback(() => {
+    setCurrentSlide(prev => (prev - 1 + 3) % 3)
+  }, [])
+
+  const goToSlide = (index) => {
+    setCurrentSlide(index)
+  }
+
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.key === 'ArrowRight') nextSlide()
