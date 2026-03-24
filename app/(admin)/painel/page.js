@@ -26,7 +26,7 @@ function useAutoScroll(ref, onEnd, active) {
 
       while (isRunning) {
         el.scrollBy({
-          top: 60,
+          top: 120,
           behavior: 'smooth'
         })
 
@@ -153,7 +153,7 @@ function TarefasSlide({ tarefas, onEnd, active }) {
         <h2 className="text-4xl font-bold">Tarefas</h2>
       </div>
 
-      <div ref={ref} className="w-full max-w-5xl flex-1 overflow-auto">
+      <div ref={ref} className="w-full max-w-5xl flex-1 overflow-auto no-scrollbar">
         <div className="grid gap-4" style={{
           gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))"
         }}>
@@ -192,7 +192,7 @@ function LembretesSlide({ lembretes, onEnd, active }) {
         <h2 className="text-4xl font-bold">Lembretes</h2>
       </div>
 
-      <div ref={ref} className="w-full max-w-5xl flex-1 overflow-auto">
+      <div ref={ref} className="w-full max-w-5xl flex-1 overflow-auto no-scrollbar">
         <div className="grid gap-4" style={{
           gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))"
         }}>
