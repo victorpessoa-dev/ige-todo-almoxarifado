@@ -19,7 +19,7 @@ function useAutoScroll(ref, onEnd, active) {
 
     const scrollStep = async () => {
       if (el.scrollHeight <= el.clientHeight) {
-        await new Promise(r => setTimeout(r, 3000))
+        await new Promise(r => setTimeout(r, 4000))
         onEnd?.()
         return
       }
@@ -281,22 +281,44 @@ function RelogioSlide({ onEnd }) {
 export default function PainelPage() {
   const { tarefas, lembretes, isLoaded } = useData()
   const [currentSlide, setCurrentSlide] = useState(0)
+  const [cycleKey, setCycleKey] = useState(0)
+  
 
   const nextSlide = useCallback(() => {
     setCurrentSlide(prev => (prev + 1) % 3)
+    setCycleKey(prev => prev + 1)
   }, [])
 
   const slides = [
     {
-      component: <TarefasSlide tarefas={tarefas} onEnd={nextSlide} active={currentSlide === 0} />,
+      component: (
+        <TarefasSlide
+          key={`tarefas-${cycleKey}`}
+          tarefas={tarefas}
+          onEnd={nextSlide}
+          active={currentSlide === 0}
+        />
+      ),
       label: 'Tarefas'
     },
     {
-      component: <LembretesSlide lembretes={lembretes} onEnd={nextSlide} active={currentSlide === 1} />,
+      component: (
+        <LembretesSlide
+          key={`lembretes-${cycleKey}`}
+          lembretes={lembretes}
+          onEnd={nextSlide}
+          active={currentSlide === 1}
+        />
+      ),
       label: 'Lembretes'
     },
     {
-      component: <RelogioSlide onEnd={nextSlide} />,
+      component: (
+        <RelogioSlide
+          key={`relogio-${cycleKey}`}
+          onEnd={nextSlide}
+        />
+      ),
       label: 'Relogio'
     },
   ]
@@ -309,10 +331,12 @@ export default function PainelPage() {
 
   const prevSlide = useCallback(() => {
     setCurrentSlide(prev => (prev - 1 + 3) % 3)
+    setCycleKey(prev => prev + 1)
   }, [])
 
   const goToSlide = (index) => {
     setCurrentSlide(index)
+    setCycleKey(prev => prev + 1)
   }
 
   useEffect(() => {
