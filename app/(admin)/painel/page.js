@@ -8,14 +8,22 @@ import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { ListTodo, StickyNote, Clock, Maximize2, Minimize2, User } from 'lucide-react'
 
-function useAutoScroll(ref, onEnd) {
+function useAutoScroll(ref, onEnd, active) {
   useEffect(() => {
+    if (!active) return
+
     const el = ref.current
     if (!el) return
 
     let isRunning = true
 
     const scrollStep = async () => {
+      if (el.scrollHeight <= el.clientHeight) {
+        await new Promise(r => setTimeout(r, 3000))
+        onEnd?.()
+        return
+      }
+
       while (isRunning) {
         el.scrollBy({
           top: 60,
@@ -29,8 +37,7 @@ function useAutoScroll(ref, onEnd) {
 
         if (chegouNoFim) {
           await new Promise(r => setTimeout(r, 1500))
-
-          onEnd?.() 
+          onEnd?.()
           return
         }
       }
@@ -41,7 +48,7 @@ function useAutoScroll(ref, onEnd) {
     return () => {
       isRunning = false
     }
-  }, [onEnd])
+  }, [onEnd, active, ref])
 }
 
 function getStatusInfo(status) {
@@ -125,13 +132,13 @@ function LembreteCard({ lembrete }) {
 }
 
 function TarefasSlide({ tarefas, onEnd, active }) {
-  const ref = useRef(null)
+ const ref = useRef(null)
 
   const pendentes = useMemo(() => {
     return sortByPriority(tarefas.filter(t => t.status !== "concluido"))
   }, [tarefas])
 
-  useAutoScroll(ref, onEnd)
+  useAutoScroll(ref, onEnd, active)
 
   useEffect(() => {
     if (active && ref.current) {
@@ -170,7 +177,7 @@ function LembretesSlide({ lembretes, onEnd, active }) {
     return sortByPriority(lembretes.filter(l => l.status !== "concluido"))
   }, [lembretes])
 
-  useAutoScroll(ref, onEnd)
+  useAutoScroll(ref, onEnd, active)
 
   useEffect(() => {
     if (active && ref.current) {
@@ -203,27 +210,33 @@ function LembretesSlide({ lembretes, onEnd, active }) {
 }
 
 function RelogioSlide({ onEnd }) {
-  const [time, setTime] = useState(new Date())
+ const [time, setTime] = useState(new Date())
 
   useEffect(() => {
+    const timer = setInterval(() => {
+      setTime(new Date())
+    }, 1000)
+
     const timeout = setTimeout(() => {
       onEnd?.()
     }, 8000)
 
-    return () => clearTimeout(timeout)
+    return () => {
+      clearInterval(timer)
+      clearTimeout(timeout)
+    }
   }, [onEnd])
 
   const hours = time.getHours().toString().padStart(2, '0')
   const minutes = time.getMinutes().toString().padStart(2, '0')
   const seconds = time.getSeconds().toString().padStart(2, '0')
 
-  const dateOptions = {
+  const dateString = time.toLocaleDateString('pt-BR', {
     weekday: 'long',
     year: 'numeric',
     month: 'long',
     day: 'numeric'
-  }
-  const dateString = time.toLocaleDateString('pt-BR', dateOptions)
+  })
 
   return (
     <div className="flex flex-col items-center justify-center h-full p-12 overflow-hidden">
