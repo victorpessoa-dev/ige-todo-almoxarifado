@@ -12,6 +12,7 @@ const menuItems = [
   { href: '/painel', label: 'Painel', icon: LayoutDashboard },
   { href: '/tarefas', label: 'Tarefas', icon: ListTodo },
   { href: '/lembretes', label: 'Lembretes', icon: StickyNote },
+  { href: '/alerta', label: 'Alerta', icon: StickyNote },
 ]
 
 export function Sidebar({ onNavigate }) {

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { useData } from '@/contexts/data-context'
 import { PRIORIDADE_OPTIONS, STATUS_OPTIONS, sortByPriority } from '@/constants/task-config'
 import { Button } from '@/components/ui/button'
@@ -8,31 +8,40 @@ import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { ListTodo, StickyNote, Clock, Maximize2, Minimize2, User } from 'lucide-react'
 
-function useItemsPerPage() {
-  const [items, setItems] = useState(4);
-
+function useAutoScroll(ref, onEnd) {
   useEffect(() => {
-    if (typeof window === "undefined") return;
+    const el = ref.current
+    if (!el) return
 
-    const update = () => {
-      const width = window.innerWidth;
+    let isRunning = true
 
-      if (width < 768) {
-        setItems(4); 
-      } else if (width < 1024) {
-        setItems(6); 
-      } else {
-        setItems(9); 
+    const scrollStep = async () => {
+      while (isRunning) {
+        el.scrollBy({
+          top: 60,
+          behavior: 'smooth'
+        })
+
+        await new Promise(r => setTimeout(r, 2500))
+
+        const chegouNoFim =
+          el.scrollTop + el.clientHeight >= el.scrollHeight - 5
+
+        if (chegouNoFim) {
+          await new Promise(r => setTimeout(r, 1500))
+
+          onEnd?.() 
+          return
+        }
       }
-    };
+    }
 
-    update();
-    window.addEventListener("resize", update);
+    scrollStep()
 
-    return () => window.removeEventListener("resize", update);
-  }, []);
-
-  return items;
+    return () => {
+      isRunning = false
+    }
+  }, [onEnd])
 }
 
 function getStatusInfo(status) {
@@ -51,16 +60,20 @@ function TarefaCard({ tarefa }) {
     <Card className={`bg-card border-border ${prioridadeInfo.shadow}`}>
       <CardHeader className="pb-2">
         <div className="flex items-start justify-between gap-2">
-          <CardTitle className="text-base font-semibold text-foreground line-clamp-2">
+          <CardTitle className="text-base font-semibold line-clamp-2">
             {tarefa.titulo}
           </CardTitle>
-          <Badge className={`${prioridadeInfo.color} shrink-0`}>{prioridadeInfo.label}</Badge>
+          <Badge className={prioridadeInfo.color}>{prioridadeInfo.label}</Badge>
         </div>
       </CardHeader>
+
       <CardContent className="pt-0">
         {tarefa.descricao && (
-          <p className="text-sm text-muted-foreground mb-3 whitespace-pre-line break-words">{tarefa.descricao}</p>
+          <p className="text-sm text-muted-foreground mb-3 whitespace-pre-line break-words">
+            {tarefa.descricao}
+          </p>
         )}
+
         <div className="flex items-center justify-between gap-2">
           {tarefa.responsavel && (
             <div className="flex items-center gap-1 text-sm text-muted-foreground">
@@ -68,7 +81,7 @@ function TarefaCard({ tarefa }) {
               <span>{tarefa.responsavel}</span>
             </div>
           )}
-          <Badge variant="outline" className="ml-auto">{statusInfo.label}</Badge>
+          <Badge variant="outline">{statusInfo.label}</Badge>
         </div>
       </CardContent>
     </Card>
@@ -83,16 +96,20 @@ function LembreteCard({ lembrete }) {
     <Card className={`bg-card border-border ${prioridadeInfo.shadow}`}>
       <CardHeader className="pb-2">
         <div className="flex items-start justify-between gap-2">
-          <CardTitle className="text-base font-semibold text-foreground line-clamp-2">
+          <CardTitle className="text-base font-semibold line-clamp-2">
             {lembrete.titulo}
           </CardTitle>
-          <Badge className={`${prioridadeInfo.color} shrink-0`}>{prioridadeInfo.label}</Badge>
+          <Badge className={prioridadeInfo.color}>{prioridadeInfo.label}</Badge>
         </div>
       </CardHeader>
+
       <CardContent className="pt-0">
         {lembrete.conteudo && (
-          <p className="text-sm text-muted-foreground mb-3 whitespace-pre-line break-words">{lembrete.conteudo}</p>
+          <p className="text-sm text-muted-foreground mb-3 whitespace-pre-line break-words">
+            {lembrete.conteudo}
+          </p>
         )}
+
         <div className="flex items-center justify-between gap-2">
           {lembrete.destinatario && (
             <div className="flex items-center gap-1 text-sm text-muted-foreground">
@@ -100,140 +117,86 @@ function LembreteCard({ lembrete }) {
               <span>{lembrete.destinatario}</span>
             </div>
           )}
-          <Badge variant="outline" className="ml-auto">{statusInfo.label}</Badge>
+          <Badge variant="outline">{statusInfo.label}</Badge>
         </div>
       </CardContent>
     </Card>
   )
 }
 
-function chunkArray(array, size) {
-  const result = []
-  for (let i = 0; i < array.length; i += size) {
-    result.push(array.slice(i, i + size))
-  }
-  return result
-}
+function TarefasSlide({ tarefas, onEnd, active }) {
+  const ref = useRef(null)
 
-function TarefasSlide({ tarefas }) {
-    const pendentes = useMemo(() => {
-    return sortByPriority(
-      tarefas.filter((l) => l.status !== "concluido")
-    );
-  }, [tarefas]);
+  const pendentes = useMemo(() => {
+    return sortByPriority(tarefas.filter(t => t.status !== "concluido"))
+  }, [tarefas])
 
-  const ITEMS_PER_PAGE = useItemsPerPage();
-
-  const pages = useMemo(() => {
-    return chunkArray(pendentes, ITEMS_PER_PAGE);
-  }, [pendentes, ITEMS_PER_PAGE]);
-
-  const [page, setPage] = useState(0);
+  useAutoScroll(ref, onEnd)
 
   useEffect(() => {
-    if (pages.length <= 1) return;
-
-    const interval = setInterval(() => {
-      setPage((prev) => (prev + 1) % pages.length);
-    }, 10000);
-
-    return () => clearInterval(interval);
-  }, [pages.length]);
-
-  useEffect(() => {
-    setPage(0);
-  }, [ITEMS_PER_PAGE]);
-
-  const safePage = page >= pages.length ? 0 : page;
-  const currentItems = pages[safePage] || [];
+    if (active && ref.current) {
+      ref.current.scrollTo({ top: 0 })
+    }
+  }, [active])
 
   return (
-    <div className="flex flex-col items-center h-full px-8 py-4 m-0">
+    <div className="flex flex-col items-center h-full px-8 py-4">
       <div className="flex items-center gap-3 mb-6">
         <ListTodo className="h-10 w-10 text-primary" />
-        <h2 className="text-4xl font-bold text-foreground">Tarefas</h2>
+        <h2 className="text-4xl font-bold">Tarefas</h2>
       </div>
 
-      {pendentes.length === 0 ? (
-        <div className="flex-1 flex items-center justify-center">
-          <p className="text-xl text-muted-foreground">Nenhuma tarefa pendente</p>
+      <div ref={ref} className="w-full max-w-5xl flex-1 overflow-auto">
+        <div className="grid gap-4" style={{
+          gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))"
+        }}>
+          {pendentes.map(t => (
+            <TarefaCard key={t.id} tarefa={t} />
+          ))}
         </div>
-      ) : (
-        <div className="w-full max-w-5xl flex-1 overflow-hidden">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {currentItems.map((tarefa) => (
-              <TarefaCard key={tarefa.id} tarefa={tarefa} />
-            ))}
-          </div>
-        </div>
-      )}
+      </div>
 
       <div className="mt-2 text-muted-foreground">
-        <p className="text-md">
-          Página {page + 1} / {pages.length} • Total: {pendentes.length}
-        </p>
+        Total: {pendentes.length}
       </div>
     </div>
   )
 }
 
-function LembretesSlide({ lembretes }) {
+function LembretesSlide({ lembretes, onEnd, active }) {
+  const ref = useRef(null)
+
   const pendentes = useMemo(() => {
-    return sortByPriority(
-      lembretes.filter((l) => l.status !== "concluido")
-    );
-  }, [lembretes]);
+    return sortByPriority(lembretes.filter(l => l.status !== "concluido"))
+  }, [lembretes])
 
-  const ITEMS_PER_PAGE = useItemsPerPage();
-
-  const pages = useMemo(() => {
-    return chunkArray(pendentes, ITEMS_PER_PAGE);
-  }, [pendentes, ITEMS_PER_PAGE]);
-
-  const [page, setPage] = useState(0);
+  useAutoScroll(ref, onEnd)
 
   useEffect(() => {
-    if (pages.length <= 1) return;
-
-    const interval = setInterval(() => {
-      setPage((prev) => (prev + 1) % pages.length);
-    }, 10000);
-
-    return () => clearInterval(interval);
-  }, [pages.length]);
-
-  useEffect(() => {
-    setPage(0);
-  }, [ITEMS_PER_PAGE]);
-
-  const safePage = page >= pages.length ? 0 : page;
-  const currentItems = pages[safePage] || [];
+    if (active && ref.current) {
+      ref.current.scrollTo({ top: 0 })
+    }
+  }, [active])
 
   return (
-    <div className="flex flex-col items-center h-full px-8 py-4 m-0">
+    <div className="flex flex-col items-center h-full px-8 py-4">
       <div className="flex items-center gap-3 mb-6">
         <StickyNote className="h-10 w-10 text-primary" />
-        <h2 className="text-4xl font-bold text-foreground">Lembretes</h2>
+        <h2 className="text-4xl font-bold">Lembretes</h2>
       </div>
 
-      {pendentes.length === 0 ? (
-        <div className="flex-1 flex items-center justify-center">
-          <p className="text-xl text-muted-foreground">Nenhum lembrete pendente</p>
+      <div ref={ref} className="w-full max-w-5xl flex-1 overflow-auto">
+        <div className="grid gap-4" style={{
+          gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))"
+        }}>
+          {pendentes.map(l => (
+            <LembreteCard key={l.id} lembrete={l} />
+          ))}
         </div>
-      ) : (
-        <div className="w-full max-w-5xl flex-1 overflow-hidden">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {currentItems.map((lembrete) => (
-              <LembreteCard key={lembrete.id} lembrete={lembrete} />
-            ))}
-          </div>
-        </div>
-      )}
+      </div>
 
       <div className="mt-2 text-muted-foreground">
-        <p className="text-md">
-          Página {page + 1} / {pages.length} • Total: {pendentes.length}
-        </p>
+        Total: {pendentes.length}
       </div>
     </div>
   )
@@ -302,42 +265,27 @@ function RelogioSlide() {
 }
 
 export default function PainelPage() {
-  const { tarefas, lembretes, isLoaded, reloadData } = useData()
+  const { tarefas, lembretes, isLoaded } = useData()
   const [currentSlide, setCurrentSlide] = useState(0)
-  const [isFullscreen, setIsFullscreen] = useState(false)
-
-  const slides = [
-    { component: <TarefasSlide tarefas={tarefas} />, label: 'Tarefas' },
-    { component: <LembretesSlide lembretes={lembretes} />, label: 'Lembretes' },
-    { component: <RelogioSlide />, label: 'Relogio' },
-  ]
 
   const nextSlide = useCallback(() => {
-    setCurrentSlide((prev) => (prev + 1) % slides.length)
-  }, [slides.length])
+    setCurrentSlide(prev => (prev + 1) % 3)
+  }, [])
 
-  const prevSlide = useCallback(() => {
-    setCurrentSlide((prev) => (prev - 1 + slides.length) % slides.length)
-  }, [slides.length])
-
-  const goToSlide = (index) => {
-    setCurrentSlide(index)
-  }
-
-  const toggleFullscreen = () => {
-    setIsFullscreen(!isFullscreen)
-  }
-
-  const refreshData = () => {
-    reloadData()
-  }
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-      nextSlide()
-    }, 15000)
-    return () => clearInterval(timer)
-  }, [nextSlide])
+  const slides = [
+    {
+      component: <TarefasSlide tarefas={tarefas} onEnd={nextSlide} active={currentSlide === 0} />,
+      label: 'Tarefas'
+    },
+    {
+      component: <LembretesSlide lembretes={lembretes} onEnd={nextSlide} active={currentSlide === 1} />,
+      label: 'Lembretes'
+    },
+    {
+      component: <RelogioSlide onEnd={nextSlide} />,
+      label: 'Relogio'
+    },
+  ]
 
   useEffect(() => {
     const handleKeyDown = (e) => {
