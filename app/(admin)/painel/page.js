@@ -45,7 +45,7 @@ function useAutoScroll(ref, onEnd, active) {
           behavior: 'smooth'
         })
 
-        await sleep(300)
+        await sleep(3000)
         if (!isRunning) return
 
         const chegouNoFim =
