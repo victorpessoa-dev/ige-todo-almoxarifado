@@ -202,15 +202,16 @@ function LembretesSlide({ lembretes, onEnd, active }) {
   )
 }
 
-function RelogioSlide() {
+function RelogioSlide({ onEnd }) {
   const [time, setTime] = useState(new Date())
 
   useEffect(() => {
-    const timer = setInterval(() => {
-      setTime(new Date())
-    }, 1000)
-    return () => clearInterval(timer)
-  }, [])
+    const timeout = setTimeout(() => {
+      onEnd?.()
+    }, 8000)
+
+    return () => clearTimeout(timeout)
+  }, [onEnd])
 
   const hours = time.getHours().toString().padStart(2, '0')
   const minutes = time.getMinutes().toString().padStart(2, '0')
