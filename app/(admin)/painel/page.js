@@ -17,9 +17,24 @@ function useAutoScroll(ref, onEnd, active) {
 
     let isRunning = true
 
+    const sleep = (ms) => {
+      return new Promise(resolve => {
+        const timeout = setTimeout(resolve, ms)
+
+        const check = setInterval(() => {
+          if (!isRunning) {
+            clearTimeout(timeout)
+            clearInterval(check)
+            resolve()
+          }
+        }, 100)
+      })
+    }
+
     const scrollStep = async () => {
       if (el.scrollHeight <= el.clientHeight) {
-        await new Promise(r => setTimeout(r, 4000))
+        await sleep(8000)
+        if (!isRunning) return
         onEnd?.()
         return
       }
@@ -30,13 +45,15 @@ function useAutoScroll(ref, onEnd, active) {
           behavior: 'smooth'
         })
 
-        await new Promise(r => setTimeout(r, 2500))
+        await sleep(300)
+        if (!isRunning) return
 
         const chegouNoFim =
           el.scrollTop + el.clientHeight >= el.scrollHeight - 5
 
         if (chegouNoFim) {
-          await new Promise(r => setTimeout(r, 1500))
+          await sleep(2000)
+          if (!isRunning) return
           onEnd?.()
           return
         }
