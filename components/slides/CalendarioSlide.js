@@ -121,15 +121,32 @@ export function CalendarioSlide({ active = false, onEnd }) {
                                 {day ? (
                                     <>
                                         <div className="flex items-center justify-between gap-2">
-                                            <div className="text-sm font-bold text-foreground">
+                                            <div className="text-3xl font-bold text-foreground">
                                                 {day.getDate()}
                                             </div>
 
-                                            {dayEvents.length > 0 && (
-                                                <div className="rounded-full bg-primary/10 px-2 py-0.5 text-[8px] font-semibold text-primary">
-                                                    {dayEvents.length} evento{dayEvents.length > 1 ? 's' : ''}
-                                                </div>
-                                            )}
+                                            <div className="flex items-center  gap-1">
+                                                {(() => {
+                                                    const tarefasCount = dayEvents.filter(e => e.type === 'tarefa').length
+                                                    const lembretesCount = dayEvents.filter(e => e.type === 'lembrete').length
+
+                                                    return (
+                                                        <>
+                                                            {tarefasCount > 0 && (
+                                                                <div className="rounded-full bg-blue-500/10 px-2 py-0.5 text-blue-500">
+                                                                    {tarefasCount}
+                                                                </div>
+                                                            )}
+
+                                                            {lembretesCount > 0 && (
+                                                                <div className="rounded-full bg-purple-500/10 px-2 py-0.5 text-purple-500">
+                                                                    {lembretesCount}
+                                                                </div>
+                                                            )}
+                                                        </>
+                                                    )
+                                                })()}
+                                            </div>
                                         </div>
                                     </>
                                 ) : (
