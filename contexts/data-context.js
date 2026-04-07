@@ -39,7 +39,8 @@ export function DataProvider({ children }) {
         descricao: form.descricao || null,
         responsavel: form.responsavel || null,
         status: form.status,
-        prioridade: form.prioridade
+        prioridade: form.prioridade,
+        data: form.data || null
       })
 
     if (error) console.error(error)
@@ -51,7 +52,7 @@ export function DataProvider({ children }) {
       .update(updates)
       .eq('id', id)
 
-    if (error) console.error(error)
+    if (error && Object.keys(error).length > 0) console.error(error)
   }
 
   async function deleteTarefa(id) {
@@ -77,7 +78,8 @@ export function DataProvider({ children }) {
         conteudo: form.conteudo || null,
         destinatario: form.destinatario || null,
         status: form.status,
-        prioridade: form.prioridade
+        prioridade: form.prioridade,
+        data: form.data || null
       })
 
     if (error) console.error(error)
@@ -89,7 +91,7 @@ export function DataProvider({ children }) {
       .update(updates)
       .eq('id', id)
 
-    if (error) console.error(error)
+    if (error && Object.keys(error).length > 0) console.error(error)
   }
 
   async function deleteLembrete(id) {
@@ -103,11 +105,36 @@ export function DataProvider({ children }) {
   useEffect(() => {
     loadData()
 
-    const interval = setInterval(() => {
-      loadData()
-    }, 12000)
+    const tarefasChannel = supabase
+      .channel('public:tarefas')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'tarefas' }, payload => {
+        if (payload.eventType === 'INSERT') {
+          setTarefas((prev) => [...prev, payload.new])
+        } else if (payload.eventType === 'UPDATE') {
+          setTarefas((prev) => prev.map((t) => (t.id === payload.new.id ? payload.new : t)))
+        } else if (payload.eventType === 'DELETE') {
+          setTarefas((prev) => prev.filter((t) => t.id !== payload.old.id))
+        }
+      })
+      .subscribe()
 
-    return () => clearInterval(interval)
+    const lembretesChannel = supabase
+      .channel('public:lembretes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'lembretes' }, payload => {
+        if (payload.eventType === 'INSERT') {
+          setLembretes((prev) => [...prev, payload.new])
+        } else if (payload.eventType === 'UPDATE') {
+          setLembretes((prev) => prev.map((l) => (l.id === payload.new.id ? payload.new : l)))
+        } else if (payload.eventType === 'DELETE') {
+          setLembretes((prev) => prev.filter((l) => l.id !== payload.old.id))
+        }
+      })
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(tarefasChannel)
+      supabase.removeChannel(lembretesChannel)
+    }
   }, [])
 
   return (
@@ -123,6 +150,7 @@ export function DataProvider({ children }) {
       updateLembrete,
       deleteLembrete,
 
+      loadData,
       isLoaded
     }}>
       {children}

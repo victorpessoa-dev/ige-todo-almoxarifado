@@ -42,6 +42,12 @@ function groupByDate(items) {
   return sortedGroups
 }
 
+function formatDateLabel(value) {
+  if (!value) return ''
+  const date = value instanceof Date ? value : new Date(value)
+  return date.toLocaleDateString('pt-BR')
+}
+
 export default function TarefasPage() {
   const { tarefas, addTarefa, updateTarefa, deleteTarefa, isLoaded } = useData()
   const [isOpen, setIsOpen] = useState(false)
@@ -51,6 +57,7 @@ export default function TarefasPage() {
     titulo: '',
     descricao: '',
     responsavel: '',
+    data: null,
     status: 'a_fazer',
     prioridade: 'medio'
   })
@@ -62,7 +69,7 @@ export default function TarefasPage() {
   const tarefasConcluidasGrouped = groupByDate(tarefasConcluidas)
 
   const resetForm = () => {
-    setForm({ titulo: '', descricao: '', responsavel: '', status: 'a_fazer', prioridade: 'medio' })
+    setForm({ titulo: '', descricao: '', responsavel: '', data: null, status: 'a_fazer', prioridade: 'medio' })
     setEditingTarefa(null)
   }
 
@@ -74,9 +81,10 @@ export default function TarefasPage() {
   const handleEdit = (tarefa) => {
     setEditingTarefa(tarefa)
     setForm({
-      titulo: tarefa.titulo,
-      descricao: tarefa.descricao,
-      responsavel: tarefa.responsavel,
+      titulo: tarefa.titulo || '',
+      descricao: tarefa.descricao || '',
+      data: tarefa.data ? new Date(tarefa.data) : new Date(),
+      responsavel: tarefa.responsavel || '',
       status: tarefa.status,
       prioridade: tarefa.prioridade || 'medio'
     })
@@ -186,6 +194,13 @@ export default function TarefasPage() {
                   </p>
                 )}
 
+                {tarefa.data && (
+                  <div className="flex items-center gap-2 mt-2 text-sm text-muted-foreground">
+                    <Calendar className="h-4 w-4" />
+                    <span>{formatDateLabel(tarefa.data)}</span>
+                  </div>
+                )}
+
                 <div className="flex flex-wrap items-center gap-2 mt-3">
                   <Badge className={prioridadeInfo.color}>
                     {prioridadeInfo.label}
@@ -270,7 +285,6 @@ export default function TarefasPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-foreground">Tarefas</h1>
-          <p className="text-muted-foreground">Gerencie suas tarefas</p>
         </div>
         <Dialog open={isOpen} onOpenChange={handleOpenChange}>
           <DialogTrigger asChild>
@@ -300,6 +314,14 @@ export default function TarefasPage() {
                   onChange={(e) => setForm({ ...form, descricao: e.target.value })}
                   placeholder="Digite a descricao"
                   rows={3}
+                />
+              </div>
+              <div className="flex flex-col gap-2">
+                <label className="text-sm font-medium">Data</label>
+                <Input
+                  type="date"
+                  value={form.data ? form.data.toISOString().split('T')[0] : ''}
+                  onChange={(e) => setForm({ ...form, data: new Date(e.target.value) })}
                 />
               </div>
               <div className="flex flex-col gap-2">

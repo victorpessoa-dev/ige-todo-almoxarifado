@@ -13,7 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { toast } from 'sonner'
 import { Plus, Pencil, Trash2, CheckCircle2, Circle, Clock, ChevronDown, ChevronUp, StickyNote, Calendar } from 'lucide-react'
 
-// Funcao para agrupar itens por data
+
 function groupByDate(items) {
   const groups = {}
 
@@ -43,6 +43,12 @@ function groupByDate(items) {
   return sortedGroups
 }
 
+function formatDateLabel(value) {
+  if (!value) return ''
+  const date = value instanceof Date ? value : new Date(value)
+  return date.toLocaleDateString('pt-BR')
+}
+
 export default function LembretesPage() {
   const { lembretes, addLembrete, updateLembrete, deleteLembrete, isLoaded } = useData()
   const [isOpen, setIsOpen] = useState(false)
@@ -52,6 +58,7 @@ export default function LembretesPage() {
     titulo: '',
     conteudo: '',
     destinatario: '',
+    data: null,
     status: 'a_fazer',
     prioridade: 'medio'
   })
@@ -63,7 +70,7 @@ export default function LembretesPage() {
   const lembretesConcluidosGrouped = groupByDate(lembretesConcluidos)
 
   const resetForm = () => {
-    setForm({ titulo: '', conteudo: '', destinatario: '', status: 'a_fazer', prioridade: 'medio' })
+    setForm({ titulo: '', conteudo: '', destinatario: '', data: null, status: 'a_fazer', prioridade: 'medio' })
     setEditingLembrete(null)
   }
 
@@ -75,9 +82,10 @@ export default function LembretesPage() {
   const handleEdit = (lembrete) => {
     setEditingLembrete(lembrete)
     setForm({
-      titulo: lembrete.titulo,
-      conteudo: lembrete.conteudo,
-      destinatario: lembrete.destinatario,
+      titulo: lembrete.titulo || '',
+      conteudo: lembrete.conteudo || '',
+      data: lembrete.data ? new Date(lembrete.data) : new Date(),
+      destinatario: lembrete.destinatario || '',
       status: lembrete.status,
       prioridade: lembrete.prioridade || 'medio'
     })
@@ -188,6 +196,13 @@ export default function LembretesPage() {
                   </p>
                 )}
 
+                {lembrete.data && (
+                  <div className="flex items-center gap-2 mt-2 text-sm text-muted-foreground">
+                    <Calendar className="h-4 w-4" />
+                    <span>{formatDateLabel(lembrete.data)}</span>
+                  </div>
+                )}
+
                 <div className="flex flex-wrap items-center gap-2 mt-3">
                   <Badge className={prioridadeInfo.color}>
                     {prioridadeInfo.label}
@@ -276,7 +291,6 @@ export default function LembretesPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-foreground">Lembretes</h1>
-          <p className="text-muted-foreground">Gerencie seus lembretes e notas</p>
         </div>
         <Dialog open={isOpen} onOpenChange={handleOpenChange}>
           <DialogTrigger asChild>
@@ -306,6 +320,14 @@ export default function LembretesPage() {
                   onChange={(e) => setForm({ ...form, conteudo: e.target.value })}
                   placeholder="Digite o conteudo do lembrete"
                   rows={4}
+                />
+              </div>
+              <div className="flex flex-col gap-2">
+                <label className="text-sm font-medium">Data</label>
+                <Input
+                  type="date"
+                  value={form.data ? form.data.toISOString().split('T')[0] : ''}
+                  onChange={(e) => setForm({ ...form, data: new Date(e.target.value) })}
                 />
               </div>
               <div className="flex flex-col gap-2">

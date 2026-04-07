@@ -6,12 +6,13 @@ import { useAuth } from '@/contexts/auth-context'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import Image from 'next/image'
-import { LayoutDashboard, ListTodo, StickyNote, LogOut } from 'lucide-react'
+import { LayoutDashboard, ListTodo, StickyNote, CalendarDays, LogOut } from 'lucide-react'
 
 const menuItems = [
   { href: '/painel', label: 'Painel', icon: LayoutDashboard },
   { href: '/tarefas', label: 'Tarefas', icon: ListTodo },
   { href: '/lembretes', label: 'Lembretes', icon: StickyNote },
+  { href: '/calendario', label: 'Calendário', icon: CalendarDays },
 ]
 
 export function Sidebar({ onNavigate }) {
@@ -32,7 +33,6 @@ export function Sidebar({ onNavigate }) {
     <aside className="w-64 bg-sidebar text-sidebar-foreground flex flex-col h-full">
       <div className="px-4 py-12 border-b border-sidebar-border">
         <Image src="/ige-supergesso.png" alt="Logo" width={200} height={150} className="mx-auto mb-2" />
-        <p className="text-lg text-sidebar-foreground/70 text-center">Tarefas e Lembretes</p>
       </div>
 
       <nav className="flex-1 p-4">

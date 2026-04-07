@@ -1,265 +1,41 @@
 'use client'
 
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useData } from '@/contexts/data-context'
-import { PRIORIDADE_OPTIONS, STATUS_OPTIONS, sortByPriority } from '@/constants/task-config'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { ListTodo, StickyNote, Clock, Maximize2, Minimize2, User } from 'lucide-react'
+import { CalendarioSlide } from '@/components/slides/CalendarioSlide'
+import { TarefasSlide } from '@/components/slides/TarefasSlide'
+import { LembretesSlide } from '@/components/slides/LembretesSlide'
+import { Clock, Maximize2, Minimize2 } from 'lucide-react'
 
-function useItemsPerPage() {
-  const [items, setItems] = useState(4);
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-
-    const update = () => {
-      const width = window.innerWidth;
-
-      if (width < 768) {
-        setItems(4); 
-      } else if (width < 1024) {
-        setItems(6); 
-      } else {
-        setItems(9); 
-      }
-    };
-
-    update();
-    window.addEventListener("resize", update);
-
-    return () => window.removeEventListener("resize", update);
-  }, []);
-
-  return items;
-}
-
-function getStatusInfo(status) {
-  return STATUS_OPTIONS.find(s => s.value === status) || STATUS_OPTIONS[0]
-}
-
-function getPrioridadeInfo(prioridade) {
-  return PRIORIDADE_OPTIONS.find(p => p.value === prioridade) || PRIORIDADE_OPTIONS[2]
-}
-
-function TarefaCard({ tarefa }) {
-  const statusInfo = getStatusInfo(tarefa.status)
-  const prioridadeInfo = getPrioridadeInfo(tarefa.prioridade)
-
-  return (
-    <Card className={`bg-card border-border ${prioridadeInfo.shadow}`}>
-      <CardHeader className="pb-2">
-        <div className="flex items-start justify-between gap-2">
-          <CardTitle className="text-base font-semibold text-foreground line-clamp-2">
-            {tarefa.titulo}
-          </CardTitle>
-          <Badge className={`${prioridadeInfo.color} shrink-0`}>{prioridadeInfo.label}</Badge>
-        </div>
-      </CardHeader>
-      <CardContent className="pt-0">
-        {tarefa.descricao && (
-          <p className="text-sm text-muted-foreground mb-3 whitespace-pre-line break-words">{tarefa.descricao}</p>
-        )}
-        <div className="flex items-center justify-between gap-2">
-          {tarefa.responsavel && (
-            <div className="flex items-center gap-1 text-sm text-muted-foreground">
-              <User className="h-3 w-3" />
-              <span>{tarefa.responsavel}</span>
-            </div>
-          )}
-          <Badge variant="outline" className="ml-auto">{statusInfo.label}</Badge>
-        </div>
-      </CardContent>
-    </Card>
-  )
-}
-
-function LembreteCard({ lembrete }) {
-  const statusInfo = getStatusInfo(lembrete.status)
-  const prioridadeInfo = getPrioridadeInfo(lembrete.prioridade)
-
-  return (
-    <Card className={`bg-card border-border ${prioridadeInfo.shadow}`}>
-      <CardHeader className="pb-2">
-        <div className="flex items-start justify-between gap-2">
-          <CardTitle className="text-base font-semibold text-foreground line-clamp-2">
-            {lembrete.titulo}
-          </CardTitle>
-          <Badge className={`${prioridadeInfo.color} shrink-0`}>{prioridadeInfo.label}</Badge>
-        </div>
-      </CardHeader>
-      <CardContent className="pt-0">
-        {lembrete.conteudo && (
-          <p className="text-sm text-muted-foreground mb-3 whitespace-pre-line break-words">{lembrete.conteudo}</p>
-        )}
-        <div className="flex items-center justify-between gap-2">
-          {lembrete.destinatario && (
-            <div className="flex items-center gap-1 text-sm text-muted-foreground">
-              <User className="h-3 w-3" />
-              <span>{lembrete.destinatario}</span>
-            </div>
-          )}
-          <Badge variant="outline" className="ml-auto">{statusInfo.label}</Badge>
-        </div>
-      </CardContent>
-    </Card>
-  )
-}
-
-function chunkArray(array, size) {
-  const result = []
-  for (let i = 0; i < array.length; i += size) {
-    result.push(array.slice(i, i + size))
-  }
-  return result
-}
-
-function TarefasSlide({ tarefas }) {
-    const pendentes = useMemo(() => {
-    return sortByPriority(
-      tarefas.filter((l) => l.status !== "concluido")
-    );
-  }, [tarefas]);
-
-  const ITEMS_PER_PAGE = useItemsPerPage();
-
-  const pages = useMemo(() => {
-    return chunkArray(pendentes, ITEMS_PER_PAGE);
-  }, [pendentes, ITEMS_PER_PAGE]);
-
-  const [page, setPage] = useState(0);
-
-  useEffect(() => {
-    if (pages.length <= 1) return;
-
-    const interval = setInterval(() => {
-      setPage((prev) => (prev + 1) % pages.length);
-    }, 10000);
-
-    return () => clearInterval(interval);
-  }, [pages.length]);
-
-  useEffect(() => {
-    setPage(0);
-  }, [ITEMS_PER_PAGE]);
-
-  const safePage = page >= pages.length ? 0 : page;
-  const currentItems = pages[safePage] || [];
-
-  return (
-    <div className="flex flex-col items-center h-full px-8 py-4 m-0">
-      <div className="flex items-center gap-3 mb-6">
-        <ListTodo className="h-10 w-10 text-primary" />
-        <h2 className="text-4xl font-bold text-foreground">Tarefas</h2>
-      </div>
-
-      {pendentes.length === 0 ? (
-        <div className="flex-1 flex items-center justify-center">
-          <p className="text-xl text-muted-foreground">Nenhuma tarefa pendente</p>
-        </div>
-      ) : (
-        <div className="w-full max-w-5xl flex-1 overflow-hidden">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {currentItems.map((tarefa) => (
-              <TarefaCard key={tarefa.id} tarefa={tarefa} />
-            ))}
-          </div>
-        </div>
-      )}
-
-      <div className="mt-2 text-muted-foreground">
-        <p className="text-md">
-          Página {page + 1} / {pages.length} • Total: {pendentes.length}
-        </p>
-      </div>
-    </div>
-  )
-}
-
-function LembretesSlide({ lembretes }) {
-  const pendentes = useMemo(() => {
-    return sortByPriority(
-      lembretes.filter((l) => l.status !== "concluido")
-    );
-  }, [lembretes]);
-
-  const ITEMS_PER_PAGE = useItemsPerPage();
-
-  const pages = useMemo(() => {
-    return chunkArray(pendentes, ITEMS_PER_PAGE);
-  }, [pendentes, ITEMS_PER_PAGE]);
-
-  const [page, setPage] = useState(0);
-
-  useEffect(() => {
-    if (pages.length <= 1) return;
-
-    const interval = setInterval(() => {
-      setPage((prev) => (prev + 1) % pages.length);
-    }, 10000);
-
-    return () => clearInterval(interval);
-  }, [pages.length]);
-
-  useEffect(() => {
-    setPage(0);
-  }, [ITEMS_PER_PAGE]);
-
-  const safePage = page >= pages.length ? 0 : page;
-  const currentItems = pages[safePage] || [];
-
-  return (
-    <div className="flex flex-col items-center h-full px-8 py-4 m-0">
-      <div className="flex items-center gap-3 mb-6">
-        <StickyNote className="h-10 w-10 text-primary" />
-        <h2 className="text-4xl font-bold text-foreground">Lembretes</h2>
-      </div>
-
-      {pendentes.length === 0 ? (
-        <div className="flex-1 flex items-center justify-center">
-          <p className="text-xl text-muted-foreground">Nenhum lembrete pendente</p>
-        </div>
-      ) : (
-        <div className="w-full max-w-5xl flex-1 overflow-hidden">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {currentItems.map((lembrete) => (
-              <LembreteCard key={lembrete.id} lembrete={lembrete} />
-            ))}
-          </div>
-        </div>
-      )}
-
-      <div className="mt-2 text-muted-foreground">
-        <p className="text-md">
-          Página {page + 1} / {pages.length} • Total: {pendentes.length}
-        </p>
-      </div>
-    </div>
-  )
-}
-
-function RelogioSlide() {
+function RelogioSlide({ onEnd }) {
   const [time, setTime] = useState(new Date())
 
   useEffect(() => {
     const timer = setInterval(() => {
       setTime(new Date())
     }, 1000)
-    return () => clearInterval(timer)
-  }, [])
+
+    const timeout = setTimeout(() => {
+      onEnd?.()
+    }, 10000)
+
+    return () => {
+      clearInterval(timer)
+      clearTimeout(timeout)
+    }
+  }, [onEnd])
 
   const hours = time.getHours().toString().padStart(2, '0')
   const minutes = time.getMinutes().toString().padStart(2, '0')
   const seconds = time.getSeconds().toString().padStart(2, '0')
 
-  const dateOptions = {
+  const dateString = time.toLocaleDateString('pt-BR', {
     weekday: 'long',
     year: 'numeric',
     month: 'long',
     day: 'numeric'
-  }
-  const dateString = time.toLocaleDateString('pt-BR', dateOptions)
+  })
 
   return (
     <div className="flex flex-col items-center justify-center h-full p-12 overflow-hidden">
@@ -302,42 +78,80 @@ function RelogioSlide() {
 }
 
 export default function PainelPage() {
-  const { tarefas, lembretes, isLoaded, reloadData } = useData()
+  const { tarefas, lembretes, isLoaded } = useData()
   const [currentSlide, setCurrentSlide] = useState(0)
-  const [isFullscreen, setIsFullscreen] = useState(false)
+  const [cycleKey, setCycleKey] = useState(0)
 
-  const slides = [
-    { component: <TarefasSlide tarefas={tarefas} />, label: 'Tarefas' },
-    { component: <LembretesSlide lembretes={lembretes} />, label: 'Lembretes' },
-    { component: <RelogioSlide />, label: 'Relogio' },
-  ]
+
+  const slideCount = 4
 
   const nextSlide = useCallback(() => {
-    setCurrentSlide((prev) => (prev + 1) % slides.length)
-  }, [slides.length])
+    setCurrentSlide(prev => (prev + 1) % slideCount)
+    setCycleKey(prev => prev + 1)
+  }, [slideCount])
+
+  const slides = [
+    {
+      component: (
+        <TarefasSlide
+          key={`tarefas-${cycleKey}`}
+          tarefas={tarefas}
+          onEnd={nextSlide}
+          active={currentSlide === 0}
+        />
+      ),
+      label: 'Tarefas'
+    },
+    {
+      component: (
+        <LembretesSlide
+          key={`lembretes-${cycleKey}`}
+          lembretes={lembretes}
+          onEnd={nextSlide}
+          active={currentSlide === 1}
+        />
+      ),
+      label: 'Lembretes'
+    },
+    {
+      component: (
+        <CalendarioSlide
+          key={`calendario-${cycleKey}`}
+          tarefas={tarefas}
+          lembretes={lembretes}
+          active={currentSlide === 2}
+          onEnd={nextSlide}
+        />
+      ),
+      label: 'Calendário'
+    },
+    {
+      component: (
+        <RelogioSlide
+          key={`relogio-${cycleKey}`}
+          active={currentSlide === 3}
+          onEnd={nextSlide}
+        />
+      ),
+      label: 'Relogio'
+    },
+  ]
+
+  const [isFullscreen, setIsFullscreen] = useState(false)
+
+  const toggleFullscreen = () => {
+    setIsFullscreen(prev => !prev)
+  }
 
   const prevSlide = useCallback(() => {
-    setCurrentSlide((prev) => (prev - 1 + slides.length) % slides.length)
-  }, [slides.length])
+    setCurrentSlide(prev => (prev - 1 + slideCount) % slideCount)
+    setCycleKey(prev => prev + 1)
+  }, [slideCount])
 
   const goToSlide = (index) => {
     setCurrentSlide(index)
+    setCycleKey(prev => prev + 1)
   }
-
-  const toggleFullscreen = () => {
-    setIsFullscreen(!isFullscreen)
-  }
-
-  const refreshData = () => {
-    reloadData()
-  }
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-      nextSlide()
-    }, 15000)
-    return () => clearInterval(timer)
-  }, [nextSlide])
 
   useEffect(() => {
     const handleKeyDown = (e) => {
