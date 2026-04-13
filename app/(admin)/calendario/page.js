@@ -167,7 +167,7 @@ export default function CalendarPage() {
     }
 
     return (
-        <div className="flex h-screen text-white">
+        <div className="flex h-screen  text-white">
             <div className="flex-1 p-4 overflow-hidden">
                 <div className="flex items-center gap-2 mb-4">
                     <h1 className="text-3xl font-bold text-foreground">Calendário</h1>

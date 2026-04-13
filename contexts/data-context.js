@@ -8,6 +8,8 @@ const DataContext = createContext()
 export function DataProvider({ children }) {
   const [tarefas, setTarefas] = useState([])
   const [lembretes, setLembretes] = useState([])
+  const [produtos, setProdutos] = useState([])
+  const [movimentacoes, setMovimentacoes] = useState([])
   const [isLoaded, setIsLoaded] = useState(false)
 
   async function loadData() {
@@ -21,8 +23,26 @@ export function DataProvider({ children }) {
       .select('*')
       .order('created_at', { ascending: false })
 
+    const { data: produtosData } = await supabase
+      .from('produtos')
+      .select('*')
+      .order('nome', { ascending: true })
+
+    const { data: movimentacoesData } = await supabase
+      .from('movimentacoes_estoque')
+      .select(`
+        *,
+        produtos (
+          nome,
+          cod
+        )
+      `)
+      .order('created_at', { ascending: false })
+
     setTarefas(tarefasData || [])
     setLembretes(lembretesData || [])
+    setProdutos(produtosData || [])
+    setMovimentacoes(movimentacoesData || [])
     setIsLoaded(true)
   }
 
@@ -102,6 +122,84 @@ export function DataProvider({ children }) {
 
     if (error) console.error(error)
   }
+
+  async function addProduto(form) {
+    const {
+      data: { user }
+    } = await supabase.auth.getUser()
+
+    const { error } = await supabase
+      .from('produtos')
+      .insert({
+        user_id: user.id,
+        cod: form.cod,
+        nome: form.nome,
+        cod_barra: form.cod_barra,
+        max: form.max,
+        min: form.min,
+        estoque: form.estoque
+      })
+
+    if (error) console.error(error)
+  }
+
+  async function updateProduto(id, updates) {
+    const { error } = await supabase
+      .from('produtos')
+      .update(updates)
+      .eq('id', id)
+
+    if (error && Object.keys(error).length > 0) console.error(error)
+  }
+
+  async function deleteProduto(id) {
+    const { error } = await supabase
+      .from('produtos')
+      .delete()
+      .eq('id', id)
+
+    if (error) console.error(error)
+  }
+
+  async function entradaProduto(id, quantidade, motivo = 'Entrada manual') {
+    const produto = produtos.find(p => p.id === id)
+    if (produto) {
+      // Registrar movimentação
+      const { data: { user } } = await supabase.auth.getUser()
+      await supabase
+        .from('movimentacoes_estoque')
+        .insert({
+          user_id: user.id,
+          produto_id: id,
+          tipo: 'entrada',
+          quantidade: quantidade,
+          motivo: motivo
+        })
+
+      // Atualizar estoque
+      await updateProduto(id, { estoque: produto.estoque + quantidade })
+    }
+  }
+
+  async function saidaProduto(id, quantidade, motivo = 'Saída manual') {
+    const produto = produtos.find(p => p.id === id)
+    if (produto && produto.estoque >= quantidade) {
+      // Registrar movimentação
+      const { data: { user } } = await supabase.auth.getUser()
+      await supabase
+        .from('movimentacoes_estoque')
+        .insert({
+          user_id: user.id,
+          produto_id: id,
+          tipo: 'saida',
+          quantidade: quantidade,
+          motivo: motivo
+        })
+
+      // Atualizar estoque
+      await updateProduto(id, { estoque: produto.estoque - quantidade })
+    }
+  }
   useEffect(() => {
     loadData()
 
@@ -131,9 +229,33 @@ export function DataProvider({ children }) {
       })
       .subscribe()
 
+    const produtosChannel = supabase
+      .channel('public:produtos')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'produtos' }, payload => {
+        if (payload.eventType === 'INSERT') {
+          setProdutos((prev) => [...prev, payload.new])
+        } else if (payload.eventType === 'UPDATE') {
+          setProdutos((prev) => prev.map((p) => (p.id === payload.new.id ? payload.new : p)))
+        } else if (payload.eventType === 'DELETE') {
+          setProdutos((prev) => prev.filter((p) => p.id !== payload.old.id))
+        }
+      })
+      .subscribe()
+
+    const movimentacoesChannel = supabase
+      .channel('public:movimentacoes_estoque')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'movimentacoes_estoque' }, payload => {
+        if (payload.eventType === 'INSERT') {
+          setMovimentacoes((prev) => [payload.new, ...prev])
+        }
+      })
+      .subscribe()
+
     return () => {
       supabase.removeChannel(tarefasChannel)
       supabase.removeChannel(lembretesChannel)
+      supabase.removeChannel(produtosChannel)
+      supabase.removeChannel(movimentacoesChannel)
     }
   }, [])
 
@@ -141,6 +263,8 @@ export function DataProvider({ children }) {
     <DataContext.Provider value={{
       tarefas,
       lembretes,
+      produtos,
+      movimentacoes,
 
       addTarefa,
       updateTarefa,
@@ -149,6 +273,12 @@ export function DataProvider({ children }) {
       addLembrete,
       updateLembrete,
       deleteLembrete,
+
+      addProduto,
+      updateProduto,
+      deleteProduto,
+      entradaProduto,
+      saidaProduto,
 
       loadData,
       isLoaded

@@ -5,7 +5,9 @@ import { PRIORIDADE_OPTIONS, STATUS_OPTIONS, sortByPriority } from '@/constants/
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { StickyNote, User } from 'lucide-react'
-import { useAutoScroll, useItemsPerPage, chunkArray } from '@/lib/utils'
+import { chunkArray } from '@/lib/utils'
+import { useItemsPerPage } from '@/lib/hooks/useItemsPerPage'
+import { useAutoScroll } from '@/lib/hooks/useAutoScroll'
 
 function getStatusInfo(status) {
     return STATUS_OPTIONS.find(s => s.value === status) || STATUS_OPTIONS[0]
