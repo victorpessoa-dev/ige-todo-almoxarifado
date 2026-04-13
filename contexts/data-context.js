@@ -153,12 +153,19 @@ export function DataProvider({ children }) {
   }
 
   async function deleteProduto(id) {
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from('produtos')
       .delete()
       .eq('id', id)
+      .select()
+      .single()
 
-    if (error) console.error(error)
+    if (error) {
+      console.error('DELETE ERROR:', error)
+      throw error
+    }
+
+    return data
   }
 
   async function entradaProduto(id, quantidade, motivo = 'Entrada manual') {
