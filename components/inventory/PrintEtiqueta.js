@@ -26,8 +26,7 @@ export default function PrintEtiqueta({ produto, copies = 1 }) {
   return (
     <div ref={containerRef} className="print-area hidden print:grid">
       {Array.from({ length: copies }).map((_, i) => (
-        <div key={i} className="label">
-
+        <div key={i} className="label" style={{ width: '9.6cm', height: '3.8cm' }}>
           <div className="flex justify-between items-center mb-2">
             <img
                 src="/ige-supergesso.png"
@@ -35,12 +34,12 @@ export default function PrintEtiqueta({ produto, copies = 1 }) {
                 className="h-8 w-auto"
             />
 
-            <div className="font-mono text-sm">
+            <div className="font-mono text-sm text-black text-bold">
                 {produto.cod}
             </div>
         </div>
           
-        <div className="text-lg font-semibold text-center mb-2">
+        <div className="text-lg font-semibold text-black text-center mb-2">
         {produto.nome}
         </div>
 
