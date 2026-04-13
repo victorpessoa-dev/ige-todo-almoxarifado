@@ -5,8 +5,6 @@ import { PRIORIDADE_OPTIONS, STATUS_OPTIONS, sortByPriority } from '@/constants/
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { ListTodo, User } from 'lucide-react'
-import { chunkArray } from '@/lib/utils'
-import { useItemsPerPage } from '@/lib/hooks/useItemsPerPage'
 import { useAutoScroll } from '@/lib/hooks/useAutoScroll'
 
 function getStatusInfo(status) {
@@ -59,39 +57,15 @@ export function TarefasSlide({ tarefas, onEnd, active }) {
         );
     }, [tarefas]);
 
-    const ITEMS_PER_PAGE = useItemsPerPage();
+    const isEmpty = pendentes.length === 0
 
-    const pages = useMemo(() => {
-        return chunkArray(pendentes, ITEMS_PER_PAGE);
-    }, [pendentes, ITEMS_PER_PAGE]);
-
-    const [page, setPage] = useState(0);
-
-    const safePage = page >= pages.length ? 0 : page;
-    const currentItems = pages[safePage] || [];
-    const isLastPage = pages.length === 0 || safePage === pages.length - 1;
-
-    useAutoScroll(ref, isLastPage ? onEnd : undefined, active)
+    useAutoScroll(ref, !isEmpty ? onEnd : undefined, active)
 
     useEffect(() => {
         if (active && ref.current) {
             ref.current.scrollTo({ top: 0 })
         }
-    }, [active, safePage])
-
-    useEffect(() => {
-        if (pages.length <= 1) return;
-
-        const interval = setInterval(() => {
-            setPage((prev) => (prev + 1) % pages.length);
-        }, 10000);
-
-        return () => clearInterval(interval);
-    }, [pages.length]);
-
-    useEffect(() => {
-        setPage(0);
-    }, [ITEMS_PER_PAGE]);
+    }, [active])
 
     return (
         <div className="flex flex-col items-center h-full px-8 py-4 m-0">
@@ -100,14 +74,16 @@ export function TarefasSlide({ tarefas, onEnd, active }) {
                 <h2 className="text-4xl font-bold text-foreground">Tarefas</h2>
             </div>
 
-            {pendentes.length === 0 ? (
+            {isEmpty ? (
                 <div className="flex-1 flex items-center justify-center">
-                    <p className="text-xl text-muted-foreground">Nenhuma tarefa pendente</p>
+                    <p className="text-xl text-muted-foreground">
+                        Nenhuma tarefa pendente
+                    </p>
                 </div>
             ) : (
                 <div ref={ref} className="w-full max-w-5xl flex-1 overflow-auto">
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {currentItems.map((tarefa) => (
+                        {pendentes.map((tarefa) => (
                             <TarefaCard key={tarefa.id} tarefa={tarefa} />
                         ))}
                     </div>
@@ -116,7 +92,7 @@ export function TarefasSlide({ tarefas, onEnd, active }) {
 
             <div className="mt-2 text-muted-foreground">
                 <p className="text-md">
-                    Página {page + 1} / {pages.length} • Total: {pendentes.length}
+                    Total: {pendentes.length}
                 </p>
             </div>
         </div>

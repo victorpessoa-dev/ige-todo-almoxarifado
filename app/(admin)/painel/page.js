@@ -6,7 +6,6 @@ import { Button } from '@/components/ui/button'
 import { CalendarioSlide } from '@/components/slides/CalendarioSlide'
 import { TarefasSlide } from '@/components/slides/TarefasSlide'
 import { LembretesSlide } from '@/components/slides/LembretesSlide'
-import { NotificacoesSlide } from '@/components/slides/NotificacoesSlide'
 import { InventarioSlide } from '@/components/slides/InventarioSlide'
 import { Clock, Maximize2, Minimize2 } from 'lucide-react'
 
@@ -85,7 +84,7 @@ export default function PainelPage() {
   const [cycleKey, setCycleKey] = useState(0)
 
 
-  const slideCount = 6
+  const slideCount = 5
 
   const nextSlide = useCallback(() => {
     setCurrentSlide(prev => (prev + 1) % slideCount)
@@ -129,22 +128,11 @@ export default function PainelPage() {
     },
     {
       component: (
-        <NotificacoesSlide
-          key={`notificacoes-${cycleKey}`}
-          tarefas={tarefas}
-          onEnd={nextSlide}
-          active={currentSlide === 3}
-        />
-      ),
-      label: 'Notificações'
-    },
-    {
-      component: (
         <InventarioSlide
           key={`inventario-${cycleKey}`}
           produtos={produtos}
           onEnd={nextSlide}
-          active={currentSlide === 4}
+          active={currentSlide === 3}
         />
       ),
       label: 'Inventário'
@@ -153,7 +141,7 @@ export default function PainelPage() {
       component: (
         <RelogioSlide
           key={`relogio-${cycleKey}`}
-          active={currentSlide === 5}
+          active={currentSlide === 4}
           onEnd={nextSlide}
         />
       ),

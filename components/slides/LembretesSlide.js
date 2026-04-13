@@ -5,8 +5,6 @@ import { PRIORIDADE_OPTIONS, STATUS_OPTIONS, sortByPriority } from '@/constants/
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { StickyNote, User } from 'lucide-react'
-import { chunkArray } from '@/lib/utils'
-import { useItemsPerPage } from '@/lib/hooks/useItemsPerPage'
 import { useAutoScroll } from '@/lib/hooks/useAutoScroll'
 
 function getStatusInfo(status) {
@@ -28,15 +26,19 @@ function LembreteCard({ lembrete }) {
                     <CardTitle className="text-base font-semibold text-foreground line-clamp-2">
                         {lembrete.titulo}
                     </CardTitle>
-                    <Badge className={`${prioridadeInfo.color} shrink-0`}>{prioridadeInfo.label}</Badge>
+                    <Badge className={`${prioridadeInfo.color} shrink-0`}>
+                        {prioridadeInfo.label}
+                    </Badge>
                 </div>
-
             </CardHeader>
 
             <CardContent className="pt-0">
                 {lembrete.conteudo && (
-                    <p className="text-sm text-muted-foreground mb-3 whitespace-pre-line break-words">{lembrete.conteudo}</p>
+                    <p className="text-sm text-muted-foreground mb-3 whitespace-pre-line break-words">
+                        {lembrete.conteudo}
+                    </p>
                 )}
+
                 <div className="flex items-center justify-between gap-2">
                     {lembrete.destinatario && (
                         <div className="flex items-center gap-1 text-sm text-muted-foreground">
@@ -45,8 +47,9 @@ function LembreteCard({ lembrete }) {
                         </div>
                     )}
 
-
-                    <Badge variant="outline" className="ml-auto">{statusInfo.label}</Badge>
+                    <Badge variant="outline" className="ml-auto">
+                        {statusInfo.label}
+                    </Badge>
                 </div>
             </CardContent>
         </Card>
@@ -58,70 +61,51 @@ export function LembretesSlide({ lembretes, onEnd, active }) {
 
     const pendentes = useMemo(() => {
         return sortByPriority(
-            lembretes.filter((l) => l.status !== "concluido")
-        );
-    }, [lembretes]);
+            lembretes.filter(l => l.status !== "concluido")
+        )
+    }, [lembretes])
 
-    const ITEMS_PER_PAGE = useItemsPerPage();
+    const isEmpty = pendentes.length === 0
 
-    const pages = useMemo(() => {
-        return chunkArray(pendentes, ITEMS_PER_PAGE);
-    }, [pendentes, ITEMS_PER_PAGE]);
-
-    const [page, setPage] = useState(0);
-
-    const safePage = page >= pages.length ? 0 : page;
-    const currentItems = pages[safePage] || [];
-    const isLastPage = pages.length === 0 || safePage === pages.length - 1;
-
-    useAutoScroll(ref, isLastPage ? onEnd : undefined, active)
+    // scroll contínuo
+    useAutoScroll(ref, !isEmpty ? onEnd : undefined, active)
 
     useEffect(() => {
         if (active && ref.current) {
             ref.current.scrollTo({ top: 0 })
         }
-    }, [active, safePage])
-
-    useEffect(() => {
-        if (pages.length <= 1) return;
-
-        const interval = setInterval(() => {
-            setPage((prev) => (prev + 1) % pages.length);
-        }, 10000);
-
-        return () => clearInterval(interval);
-    }, [pages.length]);
-
-    useEffect(() => {
-        setPage(0);
-    }, [ITEMS_PER_PAGE]);
+    }, [active])
 
     return (
         <div className="flex flex-col items-center h-full px-8 py-4 m-0">
             <div className="flex items-center gap-3 mb-6">
                 <StickyNote className="h-10 w-10 text-primary" />
-                <h2 className="text-4xl font-bold text-foreground">Lembretes</h2>
+                <h2 className="text-4xl font-bold text-foreground">
+                    Lembretes
+                </h2>
             </div>
 
-            {pendentes.length === 0 ? (
+            {isEmpty ? (
                 <div className="flex-1 flex items-center justify-center">
-                    <p className="text-xl text-muted-foreground">Nenhum lembrete pendente</p>
+                    <p className="text-xl text-muted-foreground">
+                        Nenhum lembrete pendente
+                    </p>
                 </div>
             ) : (
-                <div ref={ref} className="w-full max-w-5xl flex-1 overflow-auto">
+                <div
+                    ref={ref}
+                    className="w-full max-w-5xl flex-1 overflow-auto"
+                >
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {currentItems.map((lembrete) => (
-                            <LembreteCard key={lembrete.id} lembrete={lembrete} />
+                        {pendentes.map((lembrete) => (
+                            <LembreteCard
+                                key={lembrete.id}
+                                lembrete={lembrete}
+                            />
                         ))}
                     </div>
                 </div>
             )}
-
-            <div className="mt-2 text-muted-foreground">
-                <p className="text-md">
-                    Página {page + 1} / {pages.length} • Total: {pendentes.length}
-                </p>
-            </div>
         </div>
     )
 }

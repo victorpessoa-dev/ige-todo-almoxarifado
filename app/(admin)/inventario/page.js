@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useRef } from 'react'
+import { supabase } from '@/lib/supabaseClient'
 import { useData } from '@/contexts/data-context'
 import { Button } from '@/components/ui/button'
 import {
@@ -31,6 +32,28 @@ export default function InventarioPage() {
     saidaProduto
   } = useData()
 
+  const [deleteDialog, setDeleteDialog] = useState({
+    open: false,
+    produto: null
+  })
+
+  const [duplicateDialog, setDuplicateDialog] = useState({
+  open: false,
+  cod: ''
+})
+
+  const openDeleteDialog = (produto) => {
+    setDeleteDialog({ open: true, produto })
+  }
+
+  const handleConfirmDelete = async () => {
+    if (!deleteDialog.produto) return
+
+    await deleteProduto(deleteDialog.produto.id)
+
+    setDeleteDialog({ open: false, produto: null })
+  }
+
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
   const [editingProduto, setEditingProduto] = useState(null)
   const [movimentoDialog, setMovimentoDialog] = useState({
@@ -53,25 +76,46 @@ export default function InventarioPage() {
   const { register, handleSubmit, reset, setValue, watch } = useForm()
 
   const onSubmit = async (data) => {
+    const exists = await checkCodigoExists(
+      data.cod,
+      editingProduto?.id
+    )
+
+    if (exists) {
+      setDuplicateDialog({
+        open: true,
+        cod: data.cod
+      })
+      return
+    }
+
+    const payload = {
+      ...data,
+      cod_barra: String(data.cod)
+    }
+
     if (editingProduto) {
-      await updateProduto(editingProduto.id, data)
+      await updateProduto(editingProduto.id, payload)
       setEditingProduto(null)
     } else {
-      await addProduto(data)
+      await addProduto(payload)
       setIsAddDialogOpen(false)
     }
+
     reset()
   }
 
   const handleEdit = (produto) => {
     setEditingProduto(produto)
 
-    setValue('cod', produto.cod)
-    setValue('nome', produto.nome)
-    setValue('cod_barra', produto.cod_barra)
-    setValue('max', produto.max)
-    setValue('min', produto.min)
-    setValue('estoque', produto.estoque)
+    reset({
+      cod: produto.cod,
+      nome: produto.nome,
+      cod_barra: produto.cod_barra,
+      max: produto.max,
+      min: produto.min,
+      estoque: produto.estoque
+    })
   }
 
   const openMovimentoDialog = (produto, tipo, quantidade = 1) => {
@@ -82,8 +126,9 @@ export default function InventarioPage() {
   const handleMovimento = async (quantidade) => {
     if (!movimentoDialog.produto) return
 
-    const amount = parseInt(quantidade) || 0
-    if (amount <= 0) return
+    const amount = Number(quantidade)
+
+    if (!amount || amount <= 0) return
 
     if (movimentoDialog.tipo === 'entrada') {
       await entradaProduto(movimentoDialog.produto.id, amount)
@@ -133,6 +178,23 @@ export default function InventarioPage() {
   const produtosBaixoEstoque = produtos.filter(
     (p) => p.estoque <= p.min
   )
+
+  const checkCodigoExists = async (cod, ignoreId = null) => {
+  const query = supabase
+    .from('produtos')
+    .select('id')
+    .eq('cod', cod)
+
+  const { data, error } = await query.maybeSingle()
+
+  if (error) throw error
+
+  if (!data) return false
+
+  if (ignoreId && data.id === ignoreId) return false
+
+  return true
+}
 
   return (
     <div className="container mx-auto p-6">
@@ -191,8 +253,37 @@ export default function InventarioPage() {
         openMovimentoDialog={openMovimentoDialog}
         setPrintDialog={setPrintDialog}
         handleEdit={handleEdit}
-        deleteProduto={deleteProduto}
+        deleteProduto={openDeleteDialog}
       />
+
+      <Dialog
+        open={duplicateDialog.open}
+        onOpenChange={() =>
+          setDuplicateDialog({ open: false, cod: '' })
+        }
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Código já existente</DialogTitle>
+          </DialogHeader>
+
+          <p className="text-sm text-muted-foreground">
+            O código <strong>{duplicateDialog.cod}</strong> já está cadastrado no sistema.
+            <br />
+            Por favor, utilize outro código.
+          </p>
+
+          <div className="flex justify-end mt-4">
+            <Button
+              onClick={() =>
+                setDuplicateDialog({ open: false, cod: '' })
+              }
+            >
+              Entendi
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={!!editingProduto} onOpenChange={() => setEditingProduto(null)}>
         <DialogContent>
@@ -229,8 +320,8 @@ export default function InventarioPage() {
           <MovementFormFields
             register={register}
             handleSubmit={handleSubmit}
-            onSubmit={(data) =>
-              handleMovimento(data.quantidade)
+            onSubmit={({ quantidade }) =>
+              handleMovimento(Number(quantidade))
             }
             tipo={movimentoDialog.tipo}
           />
