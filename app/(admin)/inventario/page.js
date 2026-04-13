@@ -196,8 +196,8 @@ export default function InventarioPage() {
   return true
 }
 
-  return (
-    <div className="container mx-auto p-6">
+  rreturn (
+    <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
 
       <div className="hidden print-area">
         <PrintEtiqueta
@@ -206,18 +206,20 @@ export default function InventarioPage() {
         />
       </div>
 
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-3xl font-bold">Inventário</h1>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-6">
+        <h1 className="text-2xl sm:text-3xl font-bold">
+          Inventário
+        </h1>
 
         <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
           <DialogTrigger asChild>
-            <Button>
+            <Button className="w-full sm:w-auto">
               <Plus className="h-4 w-4 mr-2" />
               Novo Produto
             </Button>
           </DialogTrigger>
 
-          <DialogContent>
+          <DialogContent className="w-[95vw] sm:max-w-md">
             <DialogHeader>
               <DialogTitle>Adicionar Produto</DialogTitle>
             </DialogHeader>
@@ -234,43 +236,86 @@ export default function InventarioPage() {
         </Dialog>
       </div>
 
-      <LowStockCard produtosBaixoEstoque={produtosBaixoEstoque} />
+      <div className="w-full">
+        <LowStockCard produtosBaixoEstoque={produtosBaixoEstoque} />
+      </div>
 
-      <BarcodeScannerCard
-        barcodeInput={barcodeInput}
-        barcodeProduct={barcodeProduct}
-        scanQuantity={scanQuantity}
-        handleBarcodeScan={handleBarcodeScan}
-        handleBarcodeKeyDown={handleBarcodeKeyDown}
-        setBarcodeInput={setBarcodeInput}
-        setBarcodeProduct={setBarcodeProduct}
-        setScanQuantity={setScanQuantity}
-        openMovimentoDialog={openMovimentoDialog}
-      />
+      <div className="w-full overflow-x-auto">
+        <BarcodeScannerCard
+          barcodeInput={barcodeInput}
+          barcodeProduct={barcodeProduct}
+          scanQuantity={scanQuantity}
+          handleBarcodeScan={handleBarcodeScan}
+          handleBarcodeKeyDown={handleBarcodeKeyDown}
+          setBarcodeInput={setBarcodeInput}
+          setBarcodeProduct={setBarcodeProduct}
+          setScanQuantity={setScanQuantity}
+          openMovimentoDialog={openMovimentoDialog}
+        />
+      </div>
 
-      <ProductTable
-        produtos={produtos}
-        openMovimentoDialog={openMovimentoDialog}
-        setPrintDialog={setPrintDialog}
-        handleEdit={handleEdit}
-        deleteProduto={openDeleteDialog}
-      />
+      <div className="w-full overflow-x-auto">
+        <ProductTable
+          produtos={produtos}
+          openMovimentoDialog={openMovimentoDialog}
+          setPrintDialog={setPrintDialog}
+          handleEdit={handleEdit}
+          deleteProduto={openDeleteDialog}
+        />
+      </div>
 
+      <Dialog
+        open={deleteDialog.open}
+        onOpenChange={() =>
+          setDeleteDialog({ open: false, produto: null })
+        }
+      >
+        <DialogContent className="w-[95vw] sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Confirmar exclusão</DialogTitle>
+          </DialogHeader>
+
+          <p className="text-sm text-muted-foreground">
+            Deseja realmente excluir o produto{" "}
+            <strong>{deleteDialog.produto?.nome}</strong>?
+          </p>
+
+          <div className="flex flex-col sm:flex-row justify-end gap-2 mt-4">
+            <Button
+              variant="outline"
+              onClick={() =>
+                setDeleteDialog({ open: false, produto: null })
+              }
+            >
+              Cancelar
+            </Button>
+
+            <Button
+              variant="destructive"
+              onClick={handleConfirmDelete}
+            >
+              Excluir
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* DIALOG DUPLICADO */}
       <Dialog
         open={duplicateDialog.open}
         onOpenChange={() =>
           setDuplicateDialog({ open: false, cod: '' })
         }
       >
-        <DialogContent>
+        <DialogContent className="w-[95vw] sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Código já existente</DialogTitle>
           </DialogHeader>
 
           <p className="text-sm text-muted-foreground">
-            O código <strong>{duplicateDialog.cod}</strong> já está cadastrado no sistema.
+            O código <strong>{duplicateDialog.cod}</strong> já está cadastrado.
             <br />
-            Por favor, utilize outro código.
+            Use outro código.
           </p>
 
           <div className="flex justify-end mt-4">
@@ -285,8 +330,9 @@ export default function InventarioPage() {
         </DialogContent>
       </Dialog>
 
+      {/* EDIT DIALOG */}
       <Dialog open={!!editingProduto} onOpenChange={() => setEditingProduto(null)}>
-        <DialogContent>
+        <DialogContent className="w-[95vw] sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Editar Produto</DialogTitle>
           </DialogHeader>
@@ -302,18 +348,17 @@ export default function InventarioPage() {
         </DialogContent>
       </Dialog>
 
+      {/* MOVIMENTO */}
       <Dialog
         open={movimentoDialog.open}
         onOpenChange={() =>
           setMovimentoDialog({ open: false, produto: null, tipo: null })
         }
       >
-        <DialogContent>
+        <DialogContent className="w-[95vw] sm:max-w-md">
           <DialogHeader>
             <DialogTitle>
-              {movimentoDialog.tipo === 'entrada'
-                ? 'Entrada'
-                : 'Saída'}
+              {movimentoDialog.tipo === 'entrada' ? 'Entrada' : 'Saída'}
             </DialogTitle>
           </DialogHeader>
 
@@ -328,13 +373,14 @@ export default function InventarioPage() {
         </DialogContent>
       </Dialog>
 
+      {/* PRINT */}
       <Dialog
         open={printDialog.open}
         onOpenChange={() =>
           setPrintDialog({ open: false, produto: null })
         }
       >
-        <DialogContent>
+        <DialogContent className="w-[95vw] sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Imprimir Etiqueta</DialogTitle>
           </DialogHeader>
@@ -343,13 +389,14 @@ export default function InventarioPage() {
             produto={printDialog.produto}
             printCopies={printCopies}
             setPrintCopies={setPrintCopies}
-            onPrint={handlePrint} 
+            onPrint={handlePrint}
             onCancel={() =>
               setPrintDialog({ open: false, produto: null })
             }
           />
         </DialogContent>
       </Dialog>
+
     </div>
   )
 }
