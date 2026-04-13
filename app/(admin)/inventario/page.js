@@ -180,23 +180,23 @@ export default function InventarioPage() {
   )
 
   const checkCodigoExists = async (cod, ignoreId = null) => {
-  const query = supabase
-    .from('produtos')
-    .select('id')
-    .eq('cod', cod)
+    const query = supabase
+      .from('produtos')
+      .select('id')
+      .eq('cod', cod)
 
-  const { data, error } = await query.maybeSingle()
+    const { data, error } = await query.maybeSingle()
 
-  if (error) throw error
+    if (error) throw error
 
-  if (!data) return false
+    if (!data) return false
 
-  if (ignoreId && data.id === ignoreId) return false
+    if (ignoreId && data.id === ignoreId) return false
 
-  return true
-}
+    return true
+  }
 
-  rreturn (
+  return (
     <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
 
       <div className="hidden print-area">
