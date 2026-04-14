@@ -15,6 +15,7 @@ import { Plus } from 'lucide-react'
 import { useForm } from 'react-hook-form'
 
 import BarcodeScannerCard from '@/components/inventory/BarcodeScannerCard'
+import ImportExportProdutos from '@/components/inventory/ImportExportProdutos'
 import ProductTable from '@/components/inventory/ProductTable'
 import ProductFormFields from '@/components/inventory/ProductFormFields'
 import MovementFormFields from '@/components/inventory/MovementFormFields'
@@ -219,10 +220,13 @@ export default function InventarioPage() {
         </Dialog>
       </div>
 
-      <div className="flex flex-col gap-6">
+      <div className="flex flex-col">
 
+        <div className="flex gap-2 flex-wrap">
+          <ImportExportProdutos />
+        </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <BarcodeScannerCard
             barcodeInput={barcodeInput}
             barcodeProduct={barcodeProduct}

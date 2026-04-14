@@ -1,71 +1,140 @@
 'use client'
 
-import Barcode from 'react-barcode'
+import JsBarcode from 'jsbarcode'
+import { useEffect, useRef, useState } from 'react'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 
-export default function PrintDialogContent({ produto, printCopies, setPrintCopies, onPrint, onCancel }) {
-  if (!produto) {
-    return null
+const LABEL_MODELS = {
+  A4249: { width: 2.6, height: 1.5, scale: 0.7 },
+  A4251: { width: 3.82, height: 2.12, scale: 0.85 },
+  A4255: { width: 6.35, height: 3.1, scale: 1 },
+  A4256: { width: 6.35, height: 2.54, scale: 0.95 },
+  A4260: { width: 6.35, height: 3.81, scale: 1.1 },
+  A4262: { width: 9.9, height: 3.39, scale: 1.2 },
+  A4263: { width: 9.9, height: 3.81, scale: 1.3 }
+}
+
+export default function PrintDialogContent({ produto, onCancel }) {
+  const canvasRef = useRef(null)
+  const [image, setImage] = useState(null)
+  const [model, setModel] = useState('A4256')
+
+  useEffect(() => {
+    if (!produto) return
+
+    const { width, height, scale } = LABEL_MODELS[model]
+
+    const canvas = canvasRef.current
+    const ctx = canvas.getContext('2d')
+
+    const pxScale = 100
+    const widthPx = width * pxScale
+    const heightPx = height * pxScale
+
+    canvas.width = widthPx
+    canvas.height = heightPx
+
+    ctx.fillStyle = '#fff'
+    ctx.fillRect(0, 0, widthPx, heightPx)
+
+    const img = new Image()
+    img.src = '/ige-supergesso.png'
+
+    img.onload = () => {
+      ctx.globalAlpha = 0.08
+      ctx.drawImage(
+        img,
+        widthPx * 0.1,
+        heightPx * 0.1,
+        widthPx * 0.8,
+        heightPx * 0.8
+      )
+      ctx.globalAlpha = 1
+
+      ctx.fillStyle = '#000'
+      ctx.textAlign = 'center'
+
+      const maxWidth = widthPx * 0.9
+      let fontSize = heightPx * 0.3 * scale
+      const minFont = 10
+
+      while (fontSize > minFont) {
+        ctx.font = `bold ${fontSize}px Arial`
+        const textWidth = ctx.measureText(produto.nome).width
+
+        if (textWidth <= maxWidth) break
+        fontSize -= 1
+      }
+
+      ctx.fillText(produto.nome, widthPx / 2, heightPx * 0.35)
+
+      const barcodeCanvas = document.createElement('canvas')
+
+      JsBarcode(barcodeCanvas, String(produto.cod), {
+        format: 'CODE128',
+        width: Math.max(1, widthPx / 300),
+        height: heightPx * 0.4,
+        displayValue: false,
+        margin: 0
+      })
+
+      ctx.drawImage(
+        barcodeCanvas,
+        widthPx * 0.1,
+        heightPx * 0.5,
+        widthPx * 0.8,
+        heightPx * 0.4
+      )
+
+      setImage(canvas.toDataURL('image/png'))
+    }
+  }, [produto, model])
+
+  const download = () => {
+    if (!image) return
+
+    const link = document.createElement('a')
+    link.href = image
+    link.download = `${model}-${produto.cod}.png`
+    link.click()
   }
+
+  if (!produto) return null
 
   return (
     <div className="space-y-4">
-      <div className="border p-4 rounded-lg bg-white">
-        <div className="text-black">
-            <div className="flex justify-between items-center mb-2">
-                <img
-                    src="/ige-supergesso.png"
-                    alt={produto.nome}
-                    className="h-8 w-auto"
-                />
 
-                <div className="font-mono text-sm">
-                    {produto.cod}
-                </div>
-            </div>
+      <div>
+        <label className="text-sm text-white font-medium">Modelo Pimaco</label>
+        <select
+          value={model}
+          onChange={(e) => setModel(e.target.value)}
+          className="w-full border rounded px-2 py-2 mt-1 bg-transparent text-white"
+        >
+          {Object.keys(LABEL_MODELS).map((key) => (
+            <option key={key} value={key} className="bg-secondary text-white">
+              {key}
+            </option>
+          ))}
+        </select>
+      </div>
 
-                <div className="text-lg font-semibold text-center mb-2">
-                {produto.nome}
-                </div>
+      <canvas ref={canvasRef} className="hidden" />
 
-            <div className="bg-white p-2 border rounded flex flex-col items-center">
-                <Barcode
-                    value={String(produto.cod)}
-                    format="CODE128"
-                    width={2}
-                    height={40}
-                    displayValue={false}
-                />
-            </div>
+      {image && (
+        <div className="border p-4 rounded bg-white flex justify-center">
+          <img src={image} alt="Etiqueta" />
         </div>
-        </div>
-      <div className="grid gap-3">
-        <div className="flex gap-3 items-center space-y-2">
-          <div className="flex-1 space-y-1 ">
-            <Label htmlFor="print-copies">Quantidade de etiquetas</Label>
-            <Input
-              id="print-copies"
-              type="number"
-              min={1}
-              max={100}
-              value={printCopies}
-              onChange={(event) => setPrintCopies(Math.max(1, Math.min(100, Number(event.target.value) || 1)))}
-            />
-          <div className="text-sm text-muted-foreground">
-            Cada folha A4 cabe até 14 códigos em duas colunas de 7 etiquetas (10cm x 3.8cm cada).
-          </div>
-          </div>
-        </div>
-        <div className="flex gap-2">
-          <Button onClick={onPrint} className="flex-1">
-            Imprimir
-          </Button>
-          <Button variant="outline" onClick={onCancel}>
-            Cancelar
-          </Button>
-        </div>
+      )}
+
+      <div className="flex gap-2">
+        <Button onClick={download} className="flex-1">
+          Baixar Imagem
+        </Button>
+
+        <Button variant="outline" onClick={onCancel}>
+          Cancelar
+        </Button>
       </div>
     </div>
   )
