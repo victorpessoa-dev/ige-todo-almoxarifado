@@ -13,7 +13,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { toast } from 'sonner'
 import { Plus, Pencil, Trash2, CheckCircle2, Circle, Clock, ChevronDown, ChevronUp, StickyNote, Calendar } from 'lucide-react'
 
-
 function groupByDate(items) {
   const groups = {}
 
@@ -26,21 +25,13 @@ function groupByDate(items) {
       day: 'numeric'
     })
 
-    if (!groups[dateKey]) {
-      groups[dateKey] = []
-    }
+    if (!groups[dateKey]) groups[dateKey] = []
     groups[dateKey].push(item)
   })
 
-  const sortedGroups = Object.entries(groups)
-    .sort((a, b) => {
-      const dateA = new Date(a[1][0].created_at)
-      const dateB = new Date(b[1][0].created_at)
-      return dateB - dateA
-    })
+  return Object.entries(groups)
+    .sort((a, b) => new Date(b[1][0].created_at) - new Date(a[1][0].created_at))
     .map(([dateKey, items]) => [dateKey, sortByPriority(items)])
-
-  return sortedGroups
 }
 
 function formatDateLabel(value) {
@@ -51,9 +42,11 @@ function formatDateLabel(value) {
 
 export default function LembretesPage() {
   const { lembretes, addLembrete, updateLembrete, deleteLembrete, isLoaded } = useData()
+
   const [isOpen, setIsOpen] = useState(false)
   const [editingLembrete, setEditingLembrete] = useState(null)
   const [showConcluidos, setShowConcluidos] = useState(false)
+
   const [form, setForm] = useState({
     titulo: '',
     conteudo: '',
@@ -66,9 +59,6 @@ export default function LembretesPage() {
   const lembretesPendentes = lembretes.filter(l => l.status !== 'concluido')
   const lembretesConcluidos = lembretes.filter(l => l.status === 'concluido')
 
-  const lembretesPendentesGrouped = groupByDate(lembretesPendentes)
-  const lembretesConcluidosGrouped = groupByDate(lembretesConcluidos)
-
   const resetForm = () => {
     setForm({ titulo: '', conteudo: '', destinatario: '', data: null, status: 'a_fazer', prioridade: 'medio' })
     setEditingLembrete(null)
@@ -79,91 +69,46 @@ export default function LembretesPage() {
     if (!open) resetForm()
   }
 
-  const handleEdit = (lembrete) => {
-    setEditingLembrete(lembrete)
-    setForm({
-      titulo: lembrete.titulo || '',
-      conteudo: lembrete.conteudo || '',
-      data: lembrete.data ? new Date(lembrete.data) : new Date(),
-      destinatario: lembrete.destinatario || '',
-      status: lembrete.status,
-      prioridade: lembrete.prioridade || 'medio'
-    })
-    setIsOpen(true)
-  }
-
   const handleSubmit = (e) => {
     e.preventDefault()
-    if (!form.titulo.trim()) {
-      toast.error('O titulo e obrigatorio!')
-      return
-    }
+    if (!form.titulo.trim()) return toast.error('O titulo é obrigatório!')
 
     if (editingLembrete) {
       updateLembrete(editingLembrete.id, form)
-      toast.success('Lembrete atualizado com sucesso!')
+      toast.success('Atualizado!')
     } else {
       addLembrete(form)
-      toast.success('Lembrete criado com sucesso!')
+      toast.success('Criado!')
     }
+
     handleOpenChange(false)
   }
 
   const handleDelete = (id) => {
     deleteLembrete(id)
-    toast.success('Lembrete removido!')
+    toast.success('Removido!')
   }
 
-  const handleStatusChange = (id, newStatus) => {
-    updateLembrete(id, { status: newStatus })
-    if (newStatus === 'concluido') {
-      toast.success('Lembrete concluido!')
-    } else {
-      toast.success('Status atualizado!')
-    }
+  const handleStatusChange = (id, status) => {
+    updateLembrete(id, { status })
   }
 
   const handleConcluir = (id) => {
     updateLembrete(id, { status: 'concluido' })
-    toast.success('Lembrete concluido!')
   }
 
-  const getStatusIcon = (status) => {
-    switch (status) {
-      case 'concluido': return <CheckCircle2 className="h-4 w-4 text-green-600" />
-      case 'em_andamento': return <Clock className="h-4 w-4 text-blue-600" />
-      default: return <Circle className="h-4 w-4 text-muted-foreground" />
-    }
-  }
+  if (!isLoaded) return <div className="animate-pulse">Carregando...</div>
 
-  const getStatusInfo = (status) => {
-    return STATUS_OPTIONS.find(s => s.value === status) || STATUS_OPTIONS[0]
-  }
-
-  const getPrioridadeInfo = (prioridade) => {
-    return PRIORIDADE_OPTIONS.find(p => p.value === prioridade) || PRIORIDADE_OPTIONS[2]
-  }
-
-  if (!isLoaded) {
-    return <div className="animate-pulse">Carregando...</div>
-  }
-
-  const LembreteCard = ({ lembrete, isConcluido = false }) => {
-    const prioridadeInfo = getPrioridadeInfo(lembrete.prioridade)
-    const statusInfo = getStatusInfo(lembrete.status)
+  const LembreteCard = ({ lembrete, isConcluido }) => {
+    const prioridadeInfo = PRIORIDADE_OPTIONS.find(p => p.value === lembrete.prioridade) || PRIORIDADE_OPTIONS[2]
+    const statusInfo = STATUS_OPTIONS.find(s => s.value === lembrete.status) || STATUS_OPTIONS[0]
 
     return (
-      <Card
-        className={`transition-all ${isConcluido
-          ? 'opacity-70 bg-muted/30'
-          : `hover:shadow-lg ${prioridadeInfo.shadow}`
-          }`}
-      >
-        <CardContent className="p-4">
-          <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
+      <Card className={`transition-all ${isConcluido ? 'opacity-70 bg-muted/30' : `hover:shadow-lg ${prioridadeInfo.shadow}`}`}>
+        <CardContent className="p-3 sm:p-4">
+          <div className="flex flex-col sm:flex-row gap-3 sm:items-center justify-between">
 
-            {/* ESQUERDA */}
-            <div className="flex items-start gap-3 flex-1 w-full">
+            <div className="flex gap-3 flex-1">
               <button
                 onClick={() =>
                   isConcluido
@@ -171,116 +116,90 @@ export default function LembretesPage() {
                     : handleConcluir(lembrete.id)
                 }
                 className="mt-1 hover:scale-110 transition-transform"
-                title={
-                  isConcluido
-                    ? 'Reabrir lembrete'
-                    : 'Marcar como concluido'
-                }
               >
-                {getStatusIcon(lembrete.status)}
+                {lembrete.status === 'concluido'
+                  ? <CheckCircle2 className="h-4 w-4 text-green-600" />
+                  : lembrete.status === 'em_andamento'
+                    ? <Clock className="h-4 w-4 text-blue-600" />
+                    : <Circle className="h-4 w-4 text-muted-foreground" />}
               </button>
 
               <div className="flex-1">
-                <h3
-                  className={`font-semibold text-foreground break-words ${isConcluido
-                    ? 'line-through text-muted-foreground'
-                    : ''
-                    }`}
-                >
+                <h3 className={`font-semibold text-sm sm:text-base break-words ${isConcluido ? 'line-through text-muted-foreground' : ''}`}>
                   {lembrete.titulo}
                 </h3>
 
                 {lembrete.conteudo && (
-                  <p className="text-sm text-muted-foreground mt-1 whitespace-pre-wrap break-words">
+                  <p className="text-xs sm:text-sm text-muted-foreground mt-1 break-words">
                     {lembrete.conteudo}
                   </p>
                 )}
 
                 {lembrete.data && (
-                  <div className="flex items-center gap-2 mt-2 text-sm text-muted-foreground">
+                  <div className="flex items-center gap-1 mt-2 text-xs sm:text-sm text-muted-foreground">
                     <Calendar className="h-4 w-4" />
-                    <span>{formatDateLabel(lembrete.data)}</span>
+                    {formatDateLabel(lembrete.data)}
                   </div>
                 )}
 
-                <div className="flex flex-wrap items-center gap-2 mt-3">
-                  <Badge className={prioridadeInfo.color}>
-                    {prioridadeInfo.label}
-                  </Badge>
-
+                <div className="flex flex-wrap gap-1.5 sm:gap-2 mt-2">
+                  <Badge className={prioridadeInfo.color}>{prioridadeInfo.label}</Badge>
                   {!isConcluido && (
                     <Badge variant="outline" className={statusInfo.color}>
                       {statusInfo.label}
                     </Badge>
                   )}
-
-                  {lembrete.destinatario && (
-                    <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded break-words">
-                      Para: {lembrete.destinatario}
-                    </span>
-                  )}
                 </div>
               </div>
             </div>
 
-            {/* DIREITA */}
-            <div className="flex items-center gap-1 w-full sm:w-auto justify-end">
+            <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto justify-between sm:justify-end">
+
               {!isConcluido && (
-                <Select
-                  value={lembrete.status}
-                  onValueChange={(value) =>
-                    handleStatusChange(lembrete.id, value)
-                  }
-                >
-                  <SelectTrigger className="w-full sm:w-[130px] h-8 text-xs">
+                <Select value={lembrete.status} onValueChange={(v) => handleStatusChange(lembrete.id, v)}>
+                  <SelectTrigger className="w-full sm:w-[130px] h-9 sm:h-8 text-xs">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {STATUS_OPTIONS.map((option) => (
-                      <SelectItem
-                        key={option.value}
-                        value={option.value}
-                      >
-                        {option.label}
-                      </SelectItem>
+                    {STATUS_OPTIONS.map(opt => (
+                      <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               )}
 
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8"
-                onClick={() => handleEdit(lembrete)}
-              >
-                <Pencil className="h-4 w-4" />
-              </Button>
+              <div className="flex gap-1">
+                <Button variant="ghost" size="icon" className="h-9 w-9 sm:h-8 sm:w-8">
+                  <Pencil className="h-4 w-4" />
+                </Button>
 
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8"
-                onClick={() => handleDelete(lembrete.id)}
-              >
-                <Trash2 className="h-4 w-4 text-destructive" />
-              </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-9 w-9 sm:h-8 sm:w-8"
+                  onClick={() => handleDelete(lembrete.id)}
+                >
+                  <Trash2 className="h-4 w-4 text-destructive" />
+                </Button>
+              </div>
             </div>
+
           </div>
         </CardContent>
       </Card>
     )
   }
 
-  const DateGroup = ({ dateLabel, items, isConcluido = false }) => (
+  const DateGroup = ({ dateLabel, items, isConcluido }) => (
     <div className="flex flex-col gap-3">
       <div className="flex items-center gap-2 text-sm text-muted-foreground">
         <Calendar className="h-4 w-4" />
-        <span className="font-medium capitalize">{dateLabel}</span>
+        <span className="capitalize">{dateLabel}</span>
       </div>
-      <div className="flex flex-col gap-3 pl-6 border-l-2 border-muted">
-        {items.map((lembrete) => (
-          <LembreteCard key={lembrete.id} lembrete={lembrete} isConcluido={isConcluido} />
+
+      <div className="flex flex-col gap-3 pl-4 sm:pl-6 border-l-2 border-muted">
+        {items.map(l => (
+          <LembreteCard key={l.id} lembrete={l} isConcluido={isConcluido} />
         ))}
       </div>
     </div>
@@ -288,135 +207,76 @@ export default function LembretesPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">Lembretes</h1>
-        </div>
+
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+        <h1 className="text-2xl sm:text-3xl font-bold">Lembretes</h1>
+
         <Dialog open={isOpen} onOpenChange={handleOpenChange}>
           <DialogTrigger asChild>
-            <Button className="gap-2">
+            <Button className="gap-2 w-full sm:w-auto">
               <Plus className="h-4 w-4" />
-              Novo Lembrete
+              Novo
             </Button>
           </DialogTrigger>
+
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>{editingLembrete ? 'Editar Lembrete' : 'Novo Lembrete'}</DialogTitle>
+              <DialogTitle>{editingLembrete ? 'Editar' : 'Novo Lembrete'}</DialogTitle>
             </DialogHeader>
-            <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-              <div className="flex flex-col gap-2">
-                <label className="text-sm font-medium">Titulo</label>
-                <Input
-                  value={form.titulo}
-                  onChange={(e) => setForm({ ...form, titulo: e.target.value })}
-                  placeholder="Digite o titulo do lembrete"
-                  required
-                />
-              </div>
-              <div className="flex flex-col gap-2">
-                <label className="text-sm font-medium">Conteudo</label>
-                <Textarea
-                  value={form.conteudo}
-                  onChange={(e) => setForm({ ...form, conteudo: e.target.value })}
-                  placeholder="Digite o conteudo do lembrete"
-                  rows={4}
-                />
-              </div>
-              <div className="flex flex-col gap-2">
-                <label className="text-sm font-medium">Data</label>
-                <Input
-                  type="date"
-                  value={form.data ? form.data.toISOString().split('T')[0] : ''}
-                  onChange={(e) => setForm({ ...form, data: new Date(e.target.value) })}
-                />
-              </div>
-              <div className="flex flex-col gap-2">
-                <label className="text-sm font-medium">Destinatario</label>
-                <Input
-                  value={form.destinatario}
-                  onChange={(e) => setForm({ ...form, destinatario: e.target.value })}
-                  placeholder="Para quem e esse lembrete?"
-                />
-              </div>
-              <div className="flex flex-col gap-2">
-                <label className="text-sm font-medium">Prioridade</label>
-                <Select value={form.prioridade} onValueChange={(value) => setForm({ ...form, prioridade: value })}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {PRIORIDADE_OPTIONS.map((option) => (
-                      <SelectItem key={option.value} value={option.value}>
-                        {option.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="flex flex-col gap-2">
-                <label className="text-sm font-medium">Status</label>
-                <Select value={form.status} onValueChange={(value) => setForm({ ...form, status: value })}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {STATUS_OPTIONS.map((option) => (
-                      <SelectItem key={option.value} value={option.value}>
-                        {option.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <Button type="submit" className="mt-2">
-                {editingLembrete ? 'Salvar Alteracoes' : 'Criar Lembrete'}
+
+            <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+              <Input
+                placeholder="Título"
+                value={form.titulo}
+                onChange={(e) => setForm({ ...form, titulo: e.target.value })}
+              />
+
+              <Textarea
+                placeholder="Conteúdo"
+                value={form.conteudo}
+                onChange={(e) => setForm({ ...form, conteudo: e.target.value })}
+              />
+
+              <Input
+                type="date"
+                value={form.data ? form.data.toISOString().split('T')[0] : ''}
+                onChange={(e) => setForm({ ...form, data: new Date(e.target.value) })}
+              />
+
+              <Input
+                placeholder="Destinatário"
+                value={form.destinatario}
+                onChange={(e) => setForm({ ...form, destinatario: e.target.value })}
+              />
+
+              <Button type="submit">
+                {editingLembrete ? 'Salvar' : 'Criar'}
               </Button>
             </form>
           </DialogContent>
         </Dialog>
       </div>
 
-      <div className="flex flex-col gap-6 max-h-[85vh] overflow-y-auto pr-2 scroll-smooth scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent">
-        <div className="flex flex-col gap-4">
-          <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
-            <StickyNote className="h-5 w-5" />
-            Pendentes ({lembretesPendentes.length})
-          </h2>
-          {lembretesPendentesGrouped.length === 0 ? (
-            <Card>
-              <CardContent className="flex flex-col items-center justify-center py-8">
-                <p className="text-muted-foreground">Nenhum lembrete pendente</p>
-                <p className="text-sm text-muted-foreground">Clique em "Novo Lembrete" para comecar</p>
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="flex flex-col gap-6">
-              {lembretesPendentesGrouped.map(([dateLabel, items]) => (
-                <DateGroup key={dateLabel} dateLabel={dateLabel} items={items} />
-              ))}
-            </div>
-          )}
-        </div>
+      <div className="flex flex-col gap-6 max-h-[85vh] overflow-y-auto pr-2 pb-6">
+
+        {groupByDate(lembretesPendentes).map(([date, items]) => (
+          <DateGroup key={date} dateLabel={date} items={items} />
+        ))}
 
         {lembretesConcluidos.length > 0 && (
-          <div className="flex flex-col gap-4">
-            <button
-              onClick={() => setShowConcluidos(!showConcluidos)}
-              className="flex items-center gap-2 text-lg font-semibold text-foreground hover:text-primary transition-colors w-fit"
-            >
+          <div>
+            <button onClick={() => setShowConcluidos(!showConcluidos)} className="flex items-center gap-2 font-semibold">
               <CheckCircle2 className="h-5 w-5 text-green-600" />
-              Concluidos ({lembretesConcluidos.length})
-              {showConcluidos ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+              Concluídos ({lembretesConcluidos.length})
+              {showConcluidos ? <ChevronUp /> : <ChevronDown />}
             </button>
-            {showConcluidos && (
-              <div className="flex flex-col gap-6">
-                {lembretesConcluidosGrouped.map(([dateLabel, items]) => (
-                  <DateGroup key={dateLabel} dateLabel={dateLabel} items={items} isConcluido />
-                ))}
-              </div>
-            )}
+
+            {showConcluidos && groupByDate(lembretesConcluidos).map(([date, items]) => (
+              <DateGroup key={date} dateLabel={date} items={items} isConcluido />
+            ))}
           </div>
         )}
+
       </div>
     </div>
   )

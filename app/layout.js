@@ -16,7 +16,7 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="pt-BR">
-      <body className="font-sans antialiased h-screen overflow-hidden dark">
+      <body className="font-sans antialiased min-h-dvh overflow-x-hidden overflow-y-auto dark">
         <AuthProvider>
           <DataProvider>
             {children}

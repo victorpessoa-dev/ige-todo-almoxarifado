@@ -15,7 +15,6 @@ import { Plus } from 'lucide-react'
 import { useForm } from 'react-hook-form'
 
 import BarcodeScannerCard from '@/components/inventory/BarcodeScannerCard'
-import LowStockCard from '@/components/inventory/LowStockCard'
 import ProductTable from '@/components/inventory/ProductTable'
 import ProductFormFields from '@/components/inventory/ProductFormFields'
 import MovementFormFields from '@/components/inventory/MovementFormFields'
@@ -183,7 +182,6 @@ export default function InventarioPage() {
   return (
     <div className="w-full min-h-screen mx-auto px-3 sm:px-6 lg:px-10 xl:px-16 py-4 sm:py-6">
 
-      {/* PRINT AREA */}
       <div className="hidden print-area">
         <PrintEtiqueta
           produto={printDialog.produto}
@@ -191,7 +189,6 @@ export default function InventarioPage() {
         />
       </div>
 
-      {/* HEADER */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-6">
         <h1 className="text-xl sm:text-2xl md:text-3xl font-bold">
           Inventário
@@ -222,13 +219,9 @@ export default function InventarioPage() {
         </Dialog>
       </div>
 
-      {/* GRID PRINCIPAL */}
       <div className="flex flex-col gap-6">
 
-        {/* ALERTA ESTOQUE */}
-        <LowStockCard produtosBaixoEstoque={produtosBaixoEstoque} />
 
-        {/* SCANNER + (FUTURO PAINEL) */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           <BarcodeScannerCard
             barcodeInput={barcodeInput}
@@ -243,7 +236,6 @@ export default function InventarioPage() {
           />
         </div>
 
-        {/* TABELA */}
         <div className="w-full overflow-x-auto rounded-lg border">
           <div className="min-w-[700px]">
             <ProductTable
@@ -260,7 +252,6 @@ export default function InventarioPage() {
 
       </div>
 
-      {/* DELETE DIALOG */}
       <Dialog
         open={deleteDialog.open}
         onOpenChange={() =>
@@ -300,7 +291,6 @@ export default function InventarioPage() {
         </DialogContent>
       </Dialog>
 
-      {/* DUPLICADO */}
       <Dialog
         open={duplicateDialog.open}
         onOpenChange={() =>
@@ -328,7 +318,6 @@ export default function InventarioPage() {
         </DialogContent>
       </Dialog>
 
-      {/* EDIT */}
       <Dialog
         open={!!editingProduto}
         onOpenChange={() => setEditingProduto(null)}
@@ -349,7 +338,6 @@ export default function InventarioPage() {
         </DialogContent>
       </Dialog>
 
-      {/* MOVIMENTO */}
       <Dialog
         open={movimentoDialog.open}
         onOpenChange={() =>
@@ -376,7 +364,6 @@ export default function InventarioPage() {
         </DialogContent>
       </Dialog>
 
-      {/* PRINT */}
       <Dialog
         open={printDialog.open}
         onOpenChange={() =>
@@ -399,7 +386,6 @@ export default function InventarioPage() {
           />
         </DialogContent>
       </Dialog>
-
     </div>
   )
 }

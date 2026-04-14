@@ -17,7 +17,7 @@ export function CalendarioSlide({ active = false, onEnd }) {
             id: `tarefa-${tarefa.id}`,
             title: tarefa.titulo || 'Tarefa sem título',
             start: tarefa.data || null,
-            backgroundColor: '#3b82f6', // blue-500
+            backgroundColor: '#3b82f6',
             borderColor: '#3b82f6',
             textColor: '#ffffff',
             extendedProps: {
@@ -31,7 +31,7 @@ export function CalendarioSlide({ active = false, onEnd }) {
             id: `lembrete-${lembrete.id}`,
             title: lembrete.titulo || 'Lembrete sem título',
             start: lembrete.data || null,
-            backgroundColor: '#8b5cf6', // purple-500
+            backgroundColor: '#8b5cf6',
             borderColor: '#8b5cf6',
             textColor: '#ffffff',
             extendedProps: {
@@ -72,11 +72,11 @@ export function CalendarioSlide({ active = false, onEnd }) {
                         moreLinkClick={false}
                         eventDisplay="block"
                         displayEventTime={false}
-                        eventMouseEnter={() => {}} // Disable hover
-                        eventMouseLeave={() => {}} // Disable hover
-                        dayCellClassNames={() => ''} // Remove default hover classes
-                        eventClassNames={() => 'pointer-events-none'} // Disable event interactions
-                        viewClassNames={() => 'pointer-events-none'} // Disable view interactions
+                        eventMouseEnter={() => { }}
+                        eventMouseLeave={() => { }}
+                        dayCellClassNames={() => ''}
+                        eventClassNames={() => 'pointer-events-none'}
+                        viewClassNames={() => 'pointer-events-none'}
                     />
                 </div>
             </div>

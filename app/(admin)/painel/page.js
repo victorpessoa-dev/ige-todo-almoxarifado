@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { CalendarioSlide } from '@/components/slides/CalendarioSlide'
 import { TarefasSlide } from '@/components/slides/TarefasSlide'
 import { LembretesSlide } from '@/components/slides/LembretesSlide'
-import { InventarioSlide } from '@/components/slides/InventarioSlide'
+import InventarioSlide from '@/components/slides/InventarioSlide'
 import { Clock, Maximize2, Minimize2 } from 'lucide-react'
 
 function RelogioSlide({ onEnd }) {

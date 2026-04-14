@@ -1,10 +1,13 @@
 'use client'
 
+import { useEffect, useRef, useState } from 'react'
+import { BrowserMultiFormatReader } from '@zxing/browser'
+
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Barcode } from 'lucide-react'
+import { Barcode, Camera } from 'lucide-react'
 
 export default function BarcodeScannerCard({
   barcodeInput,
@@ -15,87 +18,205 @@ export default function BarcodeScannerCard({
   setBarcodeInput,
   setBarcodeProduct,
   setScanQuantity,
-  openMovimentoDialog
+  openMovimentoDialog,
+  produtos
 }) {
+  const videoRef = useRef(null)
+  const codeReader = useRef(null)
+  const controlsRef = useRef(null)
+
+  const [isCameraOpen, setIsCameraOpen] = useState(false)
+  const [lastScan, setLastScan] = useState(null)
+  const [scanSuccess, setScanSuccess] = useState(false)
+  const [modo, setModo] = useState('saida')
+
+  useEffect(() => {
+    codeReader.current = new BrowserMultiFormatReader()
+
+    return () => {
+      stopCamera()
+    }
+  }, [])
+
+
+  const startCamera = async () => {
+    setIsCameraOpen(true)
+
+    try {
+      controlsRef.current = await codeReader.current.decodeFromVideoDevice(
+        undefined,
+        videoRef.current,
+        (result) => {
+          if (result) {
+            const code = result.getText()
+
+            if (code === lastScan) return
+
+            setLastScan(code)
+            setScanSuccess(true)
+
+            navigator.vibrate?.(150)
+            setTimeout(() => setScanSuccess(false), 300)
+
+            setBarcodeInput(code)
+
+            const produto = produtos.find(
+              (p) => p.cod_barra === code || p.cod === code
+            )
+
+            if (produto) {
+              setBarcodeProduct(produto)
+
+              setTimeout(() => {
+                openMovimentoDialog(produto, modo, scanQuantity)
+              }, 200)
+            } else {
+              setBarcodeProduct(null)
+            }
+          }
+        }
+      )
+    } catch (err) {
+      console.error(err)
+      alert('Erro ao acessar câmera')
+      setIsCameraOpen(false)
+    }
+  }
+
+
+  const stopCamera = () => {
+    setIsCameraOpen(false)
+
+    try {
+      controlsRef.current?.stop()
+    } catch (err) {
+      console.warn('Erro ao parar câmera:', err)
+    }
+  }
+
   return (
     <Card className="mb-6">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Barcode className="h-5 w-5" />
-          Leitor de Código de Barras
+        <CardTitle className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Barcode className="h-5 w-5" />
+            Leitor de Código
+          </div>
+
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={isCameraOpen ? stopCamera : startCamera}
+          >
+            <Camera className="h-4 w-4 mr-1" />
+            {isCameraOpen ? 'Fechar' : 'Câmera'}
+          </Button>
         </CardTitle>
       </CardHeader>
+
       <CardContent>
-        <div className="flex gap-4">
+
+        <div className="flex gap-2 mb-3">
+          <Button
+            size="sm"
+            variant={modo === 'entrada' ? 'default' : 'outline'}
+            onClick={() => setModo('entrada')}
+          >
+            📥 Entrada
+          </Button>
+
+          <Button
+            size="sm"
+            variant={modo === 'saida' ? 'destructive' : 'outline'}
+            onClick={() => setModo('saida')}
+          >
+            📤 Saída
+          </Button>
+        </div>
+
+        {isCameraOpen && (
+          <div className="relative mb-4">
+            <video
+              ref={videoRef}
+              className="w-full rounded-lg border"
+            />
+
+            <div className="absolute inset-0 bg-black/40 pointer-events-none" />
+
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+              <div
+                className={`w-64 h-32 border-2 rounded-lg transition-all duration-200 ${scanSuccess
+                  ? 'border-green-400 shadow-lg shadow-green-400/50'
+                  : 'border-white'
+                  }`}
+              />
+            </div>
+
+            <p className="absolute bottom-2 left-0 right-0 text-center text-xs text-white">
+              Aponte para o código
+            </p>
+
+            <p className="absolute top-2 left-0 right-0 text-center text-xs text-white">
+              {modo === 'entrada' ? '📥 Entrada' : '📤 Saída'}
+            </p>
+          </div>
+        )}
+
+        <div className="flex flex-col sm:flex-row gap-3">
           <div className="flex-1">
-            <Label htmlFor="barcode-input" className="text-sm font-medium py-2">
-              Escanear Código de Barras
-            </Label>
+            <Label className="text-sm">Código</Label>
+
             <Input
-              id="barcode-input"
               value={barcodeInput}
-              onChange={handleBarcodeScan}
-              onKeyDown={handleBarcodeKeyDown}
-              placeholder="Posicione o cursor aqui e escaneie"
-              autoFocus
+              onChange={handleBarcodeScan || (() => { })}
+              onKeyDown={handleBarcodeKeyDown || (() => { })}
+              placeholder="Escaneie ou digite"
+              readOnly={isCameraOpen}
             />
           </div>
+
           <Button
             variant="outline"
+            className="sm:self-end"
             onClick={() => {
               setBarcodeInput('')
               setBarcodeProduct(null)
               setScanQuantity(1)
+              setLastScan(null)
             }}
-            className="self-end"
           >
             Limpar
           </Button>
         </div>
 
-        {barcodeInput && (
-          <p className="text-sm text-muted-foreground mt-2">
-            Código escaneado: {barcodeInput}
-          </p>
-        )}
+        {barcodeProduct && (
+          <div className="mt-4 p-4 rounded-lg border bg-muted/30">
+            <p className="font-semibold">{barcodeProduct.nome}</p>
+            <p className="text-xs text-muted-foreground">
+              Estoque: {barcodeProduct.estoque}
+            </p>
 
-        {barcodeProduct ? (
-          <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-4">
-            <div className="flex flex-col gap-2">
-              <p className="text-sm text-slate-700">Produto encontrado:</p>
-              <div className="rounded-lg bg-white p-3 shadow-sm">
-                <p className="font-semibold text-slate-900">{barcodeProduct.nome}</p>
-                <p className="text-xs text-slate-500">Cód: {barcodeProduct.cod}</p>
-                <p className="text-xs text-slate-500">Estoque atual: {barcodeProduct.estoque}</p>
-              </div>
-            </div>
-
-            <div className="mt-4 flex flex-wrap items-center gap-2">
-              <Button size="sm" variant="outline" onClick={() => setScanQuantity((prev) => Math.max(1, prev - 1))}>
+            <div className="flex flex-wrap items-center gap-2 mt-3">
+              <Button size="sm" variant="outline" onClick={() => setScanQuantity(q => Math.max(1, q - 1))}>
                 -
               </Button>
-              <div className="min-w-[3rem] rounded-lg border border-slate-200 bg-white px-3 py-2 text-center text-base font-semibold">
-                {scanQuantity}
-              </div>
-              <Button size="sm" variant="outline" onClick={() => setScanQuantity((prev) => prev + 1)}>
+
+              <span className="font-semibold">{scanQuantity}</span>
+
+              <Button size="sm" variant="outline" onClick={() => setScanQuantity(q => q + 1)}>
                 +
               </Button>
+
               <Button size="sm" onClick={() => openMovimentoDialog(barcodeProduct, 'entrada', scanQuantity)}>
                 Entrada
               </Button>
+
               <Button size="sm" variant="destructive" onClick={() => openMovimentoDialog(barcodeProduct, 'saida', scanQuantity)}>
                 Saída
               </Button>
             </div>
-            <p className="text-xs text-muted-foreground mt-2">
-              Pressione Enter para abrir o diálogo de saída automaticamente.
-            </p>
           </div>
-        ) : barcodeInput ? (
-          <div className="mt-4 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">
-            Produto não encontrado para este código.
-          </div>
-        ) : null}
+        )}
       </CardContent>
     </Card>
   )
