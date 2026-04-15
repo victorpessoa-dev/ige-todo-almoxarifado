@@ -19,19 +19,19 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (!isLoading && isAuthenticated) {
-      router.replace('/painel') 
+      router.replace('/painel')
     }
   }, [isAuthenticated, isLoading, router])
 
   const handleSubmit = async (e) => {
     e.preventDefault()
 
-    const success = await login(email, password)
+    const result = await login(email, password)
 
-    if (success) {
+    if (result.success) {
       toast.success('Login realizado com sucesso!')
     } else {
-      toast.error('Email ou senha inválidos!')
+      toast.error(result.error || 'Email ou senha inválidos!')
     }
   }
 
@@ -51,7 +51,7 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-muted p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <Image src="/ige-supergesso.png" alt="Logo"  width={200} height={150} className="mx-auto mb-2" />
+          <Image src="/ige-supergesso.png" alt="Logo" width={200} height={150} className="mx-auto mb-2" />
           <CardDescription>Entre com seu email e senha</CardDescription>
         </CardHeader>
 
@@ -93,7 +93,7 @@ export default function LoginPage() {
             </Button>
 
             <p className="text-xs text-center text-muted-foreground mt-2">
-             Acesso Admin
+              Acesso Admin
             </p>
 
           </form>

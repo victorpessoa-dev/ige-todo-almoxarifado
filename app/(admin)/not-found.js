@@ -29,12 +29,11 @@ export default function NotFound() {
               Vamos te ajudar a voltar para um lugar seguro.
             </p>
 
-            {/* Botões */}
             <div className="space-y-3">
               <Button asChild className="w-full">
-                <Link href="/admin">
+                <Link href="/painel">
                   <Home className="h-4 w-4 mr-2" />
-                  Ir para o Início
+                  Ir para o Painel
                 </Link>
               </Button>
 
@@ -46,24 +45,23 @@ export default function NotFound() {
               </Button>
             </div>
 
-            {/* Links úteis */}
             <div className="mt-8 pt-6 border-t border-gray-200">
               <p className="text-sm text-gray-500 mb-3">Páginas disponíveis:</p>
               <div className="flex flex-wrap gap-2 justify-center">
                 <Button variant="ghost" size="sm" asChild>
-                  <Link href="/admin/painel">Painel</Link>
+                  <Link href="/painel">Painel</Link>
                 </Button>
                 <Button variant="ghost" size="sm" asChild>
-                  <Link href="/admin/tarefas">Tarefas</Link>
+                  <Link href="/tarefas">Tarefas</Link>
                 </Button>
                 <Button variant="ghost" size="sm" asChild>
-                  <Link href="/admin/lembretes">Lembretes</Link>
+                  <Link href="/lembretes">Lembretes</Link>
                 </Button>
                 <Button variant="ghost" size="sm" asChild>
-                  <Link href="/admin/calendario">Calendário</Link>
+                  <Link href="/calendario">Calendário</Link>
                 </Button>
                 <Button variant="ghost" size="sm" asChild>
-                  <Link href="/admin/inventario">Inventário</Link>
+                  <Link href="/inventario">Inventário</Link>
                 </Button>
               </div>
             </div>

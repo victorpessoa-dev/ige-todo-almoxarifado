@@ -182,7 +182,6 @@ export default function InventarioPage() {
 
   return (
     <div className="w-full min-h-screen mx-auto px-3 sm:px-6 lg:px-10 xl:px-16 py-4 sm:py-6">
-
       <div className="hidden print-area">
         <PrintEtiqueta
           produto={printDialog.produto}
@@ -191,9 +190,7 @@ export default function InventarioPage() {
       </div>
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-6">
-        <h1 className="text-xl sm:text-2xl md:text-3xl font-bold">
-          Inventário
-        </h1>
+        <h1 className="text-xl sm:text-2xl md:text-3xl font-bold">Inventário</h1>
 
         <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
           <DialogTrigger asChild>
@@ -220,13 +217,12 @@ export default function InventarioPage() {
         </Dialog>
       </div>
 
-      <div className="flex flex-col">
-
+      <div className="flex flex-col gap-6">
         <div className="flex gap-2 flex-wrap">
           <ImportExportProdutos />
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 gap-4">
           <BarcodeScannerCard
             barcodeInput={barcodeInput}
             barcodeProduct={barcodeProduct}
@@ -253,8 +249,46 @@ export default function InventarioPage() {
             />
           </div>
         </div>
-
       </div>
+
+      <Dialog
+        open={deleteDialog.open}
+        onOpenChange={() =>
+          setDeleteDialog({ open: false, produto: null })
+        }
+      >
+        <DialogContent className="w-[95vw] max-w-[420px] p-4 sm:p-6">
+          <DialogHeader>
+            <DialogTitle>Confirmar exclusão</DialogTitle>
+          </DialogHeader>
+
+          <p className="text-sm text-muted-foreground">
+            Deseja realmente excluir o produto{" "}
+            <strong>{deleteDialog.produto?.nome}</strong>?
+          </p>
+
+          <div className="flex flex-col sm:flex-row justify-end gap-2 mt-4">
+            <Button
+              variant="outline"
+              onClick={() =>
+                setDeleteDialog({ open: false, produto: null })
+              }
+            >
+              Cancelar
+            </Button>
+
+            <Button
+              variant="destructive"
+              onClick={async () => {
+                await deleteProduto(deleteDialog.produto.id)
+                setDeleteDialog({ open: false, produto: null })
+              }}
+            >
+              Excluir
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <Dialog
         open={deleteDialog.open}

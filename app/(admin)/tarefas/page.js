@@ -4,14 +4,13 @@ import { useState } from 'react'
 import { useData } from '@/contexts/data-context'
 import { PRIORIDADE_OPTIONS, STATUS_OPTIONS, sortByPriority } from '@/constants/task-config'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Textarea } from '@/components/ui/textarea'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { toast } from 'sonner'
 import { Plus, Pencil, Trash2, CheckCircle2, Circle, Clock, ChevronDown, ChevronUp, Calendar } from 'lucide-react'
+import EventForm from '@/components/events/EventForm'
 
 function groupByDate(items) {
   const groups = {}
@@ -59,7 +58,8 @@ export default function TarefasPage() {
     responsavel: '',
     data: null,
     status: 'a_fazer',
-    prioridade: 'medio'
+    prioridade: 'medio',
+    type: 'tarefa'
   })
 
   const tarefasPendentes = tarefas.filter(t => t.status !== 'concluido')
@@ -69,7 +69,15 @@ export default function TarefasPage() {
   const tarefasConcluidasGrouped = groupByDate(tarefasConcluidas)
 
   const resetForm = () => {
-    setForm({ titulo: '', descricao: '', responsavel: '', data: null, status: 'a_fazer', prioridade: 'medio' })
+    setForm({
+      titulo: '',
+      descricao: '',
+      responsavel: '',
+      data: null,
+      status: 'a_fazer',
+      prioridade: 'medio',
+      type: 'tarefa'
+    })
     setEditingTarefa(null)
   }
 
@@ -91,40 +99,56 @@ export default function TarefasPage() {
     setIsOpen(true)
   }
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
     if (!form.titulo.trim()) {
       toast.error('O titulo e obrigatorio!')
       return
     }
 
-    if (editingTarefa) {
-      updateTarefa(editingTarefa.id, form)
-      toast.success('Tarefa atualizada com sucesso!')
-    } else {
-      addTarefa(form)
-      toast.success('Tarefa criada com sucesso!')
+    try {
+      if (editingTarefa) {
+        await updateTarefa(editingTarefa.id, form)
+        toast.success('Tarefa atualizada com sucesso!')
+      } else {
+        await addTarefa(form)
+        toast.success('Tarefa criada com sucesso!')
+      }
+      handleOpenChange(false)
+    } catch (error) {
+      toast.error('Erro ao salvar tarefa: ' + error.message)
     }
-    handleOpenChange(false)
   }
 
-  const handleDelete = (id) => {
-    deleteTarefa(id)
-    toast.success('Tarefa removida!')
+  const handleDelete = async (id) => {
+    try {
+      await deleteTarefa(id)
+      toast.success('Tarefa removida com sucesso!')
+    } catch (error) {
+      toast.error('Erro ao remover tarefa: ' + error.message)
+    }
   }
 
-  const handleStatusChange = (id, newStatus) => {
-    updateTarefa(id, { status: newStatus })
-    if (newStatus === 'concluido') {
+  const handleStatusChange = async (id, newStatus) => {
+    try {
+      await updateTarefa(id, { status: newStatus })
+      if (newStatus === 'concluido') {
+        toast.success('Tarefa concluida!')
+      } else {
+        toast.success('Status atualizado!')
+      }
+    } catch (error) {
+      toast.error('Erro ao atualizar status: ' + error.message)
+    }
+  }
+
+  const handleConcluir = async (id) => {
+    try {
+      await updateTarefa(id, { status: 'concluido' })
       toast.success('Tarefa concluida!')
-    } else {
-      toast.success('Status atualizado!')
+    } catch (error) {
+      toast.error('Erro ao concluir tarefa: ' + error.message)
     }
-  }
-
-  const handleConcluir = (id) => {
-    updateTarefa(id, { status: 'concluido' })
-    toast.success('Tarefa concluida!')
   }
 
   const getStatusIcon = (status) => {
@@ -297,80 +321,24 @@ export default function TarefasPage() {
             <DialogHeader>
               <DialogTitle>{editingTarefa ? 'Editar Tarefa' : 'Nova Tarefa'}</DialogTitle>
             </DialogHeader>
-            <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-              <div className="flex flex-col gap-2">
-                <label className="text-sm font-medium">Titulo</label>
-                <Input
-                  value={form.titulo}
-                  onChange={(e) => setForm({ ...form, titulo: e.target.value })}
-                  placeholder="Digite o titulo da tarefa"
-                  required
-                />
-              </div>
-              <div className="flex flex-col gap-2">
-                <label className="text-sm font-medium">Descricao</label>
-                <Textarea
-                  value={form.descricao}
-                  onChange={(e) => setForm({ ...form, descricao: e.target.value })}
-                  placeholder="Digite a descricao"
-                  rows={3}
-                />
-              </div>
-              <div className="flex flex-col gap-2">
-                <label className="text-sm font-medium">Data</label>
-                <Input
-                  type="date"
-                  value={form.data ? form.data.toISOString().split('T')[0] : ''}
-                  onChange={(e) => setForm({ ...form, data: new Date(e.target.value) })}
-                />
-              </div>
-              <div className="flex flex-col gap-2">
-                <label className="text-sm font-medium">Responsavel</label>
-                <Input
-                  value={form.responsavel}
-                  onChange={(e) => setForm({ ...form, responsavel: e.target.value })}
-                  placeholder="Para quem e essa tarefa?"
-                />
-              </div>
-              <div className="flex flex-col gap-2">
-                <label className="text-sm font-medium">Prioridade</label>
-                <Select value={form.prioridade} onValueChange={(value) => setForm({ ...form, prioridade: value })}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {PRIORIDADE_OPTIONS.map((option) => (
-                      <SelectItem key={option.value} value={option.value}>
-                        {option.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="flex flex-col gap-2">
-                <label className="text-sm font-medium">Status</label>
-                <Select value={form.status} onValueChange={(value) => setForm({ ...form, status: value })}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {STATUS_OPTIONS.map((option) => (
-                      <SelectItem key={option.value} value={option.value}>
-                        {option.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <Button type="submit" className="mt-2">
-                {editingTarefa ? 'Salvar Alteracoes' : 'Criar Tarefa'}
-              </Button>
-            </form>
+            <EventForm
+              form={form}
+              setForm={setForm}
+              onSubmit={handleSubmit}
+              typeLocked="tarefa"
+              isEditing={!!editingTarefa}
+              onDelete={() => {
+                if (editingTarefa) {
+                  handleDelete(editingTarefa.id)
+                  handleOpenChange(false)
+                }
+              }}
+            />
           </DialogContent>
         </Dialog>
       </div>
 
-      <div className="flex flex-col gap-6 max-h-[85vh] overflow-y-auto pr-2 scroll-smooth scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent">
+      <div className="flex flex-col gap-4 sm:gap-6 max-h-[85vh] sm:max-h-[90vh] overflow-y-auto pr-2 scroll-smooth scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent pb-6">
         <div className="flex flex-col gap-4">
           <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
             <Circle className="h-5 w-5" />

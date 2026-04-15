@@ -39,8 +39,7 @@ function RelogioSlide({ onEnd }) {
   })
 
   return (
-    <div className="flex flex-col items-center justify-center h-full p-12 overflow-hidden">
-
+    <div className="flex flex-col items-center justify-center h-full overflow-hidden">
       <div className="flex items-center gap-3 mb-8">
         <Clock className="h-10 w-10 text-primary" />
         <h2 className="text-4xl font-bold text-foreground">Relogio Local</h2>
@@ -182,7 +181,7 @@ export default function PainelPage() {
 
   if (isFullscreen) {
     return (
-      <div className="fixed inset-0 z-50 bg-background flex flex-col">
+      <div className="fixed inset-0 pt-6 px-2 sm:px-4 md:px-6 lg:px-8 z-50 bg-background flex flex-col">
         <div className="flex-1 relative overflow-hidden">
           {slides[currentSlide].component}
           <Button
@@ -195,7 +194,7 @@ export default function PainelPage() {
           </Button>
         </div>
 
-        <div className="flex items-center justify-center gap-4 py-4 bg-muted/50">
+        <div className="flex items-center justify-center gap-4 p-4 bg-muted/50">
           {slides.map((slide, index) => (
             <button
               key={index}
@@ -214,8 +213,8 @@ export default function PainelPage() {
   }
 
   return (
-    <div className="h-[calc(100vh-3rem)] flex flex-col">
-      <div className="flex-1 relative bg-card rounded-xl border border-border overflow-hidden">
+    <div className="h-[calc(100vh-3rem)] flex flex-col pt-6 px-2 sm:px-4 md:px-6 lg:px-8">
+      <div className="flex-1 relative overflow-hidden">
         {slides[currentSlide].component}
 
         <Button
@@ -228,7 +227,7 @@ export default function PainelPage() {
         </Button>
       </div>
 
-      <div className="flex items-center justify-center gap-4 py-4 overflow-hidden">
+      <div className="flex items-center justify-center gap-4 pt-2 overflow-hidden">
         {slides.map((slide, index) => (
           <button
             key={index}

@@ -31,12 +31,12 @@ export function Sidebar({ onNavigate }) {
   }
 
   return (
-    <aside className="w-64 bg-sidebar text-sidebar-foreground flex flex-col h-full">
-      <div className="px-4 py-12 border-b border-sidebar-border">
-        <Image src="/ige-supergesso.png" alt="Logo" width={200} height={150} className="mx-auto mb-2" />
+    <aside className="w-64 bg-sidebar text-sidebar-foreground flex flex-col h-screen">
+      <div className="px-4 py-8">
+        <Image src="/ige-supergesso.png" alt="Logo" width={200} height={120} className="mx-auto mb-2" />
       </div>
 
-      <nav className="flex-1 p-4">
+      <nav className="flex-1 px-4 overflow-y-auto">
         <ul className="flex flex-col gap-2">
           {menuItems.map((item) => {
             const Icon = item.icon
@@ -62,10 +62,10 @@ export function Sidebar({ onNavigate }) {
         </ul>
       </nav>
 
-      <div className="p-4 border-t border-sidebar-border">
+      <div className="px-4 py-4 border-t border-sidebar-border">
         <Button
           variant="ghost"
-          className="w-full justify-start bg-white gap-3 text-red-600 hover:bg-red-50 hover:text-red-700"
+          className="w-full justify-start gap-3 bg-white text-red-600 hover:bg-red-50 hover:text-red-700"
           onClick={handleLogout}
         >
           <LogOut className="h-5 w-5" />
@@ -74,4 +74,4 @@ export function Sidebar({ onNavigate }) {
       </div>
     </aside>
   )
-}
+} 

@@ -42,8 +42,8 @@ export default function InventarioSlide({ produtos, active, onEnd }) {
 
     if (produtosOrdenados.length === 0) {
         return (
-            <div className="flex items-center justify-center h-full">
-                <p className="text-2xl text-muted-foreground">
+            <div className="flex items-center justify-center h-full px-4">
+                <p className="text-lg sm:text-2xl text-muted-foreground text-center">
                     Nenhum produto com estoque baixo
                 </p>
             </div>
@@ -51,31 +51,31 @@ export default function InventarioSlide({ produtos, active, onEnd }) {
     }
 
     return (
-        <div className="flex flex-col h-full px-10 py-6">
+        <div className="flex flex-col h-full px-4 sm:px-6 md:px-10 py-4 sm:py-6 w-full max-w-full overflow-hidden">
 
-            <div className="flex items-center justify-center gap-3 mb-6 w-full">
-                <AlertTriangle className="h-10 w-10 text-primary" />
-                <h2 className="text-4xl font-bold text-foreground">Alerta de Estoque</h2>
+            <div className="flex items-center justify-center gap-2 sm:gap-3 mb-4 sm:mb-6 w-full">
+                <AlertTriangle className="h-8 w-8 sm:h-10 sm:w-10 text-primary" />
+                <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-foreground">Alerta de Estoque</h2>
             </div>
 
             <div
                 ref={ref}
-                className="flex-1 overflow-y-auto pr-2"
+                className="flex-1 overflow-y-auto pr-1 sm:pr-2"
             >
-                <div className="flex flex-col gap-3 pb-10">
+                <div className="flex flex-col gap-2 sm:gap-3 pb-8 sm:pb-10">
                     {produtosOrdenados.map((produto) => {
                         const nivel = getNivel(produto)
 
                         return (
                             <div
                                 key={produto.id}
-                                className={`flex items-center justify-between px-5 py-4 rounded-xl shadow-md text-lg font-semibold ${getStyle(nivel)}`}
+                                className={`flex flex-col sm:flex-row sm:items-center justify-between px-3 sm:px-5 py-3 sm:py-4 rounded-xl shadow-md text-base sm:text-lg font-semibold gap-2 sm:gap-6 ${getStyle(nivel)}`}
                             >
-                                <div className="flex-1">
+                                <div className="flex-1 break-words">
                                     {produto.nome}
                                 </div>
 
-                                <div className="flex items-center gap-6 text-base font-medium">
+                                <div className="flex items-center gap-4 sm:gap-6 text-sm sm:text-base font-medium">
                                     <span>
                                         Estoque: <strong>{produto.estoque}</strong>
                                     </span>

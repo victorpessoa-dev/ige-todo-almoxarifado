@@ -4,14 +4,13 @@ import { useState } from 'react'
 import { useData } from '@/contexts/data-context'
 import { PRIORIDADE_OPTIONS, STATUS_OPTIONS, sortByPriority } from '@/constants/task-config'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Textarea } from '@/components/ui/textarea'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { toast } from 'sonner'
 import { Plus, Pencil, Trash2, CheckCircle2, Circle, Clock, ChevronDown, ChevronUp, StickyNote, Calendar } from 'lucide-react'
+import EventForm from '@/components/events/EventForm'
 
 function groupByDate(items) {
   const groups = {}
@@ -53,14 +52,23 @@ export default function LembretesPage() {
     destinatario: '',
     data: null,
     status: 'a_fazer',
-    prioridade: 'medio'
+    prioridade: 'medio',
+    type: 'lembrete'
   })
 
   const lembretesPendentes = lembretes.filter(l => l.status !== 'concluido')
   const lembretesConcluidos = lembretes.filter(l => l.status === 'concluido')
 
   const resetForm = () => {
-    setForm({ titulo: '', conteudo: '', destinatario: '', data: null, status: 'a_fazer', prioridade: 'medio' })
+    setForm({
+      titulo: '',
+      conteudo: '',
+      destinatario: '',
+      data: null,
+      status: 'a_fazer',
+      prioridade: 'medio',
+      type: 'lembrete'
+    })
     setEditingLembrete(null)
   }
 
@@ -69,32 +77,62 @@ export default function LembretesPage() {
     if (!open) resetForm()
   }
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
     if (!form.titulo.trim()) return toast.error('O titulo é obrigatório!')
 
-    if (editingLembrete) {
-      updateLembrete(editingLembrete.id, form)
-      toast.success('Atualizado!')
-    } else {
-      addLembrete(form)
-      toast.success('Criado!')
+    try {
+      if (editingLembrete) {
+        await updateLembrete(editingLembrete.id, form)
+        toast.success('Lembrete atualizado com sucesso!')
+      } else {
+        await addLembrete(form)
+        toast.success('Lembrete criado com sucesso!')
+      }
+      handleOpenChange(false)
+    } catch (error) {
+      toast.error('Erro ao salvar lembrete: ' + error.message)
     }
-
-    handleOpenChange(false)
   }
 
-  const handleDelete = (id) => {
-    deleteLembrete(id)
-    toast.success('Removido!')
+  const handleDelete = async (id) => {
+    try {
+      await deleteLembrete(id)
+      toast.success('Lembrete removido com sucesso!')
+    } catch (error) {
+      toast.error('Erro ao remover lembrete: ' + error.message)
+    }
   }
 
-  const handleStatusChange = (id, status) => {
-    updateLembrete(id, { status })
+  const handleStatusChange = async (id, status) => {
+    try {
+      await updateLembrete(id, { status })
+      toast.success('Status atualizado!')
+    } catch (error) {
+      toast.error('Erro ao atualizar status: ' + error.message)
+    }
   }
 
-  const handleConcluir = (id) => {
-    updateLembrete(id, { status: 'concluido' })
+  const handleConcluir = async (id) => {
+    try {
+      await updateLembrete(id, { status: 'concluido' })
+      toast.success('Lembrete concluído!')
+    } catch (error) {
+      toast.error('Erro ao concluir lembrete: ' + error.message)
+    }
+  }
+
+  const handleEdit = (lembrete) => {
+    setEditingLembrete(lembrete)
+    setForm({
+      titulo: lembrete.titulo || '',
+      conteudo: lembrete.conteudo || '',
+      destinatario: lembrete.destinatario || '',
+      data: lembrete.data ? new Date(lembrete.data) : null,
+      status: lembrete.status,
+      prioridade: lembrete.prioridade || 'medio'
+    })
+    setIsOpen(true)
   }
 
   if (!isLoaded) return <div className="animate-pulse">Carregando...</div>
@@ -169,7 +207,12 @@ export default function LembretesPage() {
               )}
 
               <div className="flex gap-1">
-                <Button variant="ghost" size="icon" className="h-9 w-9 sm:h-8 sm:w-8">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-9 w-9 sm:h-8 sm:w-8"
+                  onClick={() => handleEdit(lembrete)}
+                >
                   <Pencil className="h-4 w-4" />
                 </Button>
 
@@ -224,40 +267,24 @@ export default function LembretesPage() {
               <DialogTitle>{editingLembrete ? 'Editar' : 'Novo Lembrete'}</DialogTitle>
             </DialogHeader>
 
-            <form onSubmit={handleSubmit} className="flex flex-col gap-3">
-              <Input
-                placeholder="Título"
-                value={form.titulo}
-                onChange={(e) => setForm({ ...form, titulo: e.target.value })}
-              />
-
-              <Textarea
-                placeholder="Conteúdo"
-                value={form.conteudo}
-                onChange={(e) => setForm({ ...form, conteudo: e.target.value })}
-              />
-
-              <Input
-                type="date"
-                value={form.data ? form.data.toISOString().split('T')[0] : ''}
-                onChange={(e) => setForm({ ...form, data: new Date(e.target.value) })}
-              />
-
-              <Input
-                placeholder="Destinatário"
-                value={form.destinatario}
-                onChange={(e) => setForm({ ...form, destinatario: e.target.value })}
-              />
-
-              <Button type="submit">
-                {editingLembrete ? 'Salvar' : 'Criar'}
-              </Button>
-            </form>
+            <EventForm
+              form={form}
+              setForm={setForm}
+              onSubmit={handleSubmit}
+              typeLocked="lembrete"
+              isEditing={!!editingLembrete}
+              onDelete={() => {
+                if (editingLembrete) {
+                  handleDelete(editingLembrete.id)
+                  handleOpenChange(false)
+                }
+              }}
+            />
           </DialogContent>
         </Dialog>
       </div>
 
-      <div className="flex flex-col gap-6 max-h-[85vh] overflow-y-auto pr-2 pb-6">
+      <div className="flex flex-col gap-4 sm:gap-6 max-h-[85vh] sm:max-h-[90vh] overflow-y-auto pr-2 pb-6">
 
         {groupByDate(lembretesPendentes).map(([date, items]) => (
           <DateGroup key={date} dateLabel={date} items={items} />

@@ -7,12 +7,10 @@ import dayGridPlugin from '@fullcalendar/daygrid'
 import interactionPlugin from '@fullcalendar/interaction'
 import ptBrLocale from '@fullcalendar/core/locales/pt-br'
 import { useData } from '@/contexts/data-context'
-import { PRIORIDADE_OPTIONS, STATUS_OPTIONS } from '@/constants/task-config'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Textarea } from '@/components/ui/textarea'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
+import { toast } from 'sonner'
+import EventForm from '@/components/events/EventForm'
 
 const defaultForm = {
     type: 'tarefa',
@@ -137,33 +135,45 @@ export default function CalendarPage() {
             payload.destinatario = form.destinatario
         }
 
-        if (selectedEvent) {
-            if (selectedEvent.type === 'tarefa') {
-                await updateTarefa(selectedEvent.id, payload)
+        try {
+            if (selectedEvent) {
+                if (selectedEvent.type === 'tarefa') {
+                    await updateTarefa(selectedEvent.id, payload)
+                    toast.success('Tarefa atualizada com sucesso!')
+                } else {
+                    await updateLembrete(selectedEvent.id, payload)
+                    toast.success('Lembrete atualizado com sucesso!')
+                }
             } else {
-                await updateLembrete(selectedEvent.id, payload)
+                if (form.type === 'tarefa') {
+                    await addTarefa(payload)
+                    toast.success('Tarefa criada com sucesso!')
+                } else {
+                    await addLembrete(payload)
+                    toast.success('Lembrete criado com sucesso!')
+                }
             }
-        } else {
-            if (form.type === 'tarefa') {
-                await addTarefa(payload)
-            } else {
-                await addLembrete(payload)
-            }
+            setDialogOpen(false)
+        } catch (error) {
+            toast.error('Erro ao salvar evento: ' + error.message)
         }
-
-        setDialogOpen(false)
     }
 
     const handleDelete = async () => {
         if (!selectedEvent) return
 
-        if (selectedEvent.type === 'tarefa') {
-            await deleteTarefa(selectedEvent.id)
-        } else {
-            await deleteLembrete(selectedEvent.id)
+        try {
+            if (selectedEvent.type === 'tarefa') {
+                await deleteTarefa(selectedEvent.id)
+                toast.success('Tarefa removida com sucesso!')
+            } else {
+                await deleteLembrete(selectedEvent.id)
+                toast.success('Lembrete removido com sucesso!')
+            }
+            setDialogOpen(false)
+        } catch (error) {
+            toast.error('Erro ao excluir evento: ' + error.message)
         }
-
-        setDialogOpen(false)
     }
 
     return (
@@ -196,123 +206,14 @@ export default function CalendarPage() {
                     <DialogHeader>
                         <DialogTitle>{selectedEvent ? 'Editar evento' : 'Criar evento'}</DialogTitle>
                     </DialogHeader>
-                    <form onSubmit={handleSubmit} className="grid gap-4">
-                        <div className="grid gap-2">
-                            <label className="text-sm font-medium">Tipo</label>
-                            <Select value={form.type} onValueChange={(value) => setForm({ ...form, type: value })}>
-                                <SelectTrigger>
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="tarefa">Tarefa</SelectItem>
-                                    <SelectItem value="lembrete">Lembrete</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
-
-                        <div className="grid gap-2">
-                            <label className="text-sm font-medium">Título</label>
-                            <Input
-                                value={form.titulo}
-                                onChange={(e) => setForm({ ...form, titulo: e.target.value })}
-                                placeholder="Digite o título"
-                                required
-                            />
-                        </div>
-
-                        {form.type === 'tarefa' ? (
-                            <>
-                                <div className="grid gap-2">
-                                    <label className="text-sm font-medium">Descrição</label>
-                                    <Textarea
-                                        value={form.descricao}
-                                        onChange={(e) => setForm({ ...form, descricao: e.target.value })}
-                                        placeholder="Descrição da tarefa"
-                                        rows={3}
-                                    />
-                                </div>
-                                <div className="grid gap-2">
-                                    <label className="text-sm font-medium">Responsável</label>
-                                    <Input
-                                        value={form.responsavel}
-                                        onChange={(e) => setForm({ ...form, responsavel: e.target.value })}
-                                        placeholder="Responsável pela tarefa"
-                                    />
-                                </div>
-                            </>
-                        ) : (
-                            <>
-                                <div className="grid gap-2">
-                                    <label className="text-sm font-medium">Conteúdo</label>
-                                    <Textarea
-                                        value={form.conteudo}
-                                        onChange={(e) => setForm({ ...form, conteudo: e.target.value })}
-                                        placeholder="Conteúdo do lembrete"
-                                        rows={3}
-                                    />
-                                </div>
-                                <div className="grid gap-2">
-                                    <label className="text-sm font-medium">Destinatário</label>
-                                    <Input
-                                        value={form.destinatario}
-                                        onChange={(e) => setForm({ ...form, destinatario: e.target.value })}
-                                        placeholder="Destinatário do lembrete"
-                                    />
-                                </div>
-                            </>
-                        )}
-
-                        <div className="grid gap-4 sm:grid-cols-2">
-                            <div className="grid gap-2">
-                                <label className="text-sm font-medium">Data</label>
-                                <Input
-                                    type="date"
-                                    value={form.data}
-                                    onChange={(e) => setForm({ ...form, data: e.target.value })}
-                                    required
-                                />
-                            </div>
-                            <div className="grid gap-2">
-                                <label className="text-sm font-medium">Prioridade</label>
-                                <Select value={form.prioridade} onValueChange={(value) => setForm({ ...form, prioridade: value })}>
-                                    <SelectTrigger>
-                                        <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {PRIORIDADE_OPTIONS.map((option) => (
-                                            <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                        </div>
-
-                        <div className="grid gap-4 sm:grid-cols-2">
-                            <div className="grid gap-2">
-                                <label className="text-sm font-medium">Status</label>
-                                <Select value={form.status} onValueChange={(value) => setForm({ ...form, status: value })}>
-                                    <SelectTrigger>
-                                        <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {STATUS_OPTIONS.map((option) => (
-                                            <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                            <div />
-                        </div>
-
-                        <DialogFooter className="mt-4 gap-2">
-                            {selectedEvent && (
-                                <Button type="button" variant="destructive" onClick={handleDelete}>
-                                    Excluir
-                                </Button>
-                            )}
-                            <Button type="submit">{selectedEvent ? 'Salvar alterações' : 'Criar evento'}</Button>
-                        </DialogFooter>
-                    </form>
+                    <EventForm
+                        form={form}
+                        setForm={setForm}
+                        onSubmit={handleSubmit}
+                        typeLocked={null}
+                        isEditing={!!selectedEvent}
+                        onDelete={handleDelete}
+                    />
                 </DialogContent>
             </Dialog>
         </div>
