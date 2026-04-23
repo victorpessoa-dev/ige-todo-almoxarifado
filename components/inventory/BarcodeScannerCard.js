@@ -39,9 +39,17 @@ export default function BarcodeScannerCard({
   const [cameraError, setCameraError] = useState('')
   const [isStartingCamera, setIsStartingCamera] = useState(false)
   const [scanHistory, setScanHistory] = useState([])
+  const [isMobileDevice, setIsMobileDevice] = useState(false)
 
   useEffect(() => {
     codeReaderRef.current = new BrowserMultiFormatReader()
+    const userAgent = navigator.userAgent || ''
+    const mobileMatch =
+      /Android|iPhone|iPad|iPod|IEMobile|Opera Mini|BlackBerry|webOS/i.test(
+        userAgent
+      )
+
+    setIsMobileDevice(mobileMatch)
 
     return () => {
       if (scanResetTimeoutRef.current) {
@@ -208,6 +216,10 @@ export default function BarcodeScannerCard({
 
   const startCamera = async () => {
     if (isStartingCamera) return
+    if (!isMobileDevice) {
+      setCameraError('A câmera do scanner está disponível somente no celular.')
+      return
+    }
 
     stopCamera()
     setCameraError('')
@@ -254,7 +266,7 @@ export default function BarcodeScannerCard({
             size="sm"
             variant="outline"
             onClick={isCameraOpen ? stopCamera : startCamera}
-            disabled={isStartingCamera}
+            disabled={isStartingCamera || (!isMobileDevice && !isCameraOpen)}
           >
             {isCameraOpen ? (
               <CameraOff className="mr-1 h-4 w-4" />
@@ -308,6 +320,11 @@ export default function BarcodeScannerCard({
         </div>
 
         <p className="mb-3 text-xs text-muted-foreground">{CAMERA_HELP}</p>
+        {!isMobileDevice && (
+          <p className="mb-3 text-xs text-amber-600">
+            A câmera fica habilitada apenas no celular. No computador, use a digitação manual.
+          </p>
+        )}
         {scanMode === 'continuous' && (
           <p className="mb-3 flex items-center gap-2 text-xs text-muted-foreground">
             <Volume2 className="h-3.5 w-3.5" />
