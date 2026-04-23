@@ -7,9 +7,10 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Barcode, Camera, CameraOff } from 'lucide-react'
+import { Barcode, Camera, CameraOff, History, Volume2 } from 'lucide-react'
 
 const CAMERA_HELP = 'No celular, permita o acesso à câmera para escanear.'
+const MAX_HISTORY_ITEMS = 8
 
 export default function BarcodeScannerCard({
   barcodeInput,
@@ -28,6 +29,8 @@ export default function BarcodeScannerCard({
   const controlsRef = useRef(null)
   const lastScanRef = useRef(null)
   const scanResetTimeoutRef = useRef(null)
+  const audioContextRef = useRef(null)
+  const scanHistoryRef = useRef([])
 
   const [isCameraOpen, setIsCameraOpen] = useState(false)
   const [scanSuccess, setScanSuccess] = useState(false)
@@ -35,6 +38,7 @@ export default function BarcodeScannerCard({
   const [scanMode, setScanMode] = useState('single')
   const [cameraError, setCameraError] = useState('')
   const [isStartingCamera, setIsStartingCamera] = useState(false)
+  const [scanHistory, setScanHistory] = useState([])
 
   useEffect(() => {
     codeReaderRef.current = new BrowserMultiFormatReader()
@@ -45,11 +49,19 @@ export default function BarcodeScannerCard({
       }
 
       stopCamera()
+      audioContextRef.current?.close?.().catch?.(() => {})
     }
   }, [])
 
+  useEffect(() => {
+    scanHistoryRef.current = scanHistory
+  }, [scanHistory])
+
   const stopCamera = () => {
     setIsCameraOpen(false)
+    setIsStartingCamera(false)
+    setScanSuccess(false)
+    lastScanRef.current = null
 
     if (scanResetTimeoutRef.current) {
       clearTimeout(scanResetTimeoutRef.current)
@@ -60,12 +72,88 @@ export default function BarcodeScannerCard({
       controlsRef.current?.stop()
     } catch {}
 
+    try {
+      codeReaderRef.current?.reset()
+    } catch {}
+
     controlsRef.current = null
 
     if (videoRef.current?.srcObject) {
       videoRef.current.srcObject.getTracks().forEach((t) => t.stop())
       videoRef.current.srcObject = null
     }
+  }
+
+  const playScanSound = async () => {
+    if (typeof window === 'undefined') return
+
+    const AudioContextClass = window.AudioContext || window.webkitAudioContext
+    if (!AudioContextClass) return
+
+    if (!audioContextRef.current || audioContextRef.current.state === 'closed') {
+      audioContextRef.current = new AudioContextClass()
+    }
+
+    const ctx = audioContextRef.current
+
+    if (ctx.state === 'suspended') {
+      try {
+        await ctx.resume()
+      } catch {
+        return
+      }
+    }
+
+    const now = ctx.currentTime
+    const notes = [
+      { at: 0, frequency: 1568, duration: 0.05 },
+      { at: 0.075, frequency: 2093, duration: 0.05 }
+    ]
+
+    notes.forEach(({ at, frequency, duration }) => {
+      const oscillator = ctx.createOscillator()
+      const gain = ctx.createGain()
+
+      oscillator.type = 'square'
+      oscillator.frequency.setValueAtTime(frequency, now + at)
+
+      gain.gain.setValueAtTime(0.0001, now + at)
+      gain.gain.exponentialRampToValueAtTime(0.18, now + at + 0.01)
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + at + duration)
+
+      oscillator.connect(gain)
+      gain.connect(ctx.destination)
+
+      oscillator.start(now + at)
+      oscillator.stop(now + at + duration)
+    })
+  }
+
+  const registerHistoryItem = (produto, code) => {
+    const historyKey = `${modo}:${produto?.id || code}`
+    const timestamp = new Date().toISOString()
+    const existingItem = scanHistoryRef.current.find((item) => item.key === historyKey)
+    const nextQuantity = existingItem ? existingItem.quantidade + 1 : 1
+
+    setScanHistory((prev) => {
+      const updatedItem = {
+        key: historyKey,
+        code,
+        produto,
+        nome: produto?.nome || 'Código não encontrado',
+        modo,
+        quantidade: nextQuantity,
+        lastScannedAt: timestamp,
+        found: Boolean(produto)
+      }
+
+      return [updatedItem, ...prev.filter((item) => item.key !== historyKey)].slice(
+        0,
+        MAX_HISTORY_ITEMS
+      )
+    })
+
+    return nextQuantity
   }
 
   const handleScanResult = (result, error) => {
@@ -81,6 +169,7 @@ export default function BarcodeScannerCard({
     lastScanRef.current = code
     setScanSuccess(true)
     setBarcodeInput(code)
+    playScanSound()
 
     navigator.vibrate?.(150)
 
@@ -91,7 +180,7 @@ export default function BarcodeScannerCard({
     scanResetTimeoutRef.current = setTimeout(() => {
       setScanSuccess(false)
       lastScanRef.current = null
-    }, 1200)
+    }, 900)
 
     const produto = produtos.find(
       (p) => p.cod_barra === code || p.cod === code
@@ -99,22 +188,28 @@ export default function BarcodeScannerCard({
 
     if (produto) {
       setBarcodeProduct(produto)
+      const nextQuantity = registerHistoryItem(produto, code)
 
       if (scanMode === 'single') {
+        setScanQuantity(1)
         stopCamera()
 
         setTimeout(() => {
-          openMovimentoDialog(produto, modo, scanQuantity)
+          openMovimentoDialog(produto, modo, 1)
         }, 150)
+      } else {
+        setScanQuantity(nextQuantity)
       }
     } else {
       setBarcodeProduct(null)
+      registerHistoryItem(null, code)
     }
   }
 
   const startCamera = async () => {
     if (isStartingCamera) return
 
+    stopCamera()
     setCameraError('')
     setIsStartingCamera(true)
 
@@ -213,40 +308,50 @@ export default function BarcodeScannerCard({
         </div>
 
         <p className="mb-3 text-xs text-muted-foreground">{CAMERA_HELP}</p>
+        {scanMode === 'continuous' && (
+          <p className="mb-3 flex items-center gap-2 text-xs text-muted-foreground">
+            <Volume2 className="h-3.5 w-3.5" />
+            Cada leitura toca um bip e soma no histórico em tempo real.
+          </p>
+        )}
 
-        <div className="mb-4 overflow-hidden rounded-xl border bg-black">
-          <div className="relative aspect-[4/3] w-full">
-            <video
-              ref={videoRef}
-              className="h-full w-full object-cover"
-              autoPlay
-              muted
-              playsInline
-            />
+        {(isCameraOpen || isStartingCamera) && (
+          <div className="mb-4 overflow-hidden rounded-xl border bg-black">
+            <div className="relative aspect-[4/3] w-full">
+              <video
+                ref={videoRef}
+                className="h-full w-full object-cover"
+                autoPlay
+                muted
+                playsInline
+              />
 
-            {isCameraOpen && (
-              <>
-                <div className="pointer-events-none absolute inset-0 bg-black/25" />
+              {isCameraOpen && (
+                <>
+                  <div className="pointer-events-none absolute inset-0 bg-black/25" />
 
-                <div className="pointer-events-none absolute inset-0 flex items-center justify-center px-6">
-                  <div
-                    className={`h-32 w-full max-w-72 rounded-xl border-2 ${
-                      scanSuccess ? 'border-green-400' : 'border-white'
-                    }`}
-                  />
-                </div>
+                  <div className="pointer-events-none absolute inset-0 flex items-center justify-center px-6">
+                    <div
+                      className={`h-32 w-full max-w-72 rounded-xl border-2 ${
+                        scanSuccess ? 'border-green-400' : 'border-white'
+                      }`}
+                    >
+                      <div className="absolute left-3 right-3 top-1/2 h-0.5 -translate-y-1/2 rounded-full bg-red-400/90 shadow-[0_0_12px_rgba(248,113,113,0.8)]" />
+                    </div>
+                  </div>
 
-                <p className="absolute top-3 w-full text-center text-xs text-white">
-                  {modo === 'entrada' ? 'Modo entrada' : 'Modo saída'}
-                </p>
+                  <p className="absolute top-3 w-full text-center text-xs text-white">
+                    {modo === 'entrada' ? 'Modo entrada' : 'Modo saída'}
+                  </p>
 
-                <p className="absolute bottom-3 w-full text-center text-xs text-white">
-                  Posicione o código dentro da moldura
-                </p>
-              </>
-            )}
+                  <p className="absolute bottom-3 w-full text-center text-xs text-white">
+                    Posicione o código dentro da moldura
+                  </p>
+                </>
+              )}
+            </div>
           </div>
-        </div>
+        )}
 
         {cameraError && (
           <div className="mb-4 rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
@@ -293,7 +398,7 @@ export default function BarcodeScannerCard({
             </p>
             {scanMode === 'continuous' && (
               <p className="mt-2 text-xs text-muted-foreground">
-                Produto identificado no scan contínuo. A câmera segue aberta para novas leituras.
+                Produto identificado no scan contínuo. A câmera segue aberta e a quantidade vai sendo somada.
               </p>
             )}
 
@@ -335,6 +440,88 @@ export default function BarcodeScannerCard({
                 Saída
               </Button>
             </div>
+          </div>
+        )}
+
+        {scanMode === 'continuous' && (
+          <div className="mt-4 rounded-lg border bg-card p-4">
+            <div className="mb-3 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <History className="h-4 w-4" />
+                <p className="font-medium">Histórico em tempo real</p>
+              </div>
+
+              <Button
+                type="button"
+                size="sm"
+                variant="ghost"
+                onClick={() => {
+                  setScanHistory([])
+                  setBarcodeProduct(null)
+                  setBarcodeInput('')
+                  setScanQuantity(1)
+                }}
+              >
+                Limpar histórico
+              </Button>
+            </div>
+
+            {scanHistory.length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                As leituras do scan contínuo vão aparecer aqui com quantidade acumulada.
+              </p>
+            ) : (
+              <div className="space-y-2">
+                {scanHistory.map((item) => (
+                  <div
+                    key={item.key}
+                    className="flex flex-col gap-3 rounded-lg border p-3 sm:flex-row sm:items-center sm:justify-between"
+                  >
+                    <div className="min-w-0">
+                      <p className="truncate font-medium">{item.nome}</p>
+                      <p className="text-xs text-muted-foreground">
+                        Código: {item.code} • {item.modo === 'entrada' ? 'Entrada' : 'Saída'} • Qtde:{' '}
+                        {item.quantidade}
+                      </p>
+                    </div>
+
+                    <div className="flex flex-wrap gap-2">
+                      {item.found && (
+                        <>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              setBarcodeInput(item.code)
+                              setBarcodeProduct(item.produto)
+                              setScanQuantity(item.quantidade)
+                            }}
+                          >
+                            Selecionar
+                          </Button>
+
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant={item.modo === 'entrada' ? 'default' : 'destructive'}
+                            onClick={() =>
+                              openMovimentoDialog(
+                                item.produto,
+                                item.modo,
+                                item.quantidade
+                              )
+                            }
+                          >
+                            Lançar {item.quantidade}
+                          </Button>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
       </CardContent>
