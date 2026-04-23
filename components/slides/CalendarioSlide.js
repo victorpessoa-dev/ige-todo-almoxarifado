@@ -17,8 +17,8 @@ export function CalendarioSlide({ active = false, onEnd }) {
             id: `tarefa-${tarefa.id}`,
             title: tarefa.titulo || 'Tarefa sem título',
             start: tarefa.data || null,
-            backgroundColor: '#3b82f6',
-            borderColor: '#3b82f6',
+            backgroundColor: '#028358',
+            borderColor: '#028358',
             textColor: '#ffffff',
             extendedProps: {
                 type: 'tarefa',
@@ -31,8 +31,8 @@ export function CalendarioSlide({ active = false, onEnd }) {
             id: `lembrete-${lembrete.id}`,
             title: lembrete.titulo || 'Lembrete sem título',
             start: lembrete.data || null,
-            backgroundColor: '#8b5cf6',
-            borderColor: '#8b5cf6',
+            backgroundColor: '#6442b1',
+            borderColor: '#6442b1',
             textColor: '#ffffff',
             extendedProps: {
                 type: 'lembrete',
@@ -53,13 +53,13 @@ export function CalendarioSlide({ active = false, onEnd }) {
     }, [active])
 
     return (
-        <div className="flex flex-col h-full w-full min-h-0 px-8 py-4 m-0">
+        <div className="flex h-full w-full min-h-0 flex-col px-4 py-4 sm:px-6 md:px-8">
             <div className="flex items-center justify-center gap-3 mb-6 w-full">
                 <CalendarDays className="h-10 w-10 text-primary" />
                 <h2 className="text-4xl font-bold text-foreground">Calendário</h2>
             </div>
 
-            <div ref={ref} className="w-full h-full min-h-0 overflow-y-auto">
+            <div ref={ref} className="slide-scroll scrollbar-soft h-full w-full min-h-0 overflow-y-auto">
                 <div className="h-full min-h-[600px]">
                     <FullCalendar
                         plugins={[dayGridPlugin]}

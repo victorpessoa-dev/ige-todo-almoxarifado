@@ -77,26 +77,26 @@ export function LembretesSlide({ lembretes, onEnd, active }) {
     }, [active])
 
     return (
-        <div className="flex flex-col items-center h-full px-8 py-4 m-0">
-            <div className="flex items-center gap-3 mb-6">
-                <StickyNote className="h-10 w-10 text-primary" />
-                <h2 className="text-4xl font-bold text-foreground">
+        <div className="flex h-full min-h-0 flex-col items-center px-4 py-4 sm:px-6 md:px-8">
+            <div className="flex items-center gap-2 sm:gap-3 mb-4 sm:mb-6">
+                <StickyNote className="h-8 w-8 sm:h-10 sm:w-10 text-primary" />
+                <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-foreground">
                     Lembretes
                 </h2>
             </div>
 
             {isEmpty ? (
-                <div className="flex-1 flex items-center justify-center">
-                    <p className="text-xl text-muted-foreground">
+                <div className="flex-1 flex items-center justify-center px-4">
+                    <p className="text-base sm:text-xl text-muted-foreground text-center">
                         Nenhum lembrete pendente
                     </p>
                 </div>
             ) : (
                 <div
                     ref={ref}
-                    className="w-full max-w-5xl flex-1 overflow-auto"
+                    className="slide-scroll scrollbar-soft w-full flex-1 overflow-auto px-2"
                 >
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
                         {pendentes.map((lembrete) => (
                             <LembreteCard
                                 key={lembrete.id}
@@ -106,6 +106,12 @@ export function LembretesSlide({ lembretes, onEnd, active }) {
                     </div>
                 </div>
             )}
+
+            <div className="mt-2 text-muted-foreground">
+                <p className="text-sm sm:text-base">
+                    Total: {pendentes.length}
+                </p>
+            </div>
         </div>
     )
 }

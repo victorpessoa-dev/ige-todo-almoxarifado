@@ -181,8 +181,8 @@ export default function PainelPage() {
 
   if (isFullscreen) {
     return (
-      <div className="fixed inset-0 pt-6 px-2 sm:px-4 md:px-6 lg:px-8 z-50 bg-background flex flex-col">
-        <div className="flex-1 relative overflow-hidden">
+      <div className="fixed inset-0 z-50 flex flex-col bg-background px-3 py-3 sm:px-4 sm:py-4 md:px-6">
+        <div className="relative min-h-0 flex-1 overflow-hidden rounded-2xl border bg-card/40">
           {slides[currentSlide].component}
           <Button
             variant="ghost"
@@ -194,7 +194,7 @@ export default function PainelPage() {
           </Button>
         </div>
 
-        <div className="flex items-center justify-center gap-4 p-4 bg-muted/50">
+        <div className="mt-3 flex shrink-0 flex-wrap items-center justify-center gap-3 rounded-2xl border bg-muted/40 p-3">
           {slides.map((slide, index) => (
             <button
               key={index}
@@ -213,8 +213,8 @@ export default function PainelPage() {
   }
 
   return (
-    <div className="h-[calc(100vh-3rem)] flex flex-col pt-6 px-2 sm:px-4 md:px-6 lg:px-8">
-      <div className="flex-1 relative overflow-hidden">
+    <div className="flex h-full min-h-0 flex-col gap-3">
+      <div className="relative min-h-0 flex-1 overflow-hidden rounded-2xl border bg-card/40">
         {slides[currentSlide].component}
 
         <Button
@@ -227,7 +227,7 @@ export default function PainelPage() {
         </Button>
       </div>
 
-      <div className="flex items-center justify-center gap-4 pt-2 overflow-hidden">
+      <div className="flex shrink-0 flex-wrap items-center justify-center gap-3 overflow-hidden rounded-2xl border bg-muted/30 p-3">
         {slides.map((slide, index) => (
           <button
             key={index}

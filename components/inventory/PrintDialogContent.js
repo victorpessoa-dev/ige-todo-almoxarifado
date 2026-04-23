@@ -27,13 +27,15 @@ export default function PrintDialogContent({ produto, onCancel }) {
     const canvas = canvasRef.current
     const ctx = canvas.getContext('2d')
 
-    const pxScale = 100
+    const pxScale = 180
     const widthPx = width * pxScale
     const heightPx = height * pxScale
 
     canvas.width = widthPx
     canvas.height = heightPx
 
+    ctx.imageSmoothingEnabled = true
+    ctx.imageSmoothingQuality = 'high'
     ctx.fillStyle = '#fff'
     ctx.fillRect(0, 0, widthPx, heightPx)
 
@@ -41,15 +43,10 @@ export default function PrintDialogContent({ produto, onCancel }) {
     img.src = '/ige-supergesso.png'
 
     img.onload = () => {
-      ctx.globalAlpha = 0.08
-      ctx.drawImage(
-        img,
-        widthPx * 0.1,
-        heightPx * 0.1,
-        widthPx * 0.8,
-        heightPx * 0.8
-      )
-      ctx.globalAlpha = 1
+      ctx.save()
+      ctx.globalAlpha = 0.12
+      ctx.drawImage(img, 0, 0, widthPx, heightPx)
+      ctx.restore()
 
       ctx.fillStyle = '#000'
       ctx.textAlign = 'center'
@@ -72,12 +69,16 @@ export default function PrintDialogContent({ produto, onCancel }) {
 
       JsBarcode(barcodeCanvas, String(produto.cod), {
         format: 'CODE128',
-        width: Math.max(1, widthPx / 300),
-        height: heightPx * 0.4,
+        width: Math.max(2, Math.round(widthPx / 210)),
+        height: heightPx * 0.38,
         displayValue: false,
-        margin: 0
+        margin: 0,
+        background: '#ffffff',
+        lineColor: '#111111'
       })
 
+      ctx.save()
+      ctx.imageSmoothingEnabled = false
       ctx.drawImage(
         barcodeCanvas,
         widthPx * 0.1,
@@ -85,6 +86,7 @@ export default function PrintDialogContent({ produto, onCancel }) {
         widthPx * 0.8,
         heightPx * 0.4
       )
+      ctx.restore()
 
       setImage(canvas.toDataURL('image/png'))
     }

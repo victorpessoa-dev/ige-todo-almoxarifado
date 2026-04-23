@@ -1,11 +1,23 @@
 'use client'
 
-import { useState, useMemo } from 'react'
-import { Button } from '@/components/ui/button'
+import { useMemo, useState } from 'react'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { TrendingUp, TrendingDown, Printer, ArrowUpDown } from 'lucide-react'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow
+} from '@/components/ui/table'
+import {
+  ArrowUpDown,
+  Printer,
+  TrendingDown,
+  TrendingUp
+} from 'lucide-react'
 
 export default function ProductTable({
   produtos,
@@ -27,6 +39,7 @@ export default function ProductTable({
           direction: prev.direction === 'asc' ? 'desc' : 'asc'
         }
       }
+
       return { key, direction: 'asc' }
     })
   }
@@ -51,8 +64,9 @@ export default function ProductTable({
   }, [produtos, sortConfig])
 
   const SortHeader = ({ label, columnKey }) => (
-    <TableHead>
+    <TableHead className="whitespace-nowrap">
       <button
+        type="button"
         onClick={() => handleSort(columnKey)}
         className="flex items-center gap-1 hover:text-primary"
       >
@@ -63,12 +77,12 @@ export default function ProductTable({
   )
 
   return (
-    <Card>
-      <CardHeader>
+    <Card className="rounded-none border-0 shadow-none">
+      <CardHeader className="border-b px-4 sm:px-6">
         <CardTitle>Produtos</CardTitle>
       </CardHeader>
 
-      <CardContent>
+      <CardContent className="px-2">
         <Table>
           <TableHeader>
             <TableRow>
@@ -78,7 +92,7 @@ export default function ProductTable({
               <SortHeader label="Mín" columnKey="min" />
               <SortHeader label="Máx" columnKey="max" />
               <TableHead>Status</TableHead>
-              <TableHead>Ações</TableHead>
+              <TableHead className="min-w-[260px]">Ações</TableHead>
             </TableRow>
           </TableHeader>
 
@@ -86,7 +100,9 @@ export default function ProductTable({
             {sortedProdutos.map((produto) => (
               <TableRow key={produto.id}>
                 <TableCell>{produto.cod}</TableCell>
-                <TableCell>{produto.nome}</TableCell>
+                <TableCell className="max-w-[280px] truncate font-medium">
+                  {produto.nome}
+                </TableCell>
                 <TableCell>{produto.estoque}</TableCell>
                 <TableCell>{produto.min}</TableCell>
                 <TableCell>{produto.max}</TableCell>
@@ -103,7 +119,11 @@ export default function ProductTable({
 
                 <TableCell>
                   <div className="flex flex-wrap gap-2">
-                    <Button size="sm" variant="outline" onClick={() => openMovimentoDialog(produto, 'entrada', 1)}>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => openMovimentoDialog(produto, 'entrada', 1)}
+                    >
                       <TrendingUp className="h-3 w-3" />
                     </Button>
 
@@ -116,15 +136,27 @@ export default function ProductTable({
                       <TrendingDown className="h-3 w-3" />
                     </Button>
 
-                    <Button size="sm" variant="outline" onClick={() => setPrintDialog({ open: true, produto })}>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setPrintDialog({ open: true, produto })}
+                    >
                       <Printer className="h-3 w-3" />
                     </Button>
 
-                    <Button size="sm" variant="outline" onClick={() => handleEdit(produto)}>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleEdit(produto)}
+                    >
                       Editar
                     </Button>
 
-                    <Button size="sm" variant="destructive" onClick={() => deleteProduto(produto.id)}>
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      onClick={() => deleteProduto(produto)}
+                    >
                       Excluir
                     </Button>
                   </div>
@@ -137,3 +169,4 @@ export default function ProductTable({
     </Card>
   )
 }
+

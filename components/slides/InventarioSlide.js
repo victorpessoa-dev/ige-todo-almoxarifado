@@ -51,7 +51,7 @@ export default function InventarioSlide({ produtos, active, onEnd }) {
     }
 
     return (
-        <div className="flex flex-col h-full px-4 sm:px-6 md:px-10 py-4 sm:py-6 w-full max-w-full overflow-hidden">
+        <div className="flex h-full min-h-0 w-full max-w-full flex-col overflow-hidden px-4 py-4 sm:px-6 sm:py-6 md:px-10">
 
             <div className="flex items-center justify-center gap-2 sm:gap-3 mb-4 sm:mb-6 w-full">
                 <AlertTriangle className="h-8 w-8 sm:h-10 sm:w-10 text-primary" />
@@ -60,7 +60,7 @@ export default function InventarioSlide({ produtos, active, onEnd }) {
 
             <div
                 ref={ref}
-                className="flex-1 overflow-y-auto pr-1 sm:pr-2"
+                className="slide-scroll scrollbar-soft flex-1 overflow-y-auto pr-1 sm:pr-2"
             >
                 <div className="flex flex-col gap-2 sm:gap-3 pb-8 sm:pb-10">
                     {produtosOrdenados.map((produto) => {

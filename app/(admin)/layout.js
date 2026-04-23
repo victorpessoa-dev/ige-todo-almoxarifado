@@ -1,10 +1,8 @@
-// app/(admin)/layout.js
 'use client'
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/contexts/auth-context'
-import { DataProvider } from '@/contexts/data-context'
 import { Sidebar } from '@/components/sidebar'
 import { Menu } from 'lucide-react'
 import Image from 'next/image'
@@ -20,9 +18,23 @@ export default function AdminLayout({ children }) {
     }
   }, [isAuthenticated, isLoading, router])
 
+  useEffect(() => {
+    const body = document.body
+
+    if (sidebarOpen) {
+      body.style.overflow = 'hidden'
+    } else {
+      body.style.overflow = ''
+    }
+
+    return () => {
+      body.style.overflow = ''
+    }
+  }, [sidebarOpen])
+
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
+      <div className="flex min-h-screen items-center justify-center bg-background">
         <div className="animate-pulse text-muted-foreground">Carregando...</div>
       </div>
     )
@@ -31,33 +43,52 @@ export default function AdminLayout({ children }) {
   if (!isAuthenticated) return null
 
   return (
-    <div className="flex min-h-screen w-full overflow-x-hidden bg-background">
-      <div className="hidden md:flex">
+    <div className="flex h-dvh w-full overflow-hidden bg-background">
+      <div className="hidden w-64 shrink-0 md:block" aria-hidden="true" />
+
+      <div className="hidden md:block">
         <Sidebar />
       </div>
 
       {sidebarOpen && (
         <div className="fixed inset-0 z-50 md:hidden">
           <div
-            className="fixed inset-0 bg-black/50"
+            className="absolute inset-0 bg-black/50"
             onClick={() => setSidebarOpen(false)}
           />
-          <div className="relative z-50 w-64 h-full">
+
+          <div className="relative h-full w-72 max-w-[85vw]">
             <Sidebar onNavigate={() => setSidebarOpen(false)} />
           </div>
         </div>
       )}
 
-      <main className="flex-1 min-w-0 overflow-x-hidden px-3 sm:px-4 md:px-6 lg:px-8">
-        <div className="md:hidden flex items-center justify-between p-4 lg:p-0 md:p-0">
-          <button onClick={() => setSidebarOpen(true)}>
+      <main className="flex min-w-0 flex-1 flex-col overflow-hidden">
+        <div className="sticky top-0 z-30 flex items-center justify-between border-b bg-background/95 px-4 py-4 backdrop-blur supports-[backdrop-filter]:bg-background/80 md:hidden">
+          <button
+            type="button"
+            aria-label="Abrir menu"
+            onClick={() => setSidebarOpen(true)}
+          >
             <Menu className="h-6 w-6" />
           </button>
-          <Image src="/ige-supergesso.png" alt="Logo" width={100} height={75} className="mx-auto" />
+
+          <Image
+            src="/ige-supergesso.png"
+            alt="Logo"
+            width={100}
+            height={75}
+            className="mx-auto"
+          />
+
+          <div className="w-6" aria-hidden="true" />
         </div>
 
-        <div className="p-4 lg:p-0 md:p-0">{children}</div>
+        <div className="admin-main-scroll scrollbar-soft flex-1 overflow-y-auto overflow-x-hidden px-4 py-4 sm:px-5 sm:py-5 md:px-7 md:py-6 lg:px-8">
+          {children}
+        </div>
       </main>
     </div>
   )
 }
+

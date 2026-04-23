@@ -10,9 +10,7 @@ export default function ImportExportProdutos() {
   const { produtos } = useData()
   const fileInputRef = useRef(null)
 
-  // =========================
-  // EXPORT CSV
-  // =========================
+
   const exportToCSV = () => {
     const headers = ['cod', 'nome', 'estoque', 'max', 'min']
 
@@ -38,9 +36,7 @@ export default function ImportExportProdutos() {
     link.click()
   }
 
-  // =========================
-  // EXPORT XLSX
-  // =========================
+  
   const exportToXLSX = () => {
     const data = produtos.map((p) => ({
       cod: p.cod,
@@ -57,9 +53,7 @@ export default function ImportExportProdutos() {
     XLSX.writeFile(wb, 'produtos.xlsx')
   }
 
-  // =========================
-  // IMPORTAR ARQUIVO
-  // =========================
+
   const handleImport = async (e) => {
     const file = e.target.files?.[0]
     if (!file) return
@@ -84,7 +78,7 @@ export default function ImportExportProdutos() {
           estoque: Number(item.estoque || 0),
           max: Number(item.max || 0),
           min: Number(item.min || 0),
-          cod_barra: String(item.cod) // 🔥 barcode automático
+          cod_barra: String(item.cod) 
         })
       }
 
@@ -105,26 +99,28 @@ export default function ImportExportProdutos() {
   }
 
   return (
-    <div className="flex flex-col sm:flex-row gap-2">
-      <Button onClick={exportToCSV}>
-        Exportar CSV
-      </Button>
+    <div className="flex items-center justify-center">
+      <div className="flex gap-2 flex-row">
+        <Button onClick={exportToCSV}>
+          Exp. CSV
+        </Button>
 
-      <Button onClick={exportToXLSX}>
-        Exportar XLSX
-      </Button>
+        <Button onClick={exportToXLSX}>
+          Exp. XLSX
+        </Button>
 
-      <Button onClick={() => fileInputRef.current.click()}>
-        Importar Arquivo
-      </Button>
+        <Button onClick={() => fileInputRef.current.click()}>
+          Imp. Arquivo
+        </Button>
 
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept=".csv, .xlsx"
-        className="hidden"
-        onChange={handleImport}
-      />
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept=".csv, .xlsx"
+          className="hidden"
+          onChange={handleImport}
+          />
+      </div>
     </div>
   )
 }

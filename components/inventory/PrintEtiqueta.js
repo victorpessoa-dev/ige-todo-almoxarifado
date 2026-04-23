@@ -12,20 +12,31 @@ export default function PrintEtiqueta({ produto }) {
 
     const canvas = canvasRef.current
     const ctx = canvas.getContext('2d')
+    const scale = 2
 
     // tamanho da etiqueta (em px - alta qualidade)
-    canvas.width = 600
-    canvas.height = 240
+    canvas.width = 600 * scale
+    canvas.height = 240 * scale
+    canvas.style.width = '600px'
+    canvas.style.height = '240px'
+    ctx.setTransform(scale, 0, 0, scale, 0, 0)
+    ctx.imageSmoothingEnabled = true
+    ctx.imageSmoothingQuality = 'high'
 
     // fundo branco
     ctx.fillStyle = '#fff'
-    ctx.fillRect(0, 0, canvas.width, canvas.height)
+    ctx.fillRect(0, 0, 600, 240)
 
     // carregar logo
     const img = new Image()
     img.src = '/ige-supergesso.png'
 
     img.onload = () => {
+      ctx.save()
+      ctx.globalAlpha = 0.12
+      ctx.drawImage(img, 0, 0, 600, 240)
+      ctx.restore()
+
       // logo
       ctx.drawImage(img, 10, 10, 120, 40)
 
@@ -33,26 +44,31 @@ export default function PrintEtiqueta({ produto }) {
       ctx.fillStyle = '#000'
       ctx.font = 'bold 20px monospace'
       ctx.textAlign = 'right'
-      ctx.fillText(produto.cod, canvas.width - 10, 30)
+      ctx.fillText(produto.cod, 590, 30)
 
       // nome produto
       ctx.font = 'bold 22px Arial'
       ctx.textAlign = 'center'
-      ctx.fillText(produto.nome, canvas.width / 2, 90)
+      ctx.fillText(produto.nome, 300, 90)
 
       // gerar código de barras em outro canvas
       const barcodeCanvas = document.createElement('canvas')
 
       JsBarcode(barcodeCanvas, String(produto.cod), {
         format: 'CODE128',
-        width: 2,
-        height: 60,
+        width: 3,
+        height: 78,
         displayValue: false,
-        margin: 0
+        margin: 0,
+        background: '#ffffff',
+        lineColor: '#111111'
       })
 
       // desenhar barcode
+      ctx.save()
+      ctx.imageSmoothingEnabled = false
       ctx.drawImage(barcodeCanvas, 50, 110, 500, 80)
+      ctx.restore()
 
       // converter para imagem
       const url = canvas.toDataURL('image/png')
