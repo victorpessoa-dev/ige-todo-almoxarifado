@@ -171,52 +171,22 @@ export default function BarcodeScannerCard({
 
     setCameraError('')
     setIsStartingCamera(true)
-
-    if (!window.isSecureContext) {
-      setCameraError(resolveCameraError())
-      setIsStartingCamera(false)
-      return
-    }
-
-    if (!navigator.mediaDevices?.getUserMedia) {
-      setCameraError(resolveCameraError())
-      setIsStartingCamera(false)
-      return
-    }
-
     stopCamera()
 
     try {
-      const constraints = {
-        audio: false,
-        video: {
-          facingMode: { ideal: 'environment' },
-          width: { ideal: 1280 },
-          height: { ideal: 720 }
-        }
-      }
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'environment' },
+        audio: false
+      })
 
-      controlsRef.current = await codeReaderRef.current.decodeFromConstraints(
-        constraints,
-        videoRef.current,
-        handleScanResult
-      )
+      videoRef.current.srcObject = stream
+
+      await videoRef.current.play()
 
       setIsCameraOpen(true)
-    } catch (primaryError) {
-      try {
-        controlsRef.current = await codeReaderRef.current.decodeFromVideoDevice(
-          undefined,
-          videoRef.current,
-          handleScanResult
-        )
-
-        setIsCameraOpen(true)
-      } catch (fallbackError) {
-        console.error('Erro ao iniciar câmera:', fallbackError)
-        setCameraError(resolveCameraError(primaryError || fallbackError))
-        stopCamera()
-      }
+    } catch (err) {
+      console.error('Erro direto getUserMedia:', err)
+      setCameraError(err.message)
     } finally {
       setIsStartingCamera(false)
     }
