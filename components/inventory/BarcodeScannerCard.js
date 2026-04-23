@@ -9,8 +9,7 @@ import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Barcode, Camera, CameraOff } from 'lucide-react'
 
-const CAMERA_HELP =
-  'No celular, permita o acesso à câmera e prefira abrir por HTTPS ou localhost.'
+const CAMERA_HELP = 'No celular, permita o acesso à câmera para escanear.'
 
 export default function BarcodeScannerCard({
   barcodeInput,
@@ -36,30 +35,9 @@ export default function BarcodeScannerCard({
   const [scanMode, setScanMode] = useState('single')
   const [cameraError, setCameraError] = useState('')
   const [isStartingCamera, setIsStartingCamera] = useState(false)
-  const [environmentInfo, setEnvironmentInfo] = useState({
-    origin: '',
-    host: '',
-    isSecureContext: false,
-    hasCameraApi: false,
-    isLikelyCameraReady: false
-  })
 
   useEffect(() => {
     codeReaderRef.current = new BrowserMultiFormatReader()
-
-    const host = window.location.hostname
-    const isLocalhost =
-      host === 'localhost' || host === '127.0.0.1' || host === '::1'
-
-    setEnvironmentInfo({
-      origin: window.location.origin,
-      host,
-      isSecureContext: window.isSecureContext,
-      hasCameraApi: Boolean(navigator.mediaDevices?.getUserMedia),
-      isLikelyCameraReady:
-        Boolean(navigator.mediaDevices?.getUserMedia) &&
-        (window.isSecureContext || isLocalhost)
-    })
 
     return () => {
       if (scanResetTimeoutRef.current) {
@@ -70,36 +48,8 @@ export default function BarcodeScannerCard({
     }
   }, [])
 
-  const resolveCameraError = (error) => {
-    if (!window.isSecureContext) {
-      return 'A câmera do navegador precisa de HTTPS ou localhost para funcionar.'
-    }
-
-    if (!navigator.mediaDevices?.getUserMedia) {
-      return 'Este navegador não oferece suporte ao acesso da câmera.'
-    }
-
-    switch (error?.name) {
-      case 'NotAllowedError':
-      case 'PermissionDeniedError':
-        return 'Permissão da câmera negada. Libere o acesso nas configurações do navegador.'
-      case 'NotFoundError':
-      case 'DevicesNotFoundError':
-        return 'Nenhuma câmera disponível foi encontrada neste aparelho.'
-      case 'NotReadableError':
-      case 'TrackStartError':
-        return 'A câmera já está sendo usada por outro aplicativo ou não pôde ser iniciada.'
-      case 'OverconstrainedError':
-      case 'ConstraintNotSatisfiedError':
-        return 'Não foi possível usar a câmera traseira. Tente novamente ou use a digitação manual.'
-      default:
-        return 'Não foi possível abrir a câmera agora.'
-    }
-  }
-
   const stopCamera = () => {
     setIsCameraOpen(false)
-    setIsStartingCamera(false)
 
     if (scanResetTimeoutRef.current) {
       clearTimeout(scanResetTimeoutRef.current)
@@ -108,17 +58,13 @@ export default function BarcodeScannerCard({
 
     try {
       controlsRef.current?.stop()
-    } catch (error) {
-      console.warn('Erro ao parar câmera:', error)
-    }
+    } catch {}
 
     controlsRef.current = null
 
-    const videoElement = videoRef.current
-    if (videoElement?.srcObject) {
-      const stream = videoElement.srcObject
-      stream.getTracks?.().forEach((track) => track.stop())
-      videoElement.srcObject = null
+    if (videoRef.current?.srcObject) {
+      videoRef.current.srcObject.getTracks().forEach((t) => t.stop())
+      videoRef.current.srcObject = null
     }
   }
 
@@ -171,22 +117,29 @@ export default function BarcodeScannerCard({
 
     setCameraError('')
     setIsStartingCamera(true)
-    stopCamera()
 
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'environment' },
-        audio: false
-      })
+      await new Promise((r) => setTimeout(r, 150))
 
-      videoRef.current.srcObject = stream
+      if (!videoRef.current) {
+        throw new Error('Elemento de vídeo não disponível')
+      }
 
-      await videoRef.current.play()
+      controlsRef.current = await codeReaderRef.current.decodeFromVideoDevice(
+        undefined,
+        videoRef.current,
+        handleScanResult
+      )
 
       setIsCameraOpen(true)
+
+      setTimeout(() => {
+        videoRef.current?.play().catch(() => {})
+      }, 300)
     } catch (err) {
-      console.error('Erro direto getUserMedia:', err)
-      setCameraError(err.message)
+      console.error('Erro ao iniciar câmera:', err)
+      setCameraError(err.message || 'Erro ao iniciar câmera')
+      stopCamera()
     } finally {
       setIsStartingCamera(false)
     }
@@ -261,77 +214,39 @@ export default function BarcodeScannerCard({
 
         <p className="mb-3 text-xs text-muted-foreground">{CAMERA_HELP}</p>
 
-        <div
-          className={`mb-4 rounded-lg border p-3 text-xs ${
-            environmentInfo.isLikelyCameraReady
-              ? 'border-green-500/30 bg-green-500/10 text-green-700'
-              : 'border-yellow-500/30 bg-yellow-500/10 text-yellow-700'
-          }`}
-        >
-          <p className="font-medium">
-            Ambiente atual:{' '}
-            {environmentInfo.isLikelyCameraReady
-              ? 'pronto para câmera'
-              : 'precisa de atenção'}
-          </p>
-          <p>Origem: {environmentInfo.origin || 'carregando...'}</p>
-          <p>
-            Contexto seguro: {environmentInfo.isSecureContext ? 'sim' : 'não'}
-          </p>
-          <p>
-            API de câmera: {environmentInfo.hasCameraApi ? 'disponível' : 'indisponível'}
-          </p>
-          {!environmentInfo.isLikelyCameraReady && (
-            <p className="mt-2">
-              Se estiver abrindo pelo celular em `http://IP:porta`, troque para uma
-              origem com HTTPS. Nesse cenário a câmera costuma ser bloqueada pelo navegador.
-            </p>
-          )}
-          {scanMode === 'continuous' && (
-            <p className="mt-2">
-              No modo contínuo, a câmera permanece aberta após a leitura e o item
-              encontrado fica disponível logo abaixo para ação manual.
-            </p>
-          )}
-        </div>
+        <div className="mb-4 overflow-hidden rounded-xl border bg-black">
+          <div className="relative aspect-[4/3] w-full">
+            <video
+              ref={videoRef}
+              className="h-full w-full object-cover"
+              autoPlay
+              muted
+              playsInline
+            />
 
-        {(isCameraOpen || cameraError) && (
-          <div className="mb-4 overflow-hidden rounded-xl border bg-black">
-            <div className="relative aspect-[4/3] w-full">
-              <video
-                ref={videoRef}
-                className="h-full w-full object-cover"
-                autoPlay
-                muted
-                playsInline
-              />
+            {isCameraOpen && (
+              <>
+                <div className="pointer-events-none absolute inset-0 bg-black/25" />
 
-              {isCameraOpen && (
-                <>
-                  <div className="pointer-events-none absolute inset-0 bg-black/25" />
+                <div className="pointer-events-none absolute inset-0 flex items-center justify-center px-6">
+                  <div
+                    className={`h-32 w-full max-w-72 rounded-xl border-2 ${
+                      scanSuccess ? 'border-green-400' : 'border-white'
+                    }`}
+                  />
+                </div>
 
-                  <div className="pointer-events-none absolute inset-0 flex items-center justify-center px-6">
-                    <div
-                      className={`h-32 w-full max-w-72 rounded-xl border-2 transition-all duration-200 ${
-                        scanSuccess
-                          ? 'border-green-400 shadow-lg shadow-green-400/50'
-                          : 'border-white'
-                      }`}
-                    />
-                  </div>
+                <p className="absolute top-3 w-full text-center text-xs text-white">
+                  {modo === 'entrada' ? 'Modo entrada' : 'Modo saída'}
+                </p>
 
-                  <p className="absolute left-0 right-0 top-3 text-center text-xs text-white">
-                    {modo === 'entrada' ? 'Modo entrada' : 'Modo saída'}
-                  </p>
-
-                  <p className="absolute bottom-3 left-0 right-0 px-4 text-center text-xs text-white">
-                    Posicione o código dentro da moldura
-                  </p>
-                </>
-              )}
-            </div>
+                <p className="absolute bottom-3 w-full text-center text-xs text-white">
+                  Posicione o código dentro da moldura
+                </p>
+              </>
+            )}
           </div>
-        )}
+        </div>
 
         {cameraError && (
           <div className="mb-4 rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
