@@ -67,7 +67,6 @@ export function LembretesSlide({ lembretes, onEnd, active }) {
 
     const isEmpty = pendentes.length === 0
 
-    // scroll contínuo
     useAutoScroll(ref, !isEmpty ? onEnd : undefined, active)
 
     useEffect(() => {

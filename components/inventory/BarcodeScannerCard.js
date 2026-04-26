@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Barcode, Camera, CameraOff, History, Volume2 } from 'lucide-react'
 
-const CAMERA_HELP = 'No celular, permita o acesso à câmera para escanear.'
+const CAMERA_HELP = 'No celular, permita o acesso a camera para escanear.'
 const MAX_HISTORY_ITEMS = 8
 
 export default function BarcodeScannerCard({
@@ -92,6 +92,43 @@ export default function BarcodeScannerCard({
     }
   }
 
+  const optimizeCameraTrack = async (stream) => {
+    const track = stream?.getVideoTracks?.()[0]
+    if (!track || typeof track.getCapabilities !== 'function') return
+
+    try {
+      const capabilities = track.getCapabilities()
+      const advanced = []
+
+      if (
+        Array.isArray(capabilities.focusMode) &&
+        capabilities.focusMode.includes('continuous')
+      ) {
+        advanced.push({ focusMode: 'continuous' })
+      }
+
+      if (
+        typeof capabilities.zoom?.min === 'number' &&
+        typeof capabilities.zoom?.max === 'number'
+      ) {
+        const zoomTarget = Math.min(
+          capabilities.zoom.max,
+          Math.max(capabilities.zoom.min, 1.5)
+        )
+
+        if (Number.isFinite(zoomTarget)) {
+          advanced.push({ zoom: zoomTarget })
+        }
+      }
+
+      if (advanced.length > 0) {
+        await track.applyConstraints({ advanced })
+      }
+    } catch (error) {
+      console.warn('Nao foi possivel otimizar foco da camera:', error)
+    }
+  }
+
   const playScanSound = async () => {
     if (typeof window === 'undefined') return
 
@@ -148,7 +185,7 @@ export default function BarcodeScannerCard({
         key: historyKey,
         code,
         produto,
-        nome: produto?.nome || 'Código não encontrado',
+        nome: produto?.nome || 'Codigo nao encontrado',
         modo,
         quantidade: nextQuantity,
         lastScannedAt: timestamp,
@@ -166,7 +203,7 @@ export default function BarcodeScannerCard({
 
   const handleScanResult = (result, error) => {
     if (error && error?.name !== 'NotFoundException') {
-      console.error('Erro durante leitura do código:', error)
+      console.error('Erro durante leitura do codigo:', error)
     }
 
     if (!result) return
@@ -217,7 +254,7 @@ export default function BarcodeScannerCard({
   const startCamera = async () => {
     if (isStartingCamera) return
     if (!isMobileDevice) {
-      setCameraError('A câmera do scanner está disponível somente no celular.')
+      setCameraError('A camera do scanner esta disponivel somente no celular.')
       return
     }
 
@@ -229,23 +266,34 @@ export default function BarcodeScannerCard({
       await new Promise((r) => setTimeout(r, 150))
 
       if (!videoRef.current) {
-        throw new Error('Elemento de vídeo não disponível')
+        throw new Error('Elemento de video nao disponivel')
       }
 
-      controlsRef.current = await codeReaderRef.current.decodeFromVideoDevice(
-        undefined,
+      const constraints = {
+        audio: false,
+        video: {
+          facingMode: { ideal: 'environment' },
+          width: { ideal: 1920 },
+          height: { ideal: 1080 },
+          aspectRatio: { ideal: 4 / 3 }
+        }
+      }
+
+      controlsRef.current = await codeReaderRef.current.decodeFromConstraints(
+        constraints,
         videoRef.current,
         handleScanResult
       )
 
+      await optimizeCameraTrack(videoRef.current.srcObject)
       setIsCameraOpen(true)
 
       setTimeout(() => {
         videoRef.current?.play().catch(() => {})
       }, 300)
     } catch (err) {
-      console.error('Erro ao iniciar câmera:', err)
-      setCameraError(err.message || 'Erro ao iniciar câmera')
+      console.error('Erro ao iniciar camera:', err)
+      setCameraError(err.message || 'Erro ao iniciar camera')
       stopCamera()
     } finally {
       setIsStartingCamera(false)
@@ -258,7 +306,7 @@ export default function BarcodeScannerCard({
         <CardTitle className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-2">
             <Barcode className="h-5 w-5" />
-            Leitor de Código
+            Leitor de Codigo
           </div>
 
           <Button
@@ -273,7 +321,7 @@ export default function BarcodeScannerCard({
             ) : (
               <Camera className="mr-1 h-4 w-4" />
             )}
-            {isStartingCamera ? 'Abrindo...' : isCameraOpen ? 'Fechar' : 'Câmera'}
+            {isStartingCamera ? 'Abrindo...' : isCameraOpen ? 'Fechar' : 'Camera'}
           </Button>
         </CardTitle>
       </CardHeader>
@@ -295,7 +343,7 @@ export default function BarcodeScannerCard({
             variant={modo === 'saida' ? 'destructive' : 'outline'}
             onClick={() => setModo('saida')}
           >
-            Saída
+            Saida
           </Button>
         </div>
 
@@ -306,7 +354,7 @@ export default function BarcodeScannerCard({
             variant={scanMode === 'single' ? 'secondary' : 'outline'}
             onClick={() => setScanMode('single')}
           >
-            Leitura única
+            Leitura unica
           </Button>
 
           <Button
@@ -315,20 +363,20 @@ export default function BarcodeScannerCard({
             variant={scanMode === 'continuous' ? 'secondary' : 'outline'}
             onClick={() => setScanMode('continuous')}
           >
-            Scan contínuo
+            Scan continuo
           </Button>
         </div>
 
         <p className="mb-3 text-xs text-muted-foreground">{CAMERA_HELP}</p>
         {!isMobileDevice && (
           <p className="mb-3 text-xs text-amber-600">
-            A câmera fica habilitada apenas no celular. No computador, use a digitação manual.
+            A camera fica habilitada apenas no celular. No computador, use a digitacao manual.
           </p>
         )}
         {scanMode === 'continuous' && (
           <p className="mb-3 flex items-center gap-2 text-xs text-muted-foreground">
             <Volume2 className="h-3.5 w-3.5" />
-            Cada leitura toca um bip e soma no histórico em tempo real.
+            Cada leitura toca um bip e soma no historico em tempo real.
           </p>
         )}
 
@@ -337,7 +385,7 @@ export default function BarcodeScannerCard({
             <div className="relative aspect-[4/3] w-full">
               <video
                 ref={videoRef}
-                className="h-full w-full object-cover"
+                className="h-full w-full object-contain"
                 autoPlay
                 muted
                 playsInline
@@ -358,11 +406,11 @@ export default function BarcodeScannerCard({
                   </div>
 
                   <p className="absolute top-3 w-full text-center text-xs text-white">
-                    {modo === 'entrada' ? 'Modo entrada' : 'Modo saída'}
+                    {modo === 'entrada' ? 'Modo entrada' : 'Modo saida'}
                   </p>
 
                   <p className="absolute bottom-3 w-full text-center text-xs text-white">
-                    Posicione o código dentro da moldura
+                    Use a camera traseira e aproxime ate o codigo ficar nitido
                   </p>
                 </>
               )}
@@ -378,7 +426,7 @@ export default function BarcodeScannerCard({
 
         <div className="flex flex-col gap-3 sm:flex-row">
           <div className="flex-1">
-            <Label className="text-sm">Código</Label>
+            <Label className="text-sm">Codigo</Label>
 
             <Input
               value={barcodeInput}
@@ -415,7 +463,7 @@ export default function BarcodeScannerCard({
             </p>
             {scanMode === 'continuous' && (
               <p className="mt-2 text-xs text-muted-foreground">
-                Produto identificado no scan contínuo. A câmera segue aberta e a quantidade vai sendo somada.
+                Produto identificado no scan continuo. A camera segue aberta e a quantidade vai sendo somada.
               </p>
             )}
 
@@ -443,7 +491,9 @@ export default function BarcodeScannerCard({
               <Button
                 type="button"
                 size="sm"
-                onClick={() => openMovimentoDialog(barcodeProduct, 'entrada', scanQuantity)}
+                onClick={() =>
+                  openMovimentoDialog(barcodeProduct, 'entrada', scanQuantity)
+                }
               >
                 Entrada
               </Button>
@@ -452,9 +502,11 @@ export default function BarcodeScannerCard({
                 type="button"
                 size="sm"
                 variant="destructive"
-                onClick={() => openMovimentoDialog(barcodeProduct, 'saida', scanQuantity)}
+                onClick={() =>
+                  openMovimentoDialog(barcodeProduct, 'saida', scanQuantity)
+                }
               >
-                Saída
+                Saida
               </Button>
             </div>
           </div>
@@ -465,7 +517,7 @@ export default function BarcodeScannerCard({
             <div className="mb-3 flex items-center justify-between gap-3">
               <div className="flex items-center gap-2">
                 <History className="h-4 w-4" />
-                <p className="font-medium">Histórico em tempo real</p>
+                <p className="font-medium">Historico em tempo real</p>
               </div>
 
               <Button
@@ -479,13 +531,13 @@ export default function BarcodeScannerCard({
                   setScanQuantity(1)
                 }}
               >
-                Limpar histórico
+                Limpar historico
               </Button>
             </div>
 
             {scanHistory.length === 0 ? (
               <p className="text-sm text-muted-foreground">
-                As leituras do scan contínuo vão aparecer aqui com quantidade acumulada.
+                As leituras do scan continuo vao aparecer aqui com quantidade acumulada.
               </p>
             ) : (
               <div className="space-y-2">
@@ -497,7 +549,7 @@ export default function BarcodeScannerCard({
                     <div className="min-w-0">
                       <p className="truncate font-medium">{item.nome}</p>
                       <p className="text-xs text-muted-foreground">
-                        Código: {item.code} • {item.modo === 'entrada' ? 'Entrada' : 'Saída'} • Qtde:{' '}
+                        Codigo: {item.code} - {item.modo === 'entrada' ? 'Entrada' : 'Saida'} - Qtde:{' '}
                         {item.quantidade}
                       </p>
                     </div>
@@ -530,7 +582,7 @@ export default function BarcodeScannerCard({
                               )
                             }
                           >
-                            Lançar {item.quantidade}
+                            Lancar {item.quantidade}
                           </Button>
                         </>
                       )}

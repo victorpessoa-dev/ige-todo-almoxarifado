@@ -40,9 +40,9 @@ export default function ProductFormFields({
       </div>
 
       <div className="grid grid-cols-3 gap-4">
-        <Input type="number" placeholder="Máx" {...register('max', { valueAsNumber: true })} />
-        <Input type="number" placeholder="Min" {...register('min', { valueAsNumber: true })} />
         <Input type="number" placeholder="Estoque" {...register('estoque', { valueAsNumber: true })} />
+        <Input type="number" placeholder="Min" {...register('min', { valueAsNumber: true })} />
+        <Input type="number" placeholder="Máx" {...register('max', { valueAsNumber: true })} />
       </div>
 
       <Button type="submit">

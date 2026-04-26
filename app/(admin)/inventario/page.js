@@ -1,9 +1,10 @@
-﻿'use client'
+'use client'
 
 import { useState } from 'react'
 import { supabase } from '@/lib/supabaseClient'
 import { useData } from '@/contexts/data-context'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import {
   Dialog,
   DialogContent,
@@ -44,6 +45,11 @@ export default function InventarioPage() {
 
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
   const [editingProduto, setEditingProduto] = useState(null)
+  const [selectedProductIds, setSelectedProductIds] = useState([])
+  const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false)
+  const [bulkSaidaDialogOpen, setBulkSaidaDialogOpen] = useState(false)
+  const [bulkSaidaQuantidade, setBulkSaidaQuantidade] = useState(1)
+  const [bulkActionError, setBulkActionError] = useState('')
 
   const [movimentoDialog, setMovimentoDialog] = useState({
     open: false,
@@ -61,6 +67,10 @@ export default function InventarioPage() {
   const [barcodeProduct, setBarcodeProduct] = useState(null)
   const [scanQuantity, setScanQuantity] = useState(1)
   const { register, handleSubmit, reset, setValue, watch } = useForm()
+
+  const selectedProducts = produtos.filter((produto) =>
+    selectedProductIds.includes(produto.id)
+  )
 
   const checkCodigoExists = async (cod, ignoreId = null) => {
     const { data, error } = await supabase
@@ -172,18 +182,72 @@ export default function InventarioPage() {
     }, 600)
   }
 
+  const toggleProductSelection = (id) => {
+    setSelectedProductIds((prev) =>
+      prev.includes(id)
+        ? prev.filter((itemId) => itemId !== id)
+        : [...prev, id]
+    )
+  }
+
+  const toggleSelectAllProducts = (checked) => {
+    setSelectedProductIds(checked ? produtos.map((produto) => produto.id) : [])
+  }
+
+  const clearSelection = () => {
+    setSelectedProductIds([])
+  }
+
+  const handleBulkDelete = async () => {
+    for (const produto of selectedProducts) {
+      await deleteProduto(produto.id)
+    }
+
+    setBulkDeleteDialogOpen(false)
+    setBulkActionError('')
+    clearSelection()
+  }
+
+  const handleBulkSaida = async () => {
+    const quantidade = Number(bulkSaidaQuantidade)
+
+    if (!quantidade || quantidade <= 0) {
+      setBulkActionError('Informe uma quantidade valida.')
+      return
+    }
+
+    const insuficientes = selectedProducts.filter(
+      (produto) => produto.estoque < quantidade
+    )
+
+    if (insuficientes.length > 0) {
+      setBulkActionError(
+        `Sem estoque suficiente para: ${insuficientes
+          .map((produto) => produto.nome)
+          .join(', ')}.`
+      )
+      return
+    }
+
+    for (const produto of selectedProducts) {
+      await saidaProduto(produto.id, quantidade)
+    }
+
+    setBulkSaidaDialogOpen(false)
+    setBulkSaidaQuantidade(1)
+    setBulkActionError('')
+    clearSelection()
+  }
+
   return (
     <div className="mx-auto flex w-full max-w-7xl flex-col gap-4 pb-4 sm:gap-6 sm:pb-6">
       <div className="hidden print-area">
-        <PrintEtiqueta
-          produto={printDialog.produto}
-          copies={printCopies}
-        />
+        <PrintEtiqueta produto={printDialog.produto} copies={printCopies} />
       </div>
 
       <div className="flex flex-col gap-3 rounded-2xl border bg-card/70 p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between sm:p-5">
         <div className="space-y-1">
-          <h1 className="text-xl font-bold sm:text-2xl md:text-3xl">Inventário</h1>
+          <h1 className="text-xl font-bold sm:text-2xl md:text-3xl">Inventario</h1>
         </div>
 
         <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
@@ -237,6 +301,19 @@ export default function InventarioPage() {
                 openMovimentoDialog={openMovimentoDialog}
                 setPrintDialog={setPrintDialog}
                 handleEdit={handleEdit}
+                selectedIds={selectedProductIds}
+                onToggleSelect={toggleProductSelection}
+                onToggleSelectAll={toggleSelectAllProducts}
+                onClearSelection={clearSelection}
+                onBulkDelete={() => {
+                  setBulkActionError('')
+                  setBulkDeleteDialogOpen(true)
+                }}
+                onBulkSaida={() => {
+                  setBulkActionError('')
+                  setBulkSaidaQuantidade(1)
+                  setBulkSaidaDialogOpen(true)
+                }}
                 deleteProduto={(produto) =>
                   setDeleteDialog({ open: true, produto })
                 }
@@ -248,13 +325,11 @@ export default function InventarioPage() {
 
       <Dialog
         open={deleteDialog.open}
-        onOpenChange={() =>
-          setDeleteDialog({ open: false, produto: null })
-        }
+        onOpenChange={() => setDeleteDialog({ open: false, produto: null })}
       >
         <DialogContent className="w-[95vw] max-w-[420px] p-4 sm:p-6">
           <DialogHeader>
-            <DialogTitle>Confirmar exclusão</DialogTitle>
+            <DialogTitle>Confirmar exclusao</DialogTitle>
           </DialogHeader>
 
           <p className="text-sm text-muted-foreground">
@@ -265,9 +340,7 @@ export default function InventarioPage() {
           <div className="mt-4 flex flex-col justify-end gap-2 sm:flex-row">
             <Button
               variant="outline"
-              onClick={() =>
-                setDeleteDialog({ open: false, produto: null })
-              }
+              onClick={() => setDeleteDialog({ open: false, produto: null })}
             >
               Cancelar
             </Button>
@@ -286,26 +359,69 @@ export default function InventarioPage() {
       </Dialog>
 
       <Dialog
-        open={duplicateDialog.open}
-        onOpenChange={() =>
-          setDuplicateDialog({ open: false, cod: '' })
-        }
+        open={bulkDeleteDialogOpen}
+        onOpenChange={(open) => {
+          setBulkDeleteDialogOpen(open)
+          if (!open) {
+            setBulkActionError('')
+          }
+        }}
       >
-        <DialogContent className="w-[95vw] max-w-[420px] p-4 sm:p-6">
+        <DialogContent className="w-[95vw] max-w-[520px] p-4 sm:p-6">
           <DialogHeader>
-            <DialogTitle>Código já existente</DialogTitle>
+            <DialogTitle>Excluir produtos selecionados</DialogTitle>
           </DialogHeader>
 
           <p className="text-sm text-muted-foreground">
-            O código <strong>{duplicateDialog.cod}</strong> já está cadastrado.
+            Deseja realmente excluir {selectedProducts.length} produto(s)?
+          </p>
+
+          <div className="max-h-52 overflow-y-auto rounded-lg border bg-muted/20 p-3 text-sm">
+            {selectedProducts.map((produto) => (
+              <div key={produto.id} className="py-1">
+                {produto.nome}
+              </div>
+            ))}
+          </div>
+
+          {bulkActionError && (
+            <p className="text-sm text-destructive">{bulkActionError}</p>
+          )}
+
+          <div className="mt-2 flex flex-col justify-end gap-2 sm:flex-row">
+            <Button
+              variant="outline"
+              onClick={() => setBulkDeleteDialogOpen(false)}
+            >
+              Cancelar
+            </Button>
+
+            <Button
+              variant="destructive"
+              onClick={handleBulkDelete}
+              disabled={selectedProducts.length === 0}
+            >
+              Excluir selecionados
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={duplicateDialog.open}
+        onOpenChange={() => setDuplicateDialog({ open: false, cod: '' })}
+      >
+        <DialogContent className="w-[95vw] max-w-[420px] p-4 sm:p-6">
+          <DialogHeader>
+            <DialogTitle>Codigo ja existente</DialogTitle>
+          </DialogHeader>
+
+          <p className="text-sm text-muted-foreground">
+            O codigo <strong>{duplicateDialog.cod}</strong> ja esta cadastrado.
           </p>
 
           <div className="mt-4 flex justify-end">
-            <Button
-              onClick={() =>
-                setDuplicateDialog({ open: false, cod: '' })
-              }
-            >
+            <Button onClick={() => setDuplicateDialog({ open: false, cod: '' })}>
               Entendi
             </Button>
           </div>
@@ -333,6 +449,79 @@ export default function InventarioPage() {
       </Dialog>
 
       <Dialog
+        open={bulkSaidaDialogOpen}
+        onOpenChange={(open) => {
+          setBulkSaidaDialogOpen(open)
+          if (!open) {
+            setBulkSaidaQuantidade(1)
+            setBulkActionError('')
+          }
+        }}
+      >
+        <DialogContent className="w-[95vw] max-w-[520px] p-4 sm:p-6">
+          <DialogHeader>
+            <DialogTitle>Dar baixa em varios produtos</DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              A quantidade informada sera aplicada em todos os {selectedProducts.length} produto(s) selecionados.
+            </p>
+
+            <div>
+              <label className="mb-2 block text-sm font-medium">
+                Quantidade para cada produto
+              </label>
+              <Input
+                type="number"
+                min={1}
+                value={bulkSaidaQuantidade}
+                onChange={(event) => {
+                  setBulkSaidaQuantidade(event.target.value)
+                  setBulkActionError('')
+                }}
+              />
+            </div>
+
+            <div className="max-h-52 overflow-y-auto rounded-lg border bg-muted/20 p-3 text-sm">
+              {selectedProducts.map((produto) => (
+                <div
+                  key={produto.id}
+                  className="flex items-center justify-between gap-3 py-1"
+                >
+                  <span className="truncate">{produto.nome}</span>
+                  <span className="text-muted-foreground">
+                    Estoque: {produto.estoque}
+                  </span>
+                </div>
+              ))}
+            </div>
+
+            {bulkActionError && (
+              <p className="text-sm text-destructive">{bulkActionError}</p>
+            )}
+
+            <div className="flex flex-col justify-end gap-2 sm:flex-row">
+              <Button
+                variant="outline"
+                onClick={() => setBulkSaidaDialogOpen(false)}
+              >
+                Cancelar
+              </Button>
+
+              <Button
+                variant="destructive"
+                onClick={handleBulkSaida}
+                disabled={selectedProducts.length === 0}
+              >
+                Confirmar baixa
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
         open={movimentoDialog.open}
         onOpenChange={() =>
           setMovimentoDialog({ open: false, produto: null, tipo: null })
@@ -341,16 +530,14 @@ export default function InventarioPage() {
         <DialogContent className="w-[95vw] max-w-[420px] p-4 sm:p-6">
           <DialogHeader>
             <DialogTitle>
-              {movimentoDialog.tipo === 'entrada' ? 'Entrada' : 'Saída'}
+              {movimentoDialog.tipo === 'entrada' ? 'Entrada' : 'Saida'}
             </DialogTitle>
           </DialogHeader>
 
           <MovementFormFields
             register={register}
             handleSubmit={handleSubmit}
-            onSubmit={({ quantidade }) =>
-              handleMovimento(Number(quantidade))
-            }
+            onSubmit={({ quantidade }) => handleMovimento(Number(quantidade))}
             tipo={movimentoDialog.tipo}
           />
         </DialogContent>
@@ -358,9 +545,7 @@ export default function InventarioPage() {
 
       <Dialog
         open={printDialog.open}
-        onOpenChange={() =>
-          setPrintDialog({ open: false, produto: null })
-        }
+        onOpenChange={() => setPrintDialog({ open: false, produto: null })}
       >
         <DialogContent className="w-[95vw] max-w-[420px] p-4 sm:p-6">
           <DialogHeader>
@@ -372,14 +557,10 @@ export default function InventarioPage() {
             printCopies={printCopies}
             setPrintCopies={setPrintCopies}
             onPrint={handlePrint}
-            onCancel={() =>
-              setPrintDialog({ open: false, produto: null })
-            }
+            onCancel={() => setPrintDialog({ open: false, produto: null })}
           />
         </DialogContent>
       </Dialog>
     </div>
   )
 }
-
-

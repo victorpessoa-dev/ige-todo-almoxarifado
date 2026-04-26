@@ -83,9 +83,24 @@ export default function PainelPage() {
   const [cycleKey, setCycleKey] = useState(0)
   const [isFullscreen, setIsFullscreen] = useState(false)
 
+  const tarefasPendentes = tarefas.filter((tarefa) => tarefa.status !== 'concluido')
+  const lembretesPendentes = lembretes.filter((lembrete) => lembrete.status !== 'concluido')
   const hasProdutosBaixos = produtos.some((produto) => produto.estoque <= produto.min)
-  const relogioIndex = hasProdutosBaixos ? 4 : 3
-  const slideCount = hasProdutosBaixos ? 5 : 4
+  const slideDefinitions = [
+    ...(tarefasPendentes.length > 0
+      ? [{ key: 'tarefas', label: 'Tarefas' }]
+      : []),
+    ...(lembretesPendentes.length > 0
+      ? [{ key: 'lembretes', label: 'Lembretes' }]
+      : []),
+    { key: 'calendario', label: 'Calendario' },
+    ...(hasProdutosBaixos
+      ? [{ key: 'inventario', label: 'Inventario' }]
+      : []),
+    { key: 'relogio', label: 'Relogio' }
+  ]
+
+  const slideCount = slideDefinitions.length
   const safeCurrentSlide = Math.min(currentSlide, slideCount - 1)
 
   const nextSlide = useCallback(() => {
@@ -98,65 +113,75 @@ export default function PainelPage() {
     setCycleKey((prev) => prev + 1)
   }, [slideCount])
 
-  const slides = [
-    {
-      component: (
-        <TarefasSlide
-          key={`tarefas-${cycleKey}`}
-          tarefas={tarefas}
-          onEnd={nextSlide}
-          active={safeCurrentSlide === 0}
-        />
-      ),
-      label: 'Tarefas'
-    },
-    {
-      component: (
-        <LembretesSlide
-          key={`lembretes-${cycleKey}`}
-          lembretes={lembretes}
-          onEnd={nextSlide}
-          active={safeCurrentSlide === 1}
-        />
-      ),
-      label: 'Lembretes'
-    },
-    {
-      component: (
-        <CalendarioSlide
-          key={`calendario-${cycleKey}`}
-          tarefas={tarefas}
-          lembretes={lembretes}
-          active={safeCurrentSlide === 2}
-          onEnd={nextSlide}
-        />
-      ),
-      label: 'Calendario'
-    },
-    ...(hasProdutosBaixos
-      ? [{
-          component: (
-            <InventarioSlide
-              key={`inventario-${cycleKey}`}
-              produtos={produtos}
-              onEnd={nextSlide}
-              active={safeCurrentSlide === 3}
-            />
-          ),
-          label: 'Inventario'
-        }]
-      : []),
-    {
+  const slides = slideDefinitions.map((slide, index) => {
+    if (slide.key === 'tarefas') {
+      return {
+        ...slide,
+        component: (
+          <TarefasSlide
+            key={`tarefas-${cycleKey}`}
+            tarefas={tarefas}
+            onEnd={nextSlide}
+            active={safeCurrentSlide === index}
+          />
+        )
+      }
+    }
+
+    if (slide.key === 'lembretes') {
+      return {
+        ...slide,
+        component: (
+          <LembretesSlide
+            key={`lembretes-${cycleKey}`}
+            lembretes={lembretes}
+            onEnd={nextSlide}
+            active={safeCurrentSlide === index}
+          />
+        )
+      }
+    }
+
+    if (slide.key === 'calendario') {
+      return {
+        ...slide,
+        component: (
+          <CalendarioSlide
+            key={`calendario-${cycleKey}`}
+            tarefas={tarefas}
+            lembretes={lembretes}
+            active={safeCurrentSlide === index}
+            onEnd={nextSlide}
+          />
+        )
+      }
+    }
+
+    if (slide.key === 'inventario') {
+      return {
+        ...slide,
+        component: (
+          <InventarioSlide
+            key={`inventario-${cycleKey}`}
+            produtos={produtos}
+            onEnd={nextSlide}
+            active={safeCurrentSlide === index}
+          />
+        )
+      }
+    }
+
+    return {
+      ...slide,
       component: (
         <RelogioSlide
           key={`relogio-${cycleKey}`}
-          active={safeCurrentSlide === relogioIndex}
+          active={safeCurrentSlide === index}
           onEnd={nextSlide}
         />
-      ),
-      label: 'Relogio'
+      )
     }
-  ]
+  })
 
   const toggleFullscreen = () => {
     setIsFullscreen((prev) => !prev)
