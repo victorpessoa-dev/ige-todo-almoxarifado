@@ -74,6 +74,7 @@ export default function InventarioPage() {
     selectedProductIds.includes(produto.id)
   )
 
+
   const checkCodigoExists = async (cod, ignoreId = null) => {
     const { data, error } = await supabase
       .from('produtos')
@@ -590,6 +591,7 @@ export default function InventarioPage() {
           />
         </DialogContent>
       </Dialog>
+
     </div>
   )
 }

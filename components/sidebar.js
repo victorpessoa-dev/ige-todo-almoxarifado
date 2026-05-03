@@ -9,6 +9,7 @@ import Image from 'next/image'
 import {
   CalendarDays,
   Camera,
+  ChartColumn,
   LayoutDashboard,
   ListTodo,
   LogOut,
@@ -22,7 +23,8 @@ const menuItems = [
   { href: '/lembretes', label: 'Lembretes', icon: StickyNote },
   { href: '/calendario', label: 'Calendario', icon: CalendarDays },
   { href: '/inventario', label: 'Inventario', icon: Package },
-  { href: '/contagem', label: 'Contagem', icon: Camera }
+  { href: '/contagem', label: 'Contagem', icon: Camera },
+  { href: '/analise-giro', label: 'Analise de Giro', icon: ChartColumn }
 ]
 
 export function Sidebar({ onNavigate }) {
