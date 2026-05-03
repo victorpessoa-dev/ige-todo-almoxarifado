@@ -47,7 +47,8 @@ const PERIOD_OPTIONS = [
   { value: '60', label: '2 meses', days: 60 },
   { value: '90', label: '3 meses', days: 90 },
   { value: '180', label: '6 meses', days: 180 },
-  { value: '365', label: '1 ano', days: 365 }
+  { value: '365', label: '1 ano', days: 365 },
+  { value: '730', label: '2 anos', days: 365 * 2 }
 ]
 
 function buildTurnoverStats(produtos, movimentacoes, periodDays) {

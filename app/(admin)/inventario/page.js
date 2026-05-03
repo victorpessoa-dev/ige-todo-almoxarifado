@@ -591,7 +591,6 @@ export default function InventarioPage() {
           />
         </DialogContent>
       </Dialog>
-
     </div>
   )
 }
