@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { toast } from 'sonner'
 import { Plus, Pencil, Trash2, CheckCircle2, Circle, Clock, ChevronDown, ChevronUp, StickyNote, Calendar } from 'lucide-react'
 import EventForm from '@/components/events/EventForm'
+import { getUserMessage } from '@/lib/user-messages'
 
 function groupByDate(items) {
   const groups = {}
@@ -91,7 +92,7 @@ export default function LembretesPage() {
       }
       handleOpenChange(false)
     } catch (error) {
-      toast.error('Erro ao salvar lembrete: ' + error.message)
+      toast.error(getUserMessage(error, 'Nao foi possivel salvar o lembrete.'))
     }
   }
 
@@ -100,7 +101,7 @@ export default function LembretesPage() {
       await deleteLembrete(id)
       toast.success('Lembrete removido com sucesso!')
     } catch (error) {
-      toast.error('Erro ao remover lembrete: ' + error.message)
+      toast.error(getUserMessage(error, 'Nao foi possivel remover o lembrete.'))
     }
   }
 
@@ -109,7 +110,7 @@ export default function LembretesPage() {
       await updateLembrete(id, { status })
       toast.success('Status atualizado!')
     } catch (error) {
-      toast.error('Erro ao atualizar status: ' + error.message)
+      toast.error(getUserMessage(error, 'Nao foi possivel atualizar o status.'))
     }
   }
 
@@ -118,7 +119,7 @@ export default function LembretesPage() {
       await updateLembrete(id, { status: 'concluido' })
       toast.success('Lembrete concluído!')
     } catch (error) {
-      toast.error('Erro ao concluir lembrete: ' + error.message)
+      toast.error(getUserMessage(error, 'Nao foi possivel concluir o lembrete.'))
     }
   }
 

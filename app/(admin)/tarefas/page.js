@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { toast } from 'sonner'
 import { Plus, Pencil, Trash2, CheckCircle2, Circle, Clock, ChevronDown, ChevronUp, Calendar } from 'lucide-react'
 import EventForm from '@/components/events/EventForm'
+import { getUserMessage } from '@/lib/user-messages'
 
 function groupByDate(items) {
   const groups = {}
@@ -116,7 +117,7 @@ export default function TarefasPage() {
       }
       handleOpenChange(false)
     } catch (error) {
-      toast.error('Erro ao salvar tarefa: ' + error.message)
+      toast.error(getUserMessage(error, 'Nao foi possivel salvar a tarefa.'))
     }
   }
 
@@ -125,7 +126,7 @@ export default function TarefasPage() {
       await deleteTarefa(id)
       toast.success('Tarefa removida com sucesso!')
     } catch (error) {
-      toast.error('Erro ao remover tarefa: ' + error.message)
+      toast.error(getUserMessage(error, 'Nao foi possivel remover a tarefa.'))
     }
   }
 
@@ -138,7 +139,7 @@ export default function TarefasPage() {
         toast.success('Status atualizado!')
       }
     } catch (error) {
-      toast.error('Erro ao atualizar status: ' + error.message)
+      toast.error(getUserMessage(error, 'Nao foi possivel atualizar o status.'))
     }
   }
 
@@ -147,7 +148,7 @@ export default function TarefasPage() {
       await updateTarefa(id, { status: 'concluido' })
       toast.success('Tarefa concluida!')
     } catch (error) {
-      toast.error('Erro ao concluir tarefa: ' + error.message)
+      toast.error(getUserMessage(error, 'Nao foi possivel concluir a tarefa.'))
     }
   }
 

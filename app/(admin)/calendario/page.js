@@ -8,6 +8,7 @@ import interactionPlugin from '@fullcalendar/interaction'
 import ptBrLocale from '@fullcalendar/core/locales/pt-br'
 import { CalendarDays } from 'lucide-react'
 import { toast } from 'sonner'
+import { getUserMessage } from '@/lib/user-messages'
 
 import { useData } from '@/contexts/data-context'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
@@ -48,7 +49,9 @@ export default function CalendarPage() {
   const [form, setForm] = useState(defaultForm)
 
   const events = useMemo(() => {
-    const tarefaEvents = tarefas.map((tarefa) => ({
+    const tarefaEvents = tarefas
+      .filter((tarefa) => tarefa.status !== 'concluido')
+      .map((tarefa) => ({
       id: `tarefa-${tarefa.id}`,
       title: tarefa.titulo || 'Tarefa sem titulo',
       start: tarefa.data || null,
@@ -59,9 +62,11 @@ export default function CalendarPage() {
         type: 'tarefa',
         originalId: tarefa.id
       }
-    }))
+      }))
 
-    const lembreteEvents = lembretes.map((lembrete) => ({
+    const lembreteEvents = lembretes
+      .filter((lembrete) => lembrete.status !== 'concluido')
+      .map((lembrete) => ({
       id: `lembrete-${lembrete.id}`,
       title: lembrete.titulo || 'Lembrete sem titulo',
       start: lembrete.data || null,
@@ -72,7 +77,7 @@ export default function CalendarPage() {
         type: 'lembrete',
         originalId: lembrete.id
       }
-    }))
+      }))
 
     return [...tarefaEvents, ...lembreteEvents].filter((event) => !!event.start)
   }, [tarefas, lembretes])
@@ -162,7 +167,7 @@ export default function CalendarPage() {
 
       setDialogOpen(false)
     } catch (error) {
-      toast.error('Erro ao salvar evento: ' + error.message)
+      toast.error(getUserMessage(error, 'Nao foi possivel salvar o evento.'))
     }
   }
 
@@ -180,7 +185,7 @@ export default function CalendarPage() {
 
       setDialogOpen(false)
     } catch (error) {
-      toast.error('Erro ao excluir evento: ' + error.message)
+      toast.error(getUserMessage(error, 'Nao foi possivel excluir o evento.'))
     }
   }
 

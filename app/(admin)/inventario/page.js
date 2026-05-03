@@ -14,6 +14,7 @@ import {
 } from '@/components/ui/dialog'
 import { Plus } from 'lucide-react'
 import { useForm } from 'react-hook-form'
+import { toast } from 'sonner'
 
 import BarcodeScannerCard from '@/components/inventory/BarcodeScannerCard'
 import ImportExportProdutos from '@/components/inventory/ImportExportProdutos'
@@ -22,6 +23,7 @@ import ProductFormFields from '@/components/inventory/ProductFormFields'
 import MovementFormFields from '@/components/inventory/MovementFormFields'
 import PrintDialogContent from '@/components/inventory/PrintDialogContent'
 import PrintEtiqueta from '@/components/inventory/PrintEtiqueta'
+import { getUserMessage } from '@/lib/user-messages'
 
 export default function InventarioPage() {
   const {
@@ -87,30 +89,36 @@ export default function InventarioPage() {
   }
 
   const onSubmit = async (data) => {
-    const exists = await checkCodigoExists(data.cod, editingProduto?.id)
+    try {
+      const exists = await checkCodigoExists(data.cod, editingProduto?.id)
 
-    if (exists) {
-      setDuplicateDialog({
-        open: true,
-        cod: data.cod
-      })
-      return
+      if (exists) {
+        setDuplicateDialog({
+          open: true,
+          cod: data.cod
+        })
+        return
+      }
+
+      const payload = {
+        ...data,
+        cod_barra: String(data.cod)
+      }
+
+      if (editingProduto) {
+        await updateProduto(editingProduto.id, payload)
+        setEditingProduto(null)
+        toast.success('Produto atualizado com sucesso!')
+      } else {
+        await addProduto(payload)
+        setIsAddDialogOpen(false)
+        toast.success('Produto criado com sucesso!')
+      }
+
+      reset()
+    } catch (error) {
+      toast.error(getUserMessage(error, 'Nao foi possivel salvar o produto.'))
     }
-
-    const payload = {
-      ...data,
-      cod_barra: String(data.cod)
-    }
-
-    if (editingProduto) {
-      await updateProduto(editingProduto.id, payload)
-      setEditingProduto(null)
-    } else {
-      await addProduto(payload)
-      setIsAddDialogOpen(false)
-    }
-
-    reset()
   }
 
   const handleEdit = (produto) => {
@@ -137,16 +145,22 @@ export default function InventarioPage() {
     const amount = Number(quantidade)
     if (!amount || amount <= 0) return
 
-    if (movimentoDialog.tipo === 'entrada') {
-      await entradaProduto(movimentoDialog.produto.id, amount)
-    } else {
-      await saidaProduto(movimentoDialog.produto.id, amount)
-    }
+    try {
+      if (movimentoDialog.tipo === 'entrada') {
+        await entradaProduto(movimentoDialog.produto.id, amount)
+        toast.success('Entrada registrada com sucesso!')
+      } else {
+        await saidaProduto(movimentoDialog.produto.id, amount)
+        toast.success('Saida registrada com sucesso!')
+      }
 
-    setMovimentoDialog({ open: false, produto: null, tipo: null })
-    setBarcodeProduct(null)
-    setBarcodeInput('')
-    setScanQuantity(1)
+      setMovimentoDialog({ open: false, produto: null, tipo: null })
+      setBarcodeProduct(null)
+      setBarcodeInput('')
+      setScanQuantity(1)
+    } catch (error) {
+      toast.error(getUserMessage(error, 'Nao foi possivel registrar a movimentacao.'))
+    }
   }
 
   const handleBarcodeScan = (event) => {
@@ -199,13 +213,18 @@ export default function InventarioPage() {
   }
 
   const handleBulkDelete = async () => {
-    for (const produto of selectedProducts) {
-      await deleteProduto(produto.id)
-    }
+    try {
+      for (const produto of selectedProducts) {
+        await deleteProduto(produto.id)
+      }
 
-    setBulkDeleteDialogOpen(false)
-    setBulkActionError('')
-    clearSelection()
+      setBulkDeleteDialogOpen(false)
+      setBulkActionError('')
+      clearSelection()
+      toast.success('Produtos removidos com sucesso!')
+    } catch (error) {
+      setBulkActionError(getUserMessage(error, 'Nao foi possivel excluir os produtos selecionados.'))
+    }
   }
 
   const handleBulkSaida = async () => {
@@ -229,14 +248,19 @@ export default function InventarioPage() {
       return
     }
 
-    for (const produto of selectedProducts) {
-      await saidaProduto(produto.id, quantidade)
-    }
+    try {
+      for (const produto of selectedProducts) {
+        await saidaProduto(produto.id, quantidade)
+      }
 
-    setBulkSaidaDialogOpen(false)
-    setBulkSaidaQuantidade(1)
-    setBulkActionError('')
-    clearSelection()
+      setBulkSaidaDialogOpen(false)
+      setBulkSaidaQuantidade(1)
+      setBulkActionError('')
+      clearSelection()
+      toast.success('Baixa registrada com sucesso!')
+    } catch (error) {
+      setBulkActionError(getUserMessage(error, 'Nao foi possivel concluir a baixa dos produtos.'))
+    }
   }
 
   return (
@@ -348,8 +372,13 @@ export default function InventarioPage() {
             <Button
               variant="destructive"
               onClick={async () => {
-                await deleteProduto(deleteDialog.produto.id)
-                setDeleteDialog({ open: false, produto: null })
+                try {
+                  await deleteProduto(deleteDialog.produto.id)
+                  setDeleteDialog({ open: false, produto: null })
+                  toast.success('Produto removido com sucesso!')
+                } catch (error) {
+                  toast.error(getUserMessage(error, 'Nao foi possivel excluir o produto.'))
+                }
               }}
             >
               Excluir

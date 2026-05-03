@@ -8,6 +8,7 @@ import { cn } from '@/lib/utils'
 import Image from 'next/image'
 import {
   CalendarDays,
+  Camera,
   LayoutDashboard,
   ListTodo,
   LogOut,
@@ -20,7 +21,8 @@ const menuItems = [
   { href: '/tarefas', label: 'Tarefas', icon: ListTodo },
   { href: '/lembretes', label: 'Lembretes', icon: StickyNote },
   { href: '/calendario', label: 'Calendario', icon: CalendarDays },
-  { href: '/inventario', label: 'Inventario', icon: Package }
+  { href: '/inventario', label: 'Inventario', icon: Package },
+  { href: '/contagem', label: 'Contagem', icon: Camera }
 ]
 
 export function Sidebar({ onNavigate }) {

@@ -208,7 +208,7 @@ export function DataProvider({ children }) {
     } catch (err) {
       console.error('Erro ao carregar dados:', err)
       if (isMounted.current) {
-        setError(err.message)
+        setError('Nao foi possivel carregar os dados agora.')
       }
       throw err
     } finally {

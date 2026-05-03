@@ -1,16 +1,24 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { BrowserMultiFormatReader } from '@zxing/browser'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Barcode, Camera, CameraOff, History, Volume2 } from 'lucide-react'
+import { Barcode, Camera, CameraOff, History, Sparkles, Volume2 } from 'lucide-react'
 
 const CAMERA_HELP = 'No celular, permita o acesso a camera para escanear.'
 const MAX_HISTORY_ITEMS = 8
+
+function normalizeText(value = '') {
+  return String(value)
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim()
+}
 
 export default function BarcodeScannerCard({
   barcodeInput,
@@ -40,6 +48,18 @@ export default function BarcodeScannerCard({
   const [isStartingCamera, setIsStartingCamera] = useState(false)
   const [scanHistory, setScanHistory] = useState([])
   const [isMobileDevice, setIsMobileDevice] = useState(false)
+  const [productSearch, setProductSearch] = useState('')
+  const [isAiHelping, setIsAiHelping] = useState(false)
+
+  const filteredProducts = useMemo(() => {
+    const normalizedSearch = normalizeText(productSearch)
+
+    if (!normalizedSearch) return []
+
+    return produtos
+      .filter((produto) => normalizeText(produto.nome).includes(normalizedSearch))
+      .slice(0, 8)
+  }, [productSearch, produtos])
 
   useEffect(() => {
     codeReaderRef.current = new BrowserMultiFormatReader()
@@ -266,7 +286,7 @@ export default function BarcodeScannerCard({
       await new Promise((r) => setTimeout(r, 150))
 
       if (!videoRef.current) {
-        throw new Error('Elemento de video nao disponivel')
+        throw new Error('Nao foi possivel preparar a camera agora.')
       }
 
       const constraints = {
@@ -293,10 +313,77 @@ export default function BarcodeScannerCard({
       }, 300)
     } catch (err) {
       console.error('Erro ao iniciar camera:', err)
-      setCameraError(err.message || 'Erro ao iniciar camera')
+      setCameraError('Nao foi possivel abrir a camera. Tente novamente.')
       stopCamera()
     } finally {
       setIsStartingCamera(false)
+    }
+  }
+
+  const selectProductByName = (produto) => {
+    setBarcodeProduct(produto)
+    setBarcodeInput(produto.cod_barra || String(produto.cod || ''))
+    setScanQuantity(1)
+    setProductSearch(produto.nome)
+  }
+
+  const handleAiAssist = async () => {
+    if (!videoRef.current || isAiHelping) return
+
+    try {
+      setIsAiHelping(true)
+      setCameraError('')
+
+      const canvas = document.createElement('canvas')
+      canvas.width = videoRef.current.videoWidth
+      canvas.height = videoRef.current.videoHeight
+
+      const ctx = canvas.getContext('2d')
+      if (!ctx) {
+        setCameraError('Nao foi possivel preparar a ajuda por imagem.')
+        return
+      }
+
+      ctx.drawImage(videoRef.current, 0, 0)
+
+      const image = canvas.toDataURL('image/jpeg', 0.75)
+      const response = await fetch('/api/inventory-scan-assist', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          image,
+          produtos: produtos.map((produto) => ({
+            id: produto.id,
+            cod: produto.cod,
+            cod_barra: produto.cod_barra,
+            nome: produto.nome
+          }))
+        })
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        setCameraError(data?.error || 'Nao foi possivel usar a ajuda por imagem agora.')
+        return
+      }
+
+      if (data?.match) {
+        selectProductByName(data.match)
+        setCameraError('')
+        return
+      }
+
+      if (data?.suggestion?.productName) {
+        setProductSearch(data.suggestion.productName)
+      }
+
+      setCameraError('A ajuda por imagem nao conseguiu localizar o produto com seguranca.')
+    } catch (error) {
+      console.error('Erro na ajuda por imagem do scanner:', error)
+      setCameraError('Nao foi possivel usar a ajuda por imagem agora.')
+    } finally {
+      setIsAiHelping(false)
     }
   }
 
@@ -368,6 +455,9 @@ export default function BarcodeScannerCard({
         </div>
 
         <p className="mb-3 text-xs text-muted-foreground">{CAMERA_HELP}</p>
+        <p className="mb-3 text-xs text-muted-foreground">
+          Se a etiqueta estiver pequena demais para a camera, busque pelo nome do produto.
+        </p>
         {!isMobileDevice && (
           <p className="mb-3 text-xs text-amber-600">
             A camera fica habilitada apenas no celular. No computador, use a digitacao manual.
@@ -418,6 +508,24 @@ export default function BarcodeScannerCard({
           </div>
         )}
 
+        {isCameraOpen && (
+          <div className="mb-4">
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              onClick={handleAiAssist}
+              disabled={isAiHelping}
+            >
+              <Sparkles className="mr-2 h-4 w-4" />
+              {isAiHelping ? 'Analisando imagem...' : 'Ajuda por IA'}
+            </Button>
+            <p className="mt-2 text-xs text-muted-foreground">
+              Use quando a camera nao conseguir ler uma etiqueta pequena. A IA tenta achar o codigo ou o nome do produto na imagem atual.
+            </p>
+          </div>
+        )}
+
         {cameraError && (
           <div className="mb-4 rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
             {cameraError}
@@ -446,6 +554,7 @@ export default function BarcodeScannerCard({
               setBarcodeInput('')
               setBarcodeProduct(null)
               setScanQuantity(1)
+              setProductSearch('')
               setScanSuccess(false)
               lastScanRef.current = null
               setCameraError('')
@@ -453,6 +562,46 @@ export default function BarcodeScannerCard({
           >
             Limpar
           </Button>
+        </div>
+
+        <div className="mt-4">
+          <Label className="text-sm">Buscar por nome do produto</Label>
+
+          <Input
+            value={productSearch}
+            onChange={(event) => setProductSearch(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter' && filteredProducts[0]) {
+                event.preventDefault()
+                selectProductByName(filteredProducts[0])
+              }
+            }}
+            placeholder="Digite o nome do produto"
+          />
+
+          {productSearch && (
+            <div className="mt-2 rounded-lg border bg-card">
+              {filteredProducts.length > 0 ? (
+                filteredProducts.map((produto) => (
+                  <button
+                    key={produto.id}
+                    type="button"
+                    className="flex w-full items-center justify-between gap-3 border-b px-3 py-2 text-left last:border-b-0 hover:bg-muted/50"
+                    onClick={() => selectProductByName(produto)}
+                  >
+                    <span className="min-w-0 truncate font-medium">{produto.nome}</span>
+                    <span className="shrink-0 text-xs text-muted-foreground">
+                      Estoque: {produto.estoque}
+                    </span>
+                  </button>
+                ))
+              ) : (
+                <p className="px-3 py-2 text-sm text-muted-foreground">
+                  Nenhum produto encontrado com esse nome.
+                </p>
+              )}
+            </div>
+          )}
         </div>
 
         {barcodeProduct && (

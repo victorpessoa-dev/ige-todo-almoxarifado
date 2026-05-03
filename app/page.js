@@ -2,13 +2,15 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import Image from 'next/image'
+import { Lock, Mail } from 'lucide-react'
+import { toast } from 'sonner'
+
 import { useAuth } from '@/contexts/auth-context'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import Image from 'next/image'
-import { toast } from 'sonner'
-import { Lock, Mail } from 'lucide-react'
+import { Card, CardContent, CardDescription, CardHeader } from '@/components/ui/card'
+import { getUserMessage } from '@/lib/user-messages'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
@@ -23,21 +25,23 @@ export default function LoginPage() {
     }
   }, [isAuthenticated, isLoading, router])
 
-  const handleSubmit = async (e) => {
-    e.preventDefault()
+  const handleSubmit = async (event) => {
+    event.preventDefault()
 
     const result = await login(email, password)
 
     if (result.success) {
       toast.success('Login realizado com sucesso!')
     } else {
-      toast.error(result.error || 'Email ou senha inválidos!')
+      toast.error(
+        getUserMessage(result.error, 'Nao foi possivel entrar agora.')
+      )
     }
   }
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
+      <div className="flex min-h-screen items-center justify-center bg-background">
         <div className="animate-pulse text-muted-foreground">Carregando...</div>
       </div>
     )
@@ -48,25 +52,30 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-muted p-4">
+    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-background to-muted p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <Image src="/ige-supergesso.png" alt="Logo" width={200} height={150} className="mx-auto mb-2" />
+          <Image
+            src="/ige-supergesso.png"
+            alt="Logo"
+            width={200}
+            height={150}
+            className="mx-auto mb-2"
+          />
           <CardDescription>Entre com seu email e senha</CardDescription>
         </CardHeader>
 
         <CardContent>
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-
             <div className="flex flex-col gap-2">
               <label className="text-sm font-medium">Email</label>
               <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
                   type="email"
                   placeholder="Digite seu email"
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  onChange={(event) => setEmail(event.target.value)}
                   className="pl-10"
                   required
                 />
@@ -76,26 +85,25 @@ export default function LoginPage() {
             <div className="flex flex-col gap-2">
               <label className="text-sm font-medium">Senha</label>
               <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
                   type="password"
                   placeholder="Digite sua senha"
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={(event) => setPassword(event.target.value)}
                   className="pl-10"
                   required
                 />
               </div>
             </div>
 
-            <Button type="submit" className="w-full mt-2">
+            <Button type="submit" className="mt-2 w-full">
               Entrar
             </Button>
 
-            <p className="text-xs text-center text-muted-foreground mt-2">
+            <p className="mt-2 text-center text-xs text-muted-foreground">
               Acesso Admin
             </p>
-
           </form>
         </CardContent>
       </Card>
