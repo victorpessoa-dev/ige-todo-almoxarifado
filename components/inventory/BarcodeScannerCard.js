@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { BrowserMultiFormatReader } from '@zxing/browser'
+import { BrowserCodeReader, BrowserMultiFormatOneDReader } from '@zxing/browser'
 import { BarcodeFormat, DecodeHintType } from '@zxing/library'
 
 import { Button } from '@/components/ui/button'
@@ -14,11 +14,72 @@ import { Barcode, Camera, CameraOff, History, Sparkles, Volume2, ZoomIn } from '
 const CAMERA_HELP = 'No celular, permita o acesso a camera para escanear.'
 const MAX_HISTORY_ITEMS = 8
 const DEFAULT_CAMERA_ZOOM = 2
+const SCANNER_FRAME_WIDTH = 1280
+const SCANNER_FRAME_HEIGHT = 720
+const SCANNER_DECODE_WIDTH = 960
+const SCANNER_DECODE_HEIGHT = 360
+const SCANNER_RETRY_DELAY = 320
+const SCANNER_SUCCESS_DELAY = 900
+const RECENT_SCAN_LOCK_MS = 1400
+
+function installScannerCanvasOptimizer() {
+  if (BrowserCodeReader.__inventoryScannerCanvasOptimizerInstalled) return
+
+  const originalCreateCaptureCanvas = BrowserCodeReader.createCaptureCanvas
+  const originalDrawImageOnCanvas = BrowserCodeReader.drawImageOnCanvas
+
+  BrowserCodeReader.createCaptureCanvas = (mediaElement) => {
+    if (mediaElement?.dataset?.inventoryScanner === 'true') {
+      const canvas = document.createElement('canvas')
+      canvas.style.width = `${SCANNER_DECODE_WIDTH}px`
+      canvas.style.height = `${SCANNER_DECODE_HEIGHT}px`
+      canvas.width = SCANNER_DECODE_WIDTH
+      canvas.height = SCANNER_DECODE_HEIGHT
+      return canvas
+    }
+
+    return originalCreateCaptureCanvas(mediaElement)
+  }
+
+  BrowserCodeReader.drawImageOnCanvas = (canvasContext, srcElement) => {
+    if (srcElement?.dataset?.inventoryScanner === 'true') {
+      const sourceWidth = srcElement.videoWidth || srcElement.width
+      const sourceHeight = srcElement.videoHeight || srcElement.height
+
+      if (!sourceWidth || !sourceHeight) {
+        originalDrawImageOnCanvas(canvasContext, srcElement)
+        return
+      }
+
+      const cropWidth = Math.round(sourceWidth * 0.96)
+      const cropHeight = Math.round(sourceHeight * 0.5)
+      const cropX = Math.round((sourceWidth - cropWidth) / 2)
+      const cropY = Math.round((sourceHeight - cropHeight) / 2)
+
+      canvasContext.drawImage(
+        srcElement,
+        cropX,
+        cropY,
+        cropWidth,
+        cropHeight,
+        0,
+        0,
+        canvasContext.canvas.width,
+        canvasContext.canvas.height
+      )
+      return
+    }
+
+    originalDrawImageOnCanvas(canvasContext, srcElement)
+  }
+
+  BrowserCodeReader.__inventoryScannerCanvasOptimizerInstalled = true
+}
 
 function createScannerHints() {
   const hints = new Map()
 
-  hints.set(DecodeHintType.TRY_HARDER, true)
+  // Limit decoding work to the barcode formats used by inventory labels.
   hints.set(DecodeHintType.POSSIBLE_FORMATS, [
     BarcodeFormat.CODE_128,
     BarcodeFormat.CODE_39,
@@ -27,8 +88,7 @@ function createScannerHints() {
     BarcodeFormat.EAN_8,
     BarcodeFormat.UPC_A,
     BarcodeFormat.UPC_E,
-    BarcodeFormat.ITF,
-    BarcodeFormat.QR_CODE
+    BarcodeFormat.ITF
   ])
 
   return hints
@@ -61,6 +121,10 @@ export default function BarcodeScannerCard({
   const scanResetTimeoutRef = useRef(null)
   const audioContextRef = useRef(null)
   const scanHistoryRef = useRef([])
+  const recentScansRef = useRef(new Map())
+  const productByCodeRef = useRef(new Map())
+  const scanModeRef = useRef('single')
+  const modoRef = useRef('saida')
 
   const [isCameraOpen, setIsCameraOpen] = useState(false)
   const [scanSuccess, setScanSuccess] = useState(false)
@@ -76,6 +140,22 @@ export default function BarcodeScannerCard({
   const [zoomRange, setZoomRange] = useState({ min: 1, max: 2, step: 0.1 })
   const [isZoomSupported, setIsZoomSupported] = useState(false)
 
+  const productByCode = useMemo(() => {
+    const productMap = new Map()
+
+    produtos.forEach((produto) => {
+      if (produto.cod_barra) {
+        productMap.set(String(produto.cod_barra), produto)
+      }
+
+      if (produto.cod) {
+        productMap.set(String(produto.cod), produto)
+      }
+    })
+
+    return productMap
+  }, [produtos])
+
   const filteredProducts = useMemo(() => {
     const normalizedSearch = normalizeText(productSearch)
 
@@ -87,9 +167,11 @@ export default function BarcodeScannerCard({
   }, [productSearch, produtos])
 
   useEffect(() => {
-    codeReaderRef.current = new BrowserMultiFormatReader(createScannerHints(), {
-      delayBetweenScanAttempts: 80,
-      delayBetweenScanSuccess: 450,
+    installScannerCanvasOptimizer()
+
+    codeReaderRef.current = new BrowserMultiFormatOneDReader(createScannerHints(), {
+      delayBetweenScanAttempts: SCANNER_RETRY_DELAY,
+      delayBetweenScanSuccess: SCANNER_SUCCESS_DELAY,
       tryPlayVideoTimeout: 5000
     })
     const userAgent = navigator.userAgent || ''
@@ -114,11 +196,24 @@ export default function BarcodeScannerCard({
     scanHistoryRef.current = scanHistory
   }, [scanHistory])
 
+  useEffect(() => {
+    productByCodeRef.current = productByCode
+  }, [productByCode])
+
+  useEffect(() => {
+    scanModeRef.current = scanMode
+  }, [scanMode])
+
+  useEffect(() => {
+    modoRef.current = modo
+  }, [modo])
+
   const stopCamera = () => {
     setIsCameraOpen(false)
     setIsStartingCamera(false)
     setScanSuccess(false)
     lastScanRef.current = null
+    recentScansRef.current.clear()
 
     if (scanResetTimeoutRef.current) {
       clearTimeout(scanResetTimeoutRef.current)
@@ -267,7 +362,8 @@ export default function BarcodeScannerCard({
   }
 
   const registerHistoryItem = (produto, code) => {
-    const historyKey = `${modo}:${produto?.id || code}`
+    const currentMode = modoRef.current
+    const historyKey = `${currentMode}:${produto?.id || code}`
     const timestamp = new Date().toISOString()
     const existingItem = scanHistoryRef.current.find((item) => item.key === historyKey)
     const nextQuantity = existingItem ? existingItem.quantidade + 1 : 1
@@ -278,7 +374,7 @@ export default function BarcodeScannerCard({
         code,
         produto,
         nome: produto?.nome || 'Codigo nao encontrado',
-        modo,
+        modo: currentMode,
         quantidade: nextQuantity,
         lastScannedAt: timestamp,
         found: Boolean(produto)
@@ -300,8 +396,16 @@ export default function BarcodeScannerCard({
 
     if (!result) return
 
-    const code = result.getText()
-    if (!code || code === lastScanRef.current) return
+    const code = String(result.getText() || '').trim()
+    if (!code) return
+
+    const now = Date.now()
+    const lastSeenAt = recentScansRef.current.get(code) || 0
+    if (code === lastScanRef.current || now - lastSeenAt < RECENT_SCAN_LOCK_MS) {
+      return
+    }
+
+    recentScansRef.current.set(code, now)
 
     lastScanRef.current = code
     setScanSuccess(true)
@@ -319,20 +423,18 @@ export default function BarcodeScannerCard({
       lastScanRef.current = null
     }, 900)
 
-    const produto = produtos.find(
-      (p) => p.cod_barra === code || p.cod === code
-    )
+    const produto = productByCodeRef.current.get(code)
 
     if (produto) {
       setBarcodeProduct(produto)
       const nextQuantity = registerHistoryItem(produto, code)
 
-      if (scanMode === 'single') {
+      if (scanModeRef.current === 'single') {
         setScanQuantity(1)
         stopCamera()
 
         setTimeout(() => {
-          openMovimentoDialog(produto, modo, 1)
+          openMovimentoDialog(produto, modoRef.current, 1)
         }, 150)
       } else {
         setScanQuantity(nextQuantity)
@@ -365,8 +467,9 @@ export default function BarcodeScannerCard({
         audio: false,
         video: {
           facingMode: { ideal: 'environment' },
-          width: { ideal: 2560 },
-          height: { ideal: 1440 }
+          width: { ideal: SCANNER_FRAME_WIDTH, max: SCANNER_FRAME_WIDTH },
+          height: { ideal: SCANNER_FRAME_HEIGHT, max: SCANNER_FRAME_HEIGHT },
+          frameRate: { ideal: 24, max: 30 }
         }
       }
 
@@ -574,6 +677,7 @@ export default function BarcodeScannerCard({
             <div className="relative aspect-[4/3] min-h-[280px] w-full sm:min-h-[360px]">
               <video
                 ref={videoRef}
+                data-inventory-scanner="true"
                 className="h-full w-full object-cover"
                 autoPlay
                 muted
@@ -624,10 +728,9 @@ export default function BarcodeScannerCard({
                   step={zoomRange.step}
                   disabled={!isZoomSupported}
                   onValueChange={(value) => {
-                    const nextZoom = value[0]
-                    setZoomValue(nextZoom)
-                    applyCameraZoom(nextZoom)
+                    setZoomValue(value[0])
                   }}
+                  onValueCommit={(value) => applyCameraZoom(value[0])}
                   aria-label="Zoom da camera"
                 />
 

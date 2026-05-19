@@ -6,6 +6,8 @@ import { Camera, SwitchCamera, X, Check } from 'lucide-react'
 
 export function CameraCapture({ onCapture, onClose, capturedCount, maxImages }) {
   const videoRef = useRef(null)
+  const streamRef = useRef(null)
+  const flashTimeoutRef = useRef(null)
   const [stream, setStream] = useState(null)
   const [facingMode, setFacingMode] = useState('environment')
   const [isLoading, setIsLoading] = useState(false)
@@ -13,19 +15,26 @@ export function CameraCapture({ onCapture, onClose, capturedCount, maxImages }) 
   const [cameraError, setCameraError] = useState('')
 
   const stopCamera = useCallback(() => {
-    if (stream) {
-      stream.getTracks().forEach((track) => track.stop())
-      setStream(null)
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((track) => track.stop())
+      streamRef.current = null
     }
-  }, [stream])
+
+    if (videoRef.current) {
+      videoRef.current.srcObject = null
+    }
+
+    setStream(null)
+  }, [])
 
   const startCamera = useCallback(async () => {
     try {
       setIsLoading(true)
       setCameraError('')
 
-      if (stream) {
-        stream.getTracks().forEach((track) => track.stop())
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach((track) => track.stop())
+        streamRef.current = null
       }
 
       if (!navigator?.mediaDevices?.getUserMedia) {
@@ -36,8 +45,9 @@ export function CameraCapture({ onCapture, onClose, capturedCount, maxImages }) 
       const mediaStream = await navigator.mediaDevices.getUserMedia({
         video: {
           facingMode,
-          width: { ideal: 1920 },
-          height: { ideal: 1080 }
+          width: { ideal: 1280, max: 1280 },
+          height: { ideal: 720, max: 720 },
+          frameRate: { ideal: 24, max: 30 }
         }
       })
 
@@ -45,6 +55,7 @@ export function CameraCapture({ onCapture, onClose, capturedCount, maxImages }) 
         videoRef.current.srcObject = mediaStream
       }
 
+      streamRef.current = mediaStream
       setStream(mediaStream)
     } catch (error) {
       console.error('Erro ao acessar a camera:', error)
@@ -52,20 +63,24 @@ export function CameraCapture({ onCapture, onClose, capturedCount, maxImages }) 
     } finally {
       setIsLoading(false)
     }
-  }, [facingMode, stream])
+  }, [facingMode])
 
   const switchCamera = useCallback(() => {
     setFacingMode((prev) => (prev === 'user' ? 'environment' : 'user'))
   }, [])
 
   useEffect(() => {
-    if (stream) {
+    if (streamRef.current) {
       startCamera()
     }
-  }, [facingMode, startCamera, stream])
+  }, [facingMode, startCamera])
 
   useEffect(() => {
     return () => {
+      if (flashTimeoutRef.current) {
+        clearTimeout(flashTimeoutRef.current)
+      }
+
       stopCamera()
     }
   }, [stopCamera])
@@ -74,20 +89,30 @@ export function CameraCapture({ onCapture, onClose, capturedCount, maxImages }) 
     if (maxImages && capturedCount >= maxImages) return
     if (!videoRef.current) return
 
+    const sourceWidth = videoRef.current.videoWidth
+    const sourceHeight = videoRef.current.videoHeight
+    if (!sourceWidth || !sourceHeight) return
+
+    const outputWidth = Math.min(sourceWidth, 1280)
+    const outputHeight = Math.round(outputWidth * (sourceHeight / sourceWidth))
+
     const canvas = document.createElement('canvas')
-    canvas.width = videoRef.current.videoWidth
-    canvas.height = videoRef.current.videoHeight
+    canvas.width = outputWidth
+    canvas.height = outputHeight
     const ctx = canvas.getContext('2d')
 
     if (!ctx) return
 
-    ctx.drawImage(videoRef.current, 0, 0)
+    ctx.drawImage(videoRef.current, 0, 0, outputWidth, outputHeight)
 
-    const imageBase64 = canvas.toDataURL('image/jpeg', 0.8)
+    const imageBase64 = canvas.toDataURL('image/jpeg', 0.72)
     onCapture(imageBase64)
 
     setShowFlash(true)
-    setTimeout(() => setShowFlash(false), 150)
+    if (flashTimeoutRef.current) {
+      clearTimeout(flashTimeoutRef.current)
+    }
+    flashTimeoutRef.current = setTimeout(() => setShowFlash(false), 150)
   }, [capturedCount, maxImages, onCapture])
 
   const handleClose = useCallback(() => {
