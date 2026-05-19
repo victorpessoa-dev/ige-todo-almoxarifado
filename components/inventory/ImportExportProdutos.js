@@ -15,15 +15,6 @@ import {
   DialogHeader,
   DialogTitle
 } from '@/components/ui/dialog'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger
-} from '@/components/ui/dropdown-menu'
-import { Check, MoreHorizontal, Plus } from 'lucide-react'
 
 function normalizeImportedProducts(rows) {
   return rows.reduce((acc, item, index) => {
@@ -93,7 +84,7 @@ export default function ImportExportProdutos() {
 
         return {
           produto: produto.nome,
-          quantidade_comprar: max - estoque
+          qtd_compra: max - estoque
         }
       })
       .sort((a, b) => a.produto.localeCompare(b.produto))
@@ -282,32 +273,23 @@ export default function ImportExportProdutos() {
 
   return (
     <>
-      <div className="w-full sm:w-auto">
-        <div className="grid w-full grid-cols-2 gap-2 sm:grid-cols-4">
-          <Button
-            onClick={exportToCSV}
-            className="h-auto min-h-10 w-full whitespace-normal px-3 text-sm"
-          >
+      <div className="flex w-full items-center justify-center sm:w-auto">
+        <div className="grid w-full grid-cols-1 gap-2 sm:w-auto sm:grid-cols-4">
+          <Button onClick={exportToCSV} className="w-full sm:w-auto">
             Exp. CSV
           </Button>
 
-          <Button
-            onClick={exportToXLSX}
-            className="h-auto min-h-10 w-full whitespace-normal px-3 text-sm"
-          >
+          <Button onClick={exportToXLSX} className="w-full sm:w-auto">
             Exp. XLSX
           </Button>
 
-          <Button
-            onClick={exportLowStockPurchaseList}
-            className="h-auto min-h-10 w-full whitespace-normal px-3 text-center text-sm leading-tight"
-          >
-            Lista compra
+          <Button onClick={exportLowStockPurchaseList} className="w-full sm:w-auto">
+            Lista de Compra
           </Button>
 
           <Button
             onClick={() => fileInputRef.current?.click()}
-            className="h-auto min-h-10 w-full whitespace-normal px-3 text-sm"
+            className="w-full sm:w-auto"
           >
             Imp. Arquivo
           </Button>
@@ -334,216 +316,174 @@ export default function ImportExportProdutos() {
           }
         }}
       >
-        <DialogContent className="grid max-h-[calc(100vh-2rem)] w-[95vw] grid-rows-[auto_minmax(0,1fr)_auto] overflow-hidden p-0 sm:max-w-6xl">
-          <DialogHeader className="border-b px-4 py-4 sm:px-6">
-            <DialogTitle>Confirmar importacao de produtos</DialogTitle>
-            <p className="text-sm text-muted-foreground">
-              Confira os itens lidos do arquivo antes de gravar no estoque.
-            </p>
+        <DialogContent className="grid max-h-[calc(100vh-2rem)] w-[95vw] grid-rows-[auto_minmax(0,1fr)] overflow-hidden p-4 sm:max-w-5xl sm:p-6">
+          <DialogHeader>
+            <DialogTitle>Confirmar importacao</DialogTitle>
           </DialogHeader>
 
-          <div className="min-h-0 overflow-y-auto px-4 py-4 sm:px-6">
-            <div className="mb-4 grid grid-cols-3 gap-2">
-              <div className="rounded-xl border bg-background px-3 py-3">
-                <p className="text-xs uppercase text-muted-foreground">Lidos</p>
-                <p className="text-xl font-bold">{importSummary.total}</p>
+          <div className="flex min-h-0 flex-col gap-4">
+            <p className="text-sm text-muted-foreground">
+              Revise os produtos lidos antes de salvar no banco. Quando houver codigo duplicado,
+              voce pode somar ao produto existente ou criar um novo com outro codigo.
+            </p>
+
+            <div className="grid gap-3 sm:grid-cols-3">
+              <div className="rounded-xl border bg-background px-4 py-3">
+                <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                  Total lidos
+                </p>
+                <p className="text-2xl font-bold">{importSummary.total}</p>
               </div>
 
-              <div className="rounded-xl border border-emerald-300 bg-emerald-50 px-3 py-3">
-                <p className="text-xs uppercase text-emerald-700">Criar</p>
-                <p className="text-xl font-bold text-emerald-900">
+              <div className="rounded-xl border border-emerald-300 bg-emerald-50 px-4 py-3">
+                <p className="text-xs uppercase tracking-wide text-emerald-700">
+                  Serao criados
+                </p>
+                <p className="text-2xl font-bold text-emerald-900">
                   {importSummary.create}
                 </p>
               </div>
 
-              <div className="rounded-xl border border-amber-300 bg-amber-50 px-3 py-3">
-                <p className="text-xs uppercase text-amber-700">Somar</p>
-                <p className="text-xl font-bold text-amber-900">
+              <div className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3">
+                <p className="text-xs uppercase tracking-wide text-amber-700">
+                  Serao somados
+                </p>
+                <p className="text-2xl font-bold text-amber-900">
                   {importSummary.sum}
                 </p>
               </div>
             </div>
 
-            <div className="overflow-hidden rounded-xl border">
-              <div className="hidden grid-cols-[minmax(220px,1fr)_120px_80px_80px_80px_minmax(280px,340px)] gap-3 border-b bg-muted/40 px-4 py-2 text-xs font-medium uppercase text-muted-foreground lg:grid">
-                <span>Produto</span>
-                <span>Codigo</span>
-                <span>Estoque</span>
-                <span>Min</span>
-                <span>Max</span>
-                <span>Acoes</span>
-              </div>
-
-              <div className="divide-y">
-                {itemsWithDuplicates.map((item) => (
-                  <div
-                    key={item.id}
-                    className="grid gap-3 bg-background p-3 sm:p-4 lg:grid-cols-[minmax(220px,1fr)_120px_80px_80px_80px_minmax(280px,340px)] lg:items-start"
-                  >
-                    <div className="min-w-0">
+            <div className="min-h-0 flex-1 space-y-3 overflow-y-auto pr-1">
+              {itemsWithDuplicates.map((item) => (
+                <div
+                  key={item.id}
+                  className={`rounded-xl border p-3 ${
+                    item.duplicateProduct
+                      ? 'border-amber-300 bg-amber-50/40'
+                      : 'bg-card'
+                  }`}
+                >
+                  <div className="grid gap-3 xl:grid-cols-[minmax(0,1fr)_minmax(280px,340px)]">
+                    <div className="min-w-0 flex-1 space-y-1">
                       <div className="flex flex-wrap items-center gap-2">
                         <p className="min-w-0 break-words font-semibold">
                           {item.nome}
                         </p>
                         {item.duplicateProduct ? (
-                          <span className="w-fit rounded-full border px-2 py-0.5 text-xs font-medium text-muted-foreground">
-                            Duplicado
+                          <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-900">
+                            Codigo ja existe
                           </span>
                         ) : (
-                          <span className="w-fit rounded-full border px-2 py-0.5 text-xs font-medium text-muted-foreground">
-                            Novo
+                          <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-900">
+                            Produto novo
                           </span>
                         )}
                       </div>
 
+                      <div className="grid gap-1 text-sm text-muted-foreground sm:grid-cols-3">
+                        <p>Codigo lido: {item.originalCode}</p>
+                        <p>Estoque: {item.estoque}</p>
+                        <p>Min: {item.min} | Max: {item.max}</p>
+                      </div>
+
                       {item.duplicateProduct && (
-                        <p className="mt-1 text-xs text-amber-900">
-                          Existe: {item.duplicateProduct.nome} | Estoque atual:{' '}
-                          {item.duplicateProduct.estoque}
-                        </p>
+                        <div className="rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-900">
+                          Ja existe no banco: <strong>{item.duplicateProduct.nome}</strong>
+                          {' '}com codigo <strong>{item.duplicateProduct.cod}</strong> e estoque atual{' '}
+                          <strong>{item.duplicateProduct.estoque}</strong>.
+                        </div>
                       )}
                     </div>
 
-                    <div className="grid grid-cols-4 gap-2 text-sm lg:contents">
-                      <div className="rounded-lg border bg-background/70 px-3 py-2 lg:border-0 lg:bg-transparent lg:p-0">
-                        <p className="text-xs uppercase text-muted-foreground lg:hidden">Codigo</p>
-                        <p className="font-medium">{item.originalCode}</p>
-                      </div>
-                      <div className="rounded-lg border bg-background/70 px-3 py-2 lg:border-0 lg:bg-transparent lg:p-0">
-                        <p className="text-xs uppercase text-muted-foreground lg:hidden">Estoque</p>
-                        <p className="font-medium">{item.estoque}</p>
-                      </div>
-                      <div className="rounded-lg border bg-background/70 px-3 py-2 lg:border-0 lg:bg-transparent lg:p-0">
-                        <p className="text-xs uppercase text-muted-foreground lg:hidden">Min</p>
-                        <p className="font-medium">{item.min}</p>
-                      </div>
-                      <div className="rounded-lg border bg-background/70 px-3 py-2 lg:border-0 lg:bg-transparent lg:p-0">
-                        <p className="text-xs uppercase text-muted-foreground lg:hidden">Max</p>
-                        <p className="font-medium">{item.max}</p>
-                      </div>
-                    </div>
-
-                    <div className="flex flex-col gap-2 lg:items-end">
+                    <div className="w-full space-y-2">
                       {item.duplicateProduct ? (
                         <>
-                          <div className="flex w-full items-center justify-between gap-2 lg:justify-end">
-                            <span className="text-sm text-muted-foreground">
-                              {item.action === 'sum' ? 'Somar estoque' : 'Criar novo'}
-                            </span>
+                          <div className="grid gap-2 rounded-lg border bg-background/70 p-3">
+                            <label className="flex items-start gap-2 text-sm">
+                              <input
+                                type="radio"
+                                name={`action-${item.id}`}
+                                className="mt-1"
+                                checked={item.action === 'sum'}
+                                onChange={() =>
+                                  updateImportItem(item.id, {
+                                    action: 'sum',
+                                    code: item.originalCode
+                                  })
+                                }
+                              />
+                              Somar ao produto existente
+                            </label>
 
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button
-                                  type="button"
-                                  size="icon"
-                                  variant="ghost"
-                                  className="h-8 w-8"
-                                >
-                                  <MoreHorizontal className="h-4 w-4" />
-                                </Button>
-                              </DropdownMenuTrigger>
-
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuLabel>Acoes</DropdownMenuLabel>
-                                <DropdownMenuSeparator />
-
-                                <DropdownMenuItem
-                                  onClick={() =>
-                                    updateImportItem(item.id, {
-                                      action: 'sum',
-                                      code: item.originalCode
-                                    })
-                                  }
-                                >
-                                  <Check className="h-4 w-4" />
-                                  Somar estoque
-                                </DropdownMenuItem>
-
-                                <DropdownMenuItem
-                                  onClick={() =>
-                                    updateImportItem(item.id, {
-                                      action: 'create',
-                                      code:
-                                        item.code && item.code !== item.originalCode
-                                          ? item.code
-                                          : ''
-                                    })
-                                  }
-                                >
-                                  <Plus className="h-4 w-4" />
-                                  Criar novo
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
+                            <label className="flex items-start gap-2 text-sm">
+                              <input
+                                type="radio"
+                                name={`action-${item.id}`}
+                                className="mt-1"
+                                checked={item.action === 'create'}
+                                onChange={() =>
+                                  updateImportItem(item.id, {
+                                    action: 'create',
+                                    code:
+                                      item.code && item.code !== item.originalCode
+                                        ? item.code
+                                        : ''
+                                  })
+                                }
+                              />
+                              Criar como novo produto
+                            </label>
                           </div>
 
                           {item.action === 'create' && (
-                            <Input
-                              value={item.code}
-                              onChange={(event) =>
-                                updateImportItem(item.id, {
-                                  code: event.target.value
-                                })
-                              }
-                              placeholder="Novo codigo"
-                            />
+                            <div>
+                              <label className="mb-1 block text-sm font-medium">
+                                Novo codigo
+                              </label>
+                              <Input
+                                value={item.code}
+                                onChange={(event) =>
+                                  updateImportItem(item.id, {
+                                    code: event.target.value
+                                  })
+                                }
+                                placeholder="Informe outro codigo"
+                              />
+                            </div>
                           )}
                         </>
                       ) : (
-                        <div className="flex w-full items-center justify-between gap-2 lg:justify-end">
-                          <span className="text-sm text-muted-foreground">
-                            Criar produto
-                          </span>
-
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button
-                                type="button"
-                                size="icon"
-                                variant="ghost"
-                                className="h-8 w-8"
-                              >
-                                <MoreHorizontal className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuLabel>Acoes</DropdownMenuLabel>
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem disabled>
-                                <Plus className="h-4 w-4" />
-                                Criar produto
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
+                        <div className="rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-2 text-sm text-emerald-900">
+                          Produto novo. Sera criado no banco com o codigo {item.code}.
                         </div>
                       )}
                     </div>
                   </div>
-                ))}
-              </div>
+                </div>
+              ))}
             </div>
-          </div>
 
-          <div className="flex flex-col justify-end gap-2 border-t bg-background px-4 py-3 sm:flex-row sm:px-6">
-            <Button
-              variant="outline"
-              onClick={resetImportState}
-              disabled={isImporting}
-              className="w-full sm:w-auto"
-            >
-              Cancelar
-            </Button>
+            <div className="flex flex-col justify-end gap-2 border-t pt-3 sm:flex-row">
+              <Button
+                variant="outline"
+                onClick={resetImportState}
+                disabled={isImporting}
+                className="w-full sm:w-auto"
+              >
+                Cancelar
+              </Button>
 
-            <Button
-              onClick={confirmImport}
-              disabled={isImporting}
-              className="w-full whitespace-normal text-center sm:w-auto"
-            >
-              {isImporting
-                ? 'Importando...'
-                : `Confirmar importacao (${importSummary.create} criar, ${importSummary.sum} somar)`}
-            </Button>
+              <Button
+                onClick={confirmImport}
+                disabled={isImporting}
+                className="w-full whitespace-normal text-center sm:w-auto"
+              >
+                {isImporting
+                  ? 'Importando...'
+                  : `Confirmar importacao (${importSummary.create} criar, ${importSummary.sum} somar)`}
+              </Button>
+            </div>
           </div>
         </DialogContent>
       </Dialog>
