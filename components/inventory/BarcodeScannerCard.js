@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { BrowserMultiFormatReader } from '@zxing/browser'
+import { BarcodeFormat, DecodeHintType } from '@zxing/library'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -12,7 +13,26 @@ import { Barcode, Camera, CameraOff, History, Sparkles, Volume2, ZoomIn } from '
 
 const CAMERA_HELP = 'No celular, permita o acesso a camera para escanear.'
 const MAX_HISTORY_ITEMS = 8
-const DEFAULT_CAMERA_ZOOM = 1.5
+const DEFAULT_CAMERA_ZOOM = 2
+
+function createScannerHints() {
+  const hints = new Map()
+
+  hints.set(DecodeHintType.TRY_HARDER, true)
+  hints.set(DecodeHintType.POSSIBLE_FORMATS, [
+    BarcodeFormat.CODE_128,
+    BarcodeFormat.CODE_39,
+    BarcodeFormat.CODE_93,
+    BarcodeFormat.EAN_13,
+    BarcodeFormat.EAN_8,
+    BarcodeFormat.UPC_A,
+    BarcodeFormat.UPC_E,
+    BarcodeFormat.ITF,
+    BarcodeFormat.QR_CODE
+  ])
+
+  return hints
+}
 
 function normalizeText(value = '') {
   return String(value)
@@ -67,7 +87,11 @@ export default function BarcodeScannerCard({
   }, [productSearch, produtos])
 
   useEffect(() => {
-    codeReaderRef.current = new BrowserMultiFormatReader()
+    codeReaderRef.current = new BrowserMultiFormatReader(createScannerHints(), {
+      delayBetweenScanAttempts: 80,
+      delayBetweenScanSuccess: 450,
+      tryPlayVideoTimeout: 5000
+    })
     const userAgent = navigator.userAgent || ''
     const mobileMatch =
       /Android|iPhone|iPad|iPod|IEMobile|Opera Mini|BlackBerry|webOS/i.test(
@@ -154,6 +178,13 @@ export default function BarcodeScannerCard({
         capabilities.focusMode.includes('continuous')
       ) {
         advanced.push({ focusMode: 'continuous' })
+      }
+
+      if (
+        Array.isArray(capabilities.exposureMode) &&
+        capabilities.exposureMode.includes('continuous')
+      ) {
+        advanced.push({ exposureMode: 'continuous' })
       }
 
       if (
@@ -334,9 +365,8 @@ export default function BarcodeScannerCard({
         audio: false,
         video: {
           facingMode: { ideal: 'environment' },
-          width: { ideal: 1920 },
-          height: { ideal: 1080 },
-          aspectRatio: { ideal: 4 / 3 }
+          width: { ideal: 2560 },
+          height: { ideal: 1440 }
         }
       }
 
@@ -375,9 +405,25 @@ export default function BarcodeScannerCard({
       setIsAiHelping(true)
       setCameraError('')
 
+      const video = videoRef.current
+      const sourceWidth = video.videoWidth
+      const sourceHeight = video.videoHeight
+
+      if (!sourceWidth || !sourceHeight) {
+        setCameraError('A camera ainda esta preparando a imagem. Tente novamente.')
+        return
+      }
+
+      const cropWidth = Math.round(sourceWidth * 0.82)
+      const cropHeight = Math.round(sourceHeight * 0.62)
+      const cropX = Math.round((sourceWidth - cropWidth) / 2)
+      const cropY = Math.round((sourceHeight - cropHeight) / 2)
+      const outputWidth = Math.max(1600, cropWidth)
+      const outputHeight = Math.round(outputWidth * (cropHeight / cropWidth))
+
       const canvas = document.createElement('canvas')
-      canvas.width = videoRef.current.videoWidth
-      canvas.height = videoRef.current.videoHeight
+      canvas.width = outputWidth
+      canvas.height = outputHeight
 
       const ctx = canvas.getContext('2d')
       if (!ctx) {
@@ -385,9 +431,21 @@ export default function BarcodeScannerCard({
         return
       }
 
-      ctx.drawImage(videoRef.current, 0, 0)
+      ctx.imageSmoothingEnabled = true
+      ctx.imageSmoothingQuality = 'high'
+      ctx.drawImage(
+        video,
+        cropX,
+        cropY,
+        cropWidth,
+        cropHeight,
+        0,
+        0,
+        outputWidth,
+        outputHeight
+      )
 
-      const image = canvas.toDataURL('image/jpeg', 0.75)
+      const image = canvas.toDataURL('image/jpeg', 0.92)
       const response = await fetch('/api/inventory-scan-assist', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -513,10 +571,10 @@ export default function BarcodeScannerCard({
 
         {(isCameraOpen || isStartingCamera) && (
           <div className="mb-4 overflow-hidden rounded-xl border bg-black">
-            <div className="relative aspect-[4/3] w-full">
+            <div className="relative aspect-[4/3] min-h-[280px] w-full sm:min-h-[360px]">
               <video
                 ref={videoRef}
-                className="h-full w-full object-contain"
+                className="h-full w-full object-cover"
                 autoPlay
                 muted
                 playsInline
@@ -528,7 +586,7 @@ export default function BarcodeScannerCard({
 
                   <div className="pointer-events-none absolute inset-0 flex items-center justify-center px-6">
                     <div
-                      className={`h-32 w-full max-w-72 rounded-xl border-2 ${
+                      className={`relative h-36 w-full max-w-sm rounded-xl border-2 ${
                         scanSuccess ? 'border-green-400' : 'border-white'
                       }`}
                     >

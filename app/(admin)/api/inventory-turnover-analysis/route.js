@@ -6,26 +6,105 @@ function createUserError(message, status = 400) {
   return Response.json({ error: message }, { status })
 }
 
+function buildLocalTurnoverAnalysis(products) {
+  const totalOut = products.reduce((acc, product) => acc + Number(product.saida30 || 0), 0)
+  const totalIn = products.reduce((acc, product) => acc + Number(product.entrada30 || 0), 0)
+  const lowStockItems = products.filter(
+    (product) => Number(product.currentStock || 0) <= Number(product.min || 0)
+  )
+  const stoppedItems = products.filter(
+    (product) => product.daysWithoutSales == null || Number(product.daysWithoutSales) >= 60
+  )
+
+  const summaryParts = [
+    `Foram avaliados ${products.length} produto(s).`,
+    `No periodo, houve ${totalOut} saida(s) e ${totalIn} entrada(s).`
+  ]
+
+  if (lowStockItems.length > 0) {
+    summaryParts.push(`${lowStockItems.length} produto(s) estao no minimo ou abaixo dele.`)
+  }
+
+  if (stoppedItems.length > 0) {
+    summaryParts.push(`${stoppedItems.length} produto(s) merecem atencao por baixa ou nenhuma saida recente.`)
+  }
+
+  return {
+    summary: summaryParts.join(' '),
+    source: 'local',
+    recommendations: products.map((product) => {
+      const currentStock = Number(product.currentStock || 0)
+      const currentMin = Number(product.min || 0)
+      const currentMax = Number(product.max || 0)
+      const avgMonthlyOut = Number(product.avgMonthlyOut || 0)
+      const saida30 = Number(product.saida30 || 0)
+      const daysWithoutSales = product.daysWithoutSales
+
+      let minSuggestion = currentMin
+      let maxSuggestion = currentMax
+      let recommendation = 'Manter os parametros atuais e acompanhar o proximo periodo.'
+      let reason = 'O giro recente nao indica necessidade clara de ajuste.'
+
+      if (saida30 > 0 || avgMonthlyOut > 0) {
+        minSuggestion = Math.max(1, Math.ceil(avgMonthlyOut * 0.5))
+        maxSuggestion = Math.max(minSuggestion + 1, Math.ceil(avgMonthlyOut * 1.5))
+        recommendation = 'Ajustar minimo e maximo com base na media mensal de saida.'
+        reason = `Media mensal aproximada de saida: ${avgMonthlyOut}.`
+      }
+
+      if (currentStock <= currentMin) {
+        maxSuggestion = Math.max(maxSuggestion, currentMax, currentStock + Math.ceil(avgMonthlyOut || 1))
+        recommendation = 'Priorizar reposicao deste produto.'
+        reason = `Estoque atual (${currentStock}) esta no minimo ou abaixo do minimo (${currentMin}).`
+      }
+
+      if ((daysWithoutSales == null || daysWithoutSales >= 60) && saida30 === 0) {
+        minSuggestion = 0
+        maxSuggestion = Math.max(1, Math.min(currentMax || 1, currentStock || 1))
+        recommendation = 'Evitar compra ate voltar a ter saida.'
+        reason =
+          daysWithoutSales == null
+            ? 'Nao ha registro de saida para este produto.'
+            : `Produto esta ha ${daysWithoutSales} dias sem saida.`
+      }
+
+      return {
+        productId: product.productId,
+        name: product.name,
+        turnoverLabel: product.turnoverLabel,
+        minSuggestion,
+        maxSuggestion,
+        recommendation,
+        reason
+      }
+    })
+  }
+}
+
 export async function POST(req) {
+  let products = []
+
   try {
     const body = await req.json()
 
-    const products = Array.isArray(body?.products)
+    products = Array.isArray(body?.products)
       ? body.products.slice(0, MAX_TURNOVER_ANALYSIS_PRODUCTS)
       : []
 
     if (products.length === 0) {
-      return createUserError('Sem dados para análise.')
+      return createUserError('Sem dados para analise.')
     }
 
     const prompt = `
       Analise o giro de estoque.
 
       Considere:
-      - consumo 30, 60 e 90 dias
-      - estoque atual vs mínimo/máximo
+      - saidas e entradas no periodo selecionado
+      - estoque atual vs minimo/maximo
+      - media mensal de saida
+      - dias sem saida
 
-      Responda JSON:
+      Retorne somente JSON valido:
       {
         "summary": "string",
         "recommendations": [
@@ -51,7 +130,8 @@ export async function POST(req) {
     })
 
     return Response.json({
-      summary: data?.summary || 'Análise concluída.',
+      summary: data?.summary || 'Analise concluida.',
+      source: 'ai',
       recommendations: Array.isArray(data?.recommendations)
         ? data.recommendations
         : []
@@ -59,9 +139,10 @@ export async function POST(req) {
   } catch (error) {
     console.error('Erro turnover:', error)
 
-    return createUserError(
-      'Nao foi possivel analisar o giro agora.',
-      500
-    )
+    if (products.length > 0) {
+      return Response.json(buildLocalTurnoverAnalysis(products))
+    }
+
+    return createUserError('Nao foi possivel analisar o giro agora.', 500)
   }
 }

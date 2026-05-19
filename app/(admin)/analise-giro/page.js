@@ -628,8 +628,16 @@ export default function AnaliseGiroPage() {
               <>
                 {turnoverAnalysis?.summary && (
                   <div className="rounded-xl border bg-primary/5 px-4 py-4">
-                    <p className="text-sm font-medium text-primary">Resumo</p>
+                    <p className="text-sm font-medium text-primary">
+                      Resumo
+                      {turnoverAnalysis.source === 'local' ? ' automatico' : ''}
+                    </p>
                     <p className="mt-2 text-sm">{turnoverAnalysis.summary}</p>
+                    {turnoverAnalysis.source === 'local' && (
+                      <p className="mt-2 text-xs text-muted-foreground">
+                        A IA externa nao respondeu ou nao esta configurada; foi usada uma analise local pelos dados de giro.
+                      </p>
+                    )}
                   </div>
                 )}
 
