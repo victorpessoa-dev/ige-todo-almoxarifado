@@ -1,5 +1,7 @@
 import { callAI } from '@/lib/server/ai-providers'
 
+const MAX_TURNOVER_ANALYSIS_PRODUCTS = 5
+
 function createUserError(message, status = 400) {
   return Response.json({ error: message }, { status })
 }
@@ -8,7 +10,9 @@ export async function POST(req) {
   try {
     const body = await req.json()
 
-    const products = Array.isArray(body?.products) ? body.products.slice(0, 80) : []
+    const products = Array.isArray(body?.products)
+      ? body.products.slice(0, MAX_TURNOVER_ANALYSIS_PRODUCTS)
+      : []
 
     if (products.length === 0) {
       return createUserError('Sem dados para análise.')

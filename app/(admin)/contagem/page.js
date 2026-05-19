@@ -12,7 +12,7 @@ import { ProductList } from '@/components/contagem/ProductList'
 import { downloadExcel } from '@/lib/excel'
 import { getUserMessage } from '@/lib/user-messages'
 
-const MAX_IMAGES = 10
+const MAX_IMAGES = 3
 
 function getFriendlyAnalyzeError(error) {
   const message = getUserMessage(
@@ -271,6 +271,7 @@ export default function ContagemPage() {
         onCapture={addImage}
         onClose={() => setShowCamera(false)}
         capturedCount={pendingImages.length}
+        maxImages={MAX_IMAGES}
       />
     )
   }

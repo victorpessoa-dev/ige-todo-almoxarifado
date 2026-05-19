@@ -6,11 +6,13 @@ import { BrowserMultiFormatReader } from '@zxing/browser'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Slider } from '@/components/ui/slider'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Barcode, Camera, CameraOff, History, Sparkles, Volume2 } from 'lucide-react'
+import { Barcode, Camera, CameraOff, History, Sparkles, Volume2, ZoomIn } from 'lucide-react'
 
 const CAMERA_HELP = 'No celular, permita o acesso a camera para escanear.'
 const MAX_HISTORY_ITEMS = 8
+const DEFAULT_CAMERA_ZOOM = 1.5
 
 function normalizeText(value = '') {
   return String(value)
@@ -50,6 +52,9 @@ export default function BarcodeScannerCard({
   const [isMobileDevice, setIsMobileDevice] = useState(false)
   const [productSearch, setProductSearch] = useState('')
   const [isAiHelping, setIsAiHelping] = useState(false)
+  const [zoomValue, setZoomValue] = useState(1)
+  const [zoomRange, setZoomRange] = useState({ min: 1, max: 2, step: 0.1 })
+  const [isZoomSupported, setIsZoomSupported] = useState(false)
 
   const filteredProducts = useMemo(() => {
     const normalizedSearch = normalizeText(productSearch)
@@ -105,10 +110,34 @@ export default function BarcodeScannerCard({
     } catch {}
 
     controlsRef.current = null
+    setIsZoomSupported(false)
 
     if (videoRef.current?.srcObject) {
       videoRef.current.srcObject.getTracks().forEach((t) => t.stop())
       videoRef.current.srcObject = null
+    }
+  }
+
+  const clampZoom = (value, range = zoomRange) => {
+    const parsedValue = Number(value)
+    if (!Number.isFinite(parsedValue)) return range.min
+
+    return Math.min(range.max, Math.max(range.min, parsedValue))
+  }
+
+  const applyCameraZoom = async (value) => {
+    const track = videoRef.current?.srcObject?.getVideoTracks?.()[0]
+    if (!track || typeof track.applyConstraints !== 'function') return
+
+    const nextZoom = clampZoom(value)
+    setZoomValue(nextZoom)
+
+    try {
+      await track.applyConstraints({
+        advanced: [{ zoom: nextZoom }]
+      })
+    } catch (error) {
+      console.warn('Nao foi possivel ajustar o zoom da camera:', error)
     }
   }
 
@@ -131,14 +160,26 @@ export default function BarcodeScannerCard({
         typeof capabilities.zoom?.min === 'number' &&
         typeof capabilities.zoom?.max === 'number'
       ) {
-        const zoomTarget = Math.min(
-          capabilities.zoom.max,
-          Math.max(capabilities.zoom.min, 1.5)
+        const nextRange = {
+          min: capabilities.zoom.min,
+          max: capabilities.zoom.max,
+          step: capabilities.zoom.step || 0.1
+        }
+        const zoomTarget = clampZoom(
+          zoomValue > nextRange.min ? zoomValue : DEFAULT_CAMERA_ZOOM,
+          nextRange
         )
 
         if (Number.isFinite(zoomTarget)) {
+          setZoomRange(nextRange)
+          setZoomValue(zoomTarget)
+          setIsZoomSupported(nextRange.max > nextRange.min)
           advanced.push({ zoom: zoomTarget })
         }
+      } else {
+        setZoomRange({ min: 1, max: 2, step: 0.1 })
+        setZoomValue(1)
+        setIsZoomSupported(false)
       }
 
       if (advanced.length > 0) {
@@ -505,6 +546,40 @@ export default function BarcodeScannerCard({
                 </>
               )}
             </div>
+
+            {isCameraOpen && (
+              <div className="border-t border-white/10 bg-background p-3">
+                <div className="mb-2 flex items-center justify-between gap-3 text-sm">
+                  <Label className="flex items-center gap-2">
+                    <ZoomIn className="h-4 w-4" />
+                    Zoom
+                  </Label>
+                  <span className="text-xs text-muted-foreground">
+                    {zoomValue.toFixed(1)}x
+                  </span>
+                </div>
+
+                <Slider
+                  value={[zoomValue]}
+                  min={zoomRange.min}
+                  max={zoomRange.max}
+                  step={zoomRange.step}
+                  disabled={!isZoomSupported}
+                  onValueChange={(value) => {
+                    const nextZoom = value[0]
+                    setZoomValue(nextZoom)
+                    applyCameraZoom(nextZoom)
+                  }}
+                  aria-label="Zoom da camera"
+                />
+
+                {!isZoomSupported && (
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    Este aparelho nao liberou zoom manual para o navegador.
+                  </p>
+                )}
+              </div>
+            )}
           </div>
         )}
 

@@ -4,7 +4,7 @@ import { useRef, useState, useCallback, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Camera, SwitchCamera, X, Check } from 'lucide-react'
 
-export function CameraCapture({ onCapture, onClose, capturedCount }) {
+export function CameraCapture({ onCapture, onClose, capturedCount, maxImages }) {
   const videoRef = useRef(null)
   const [stream, setStream] = useState(null)
   const [facingMode, setFacingMode] = useState('environment')
@@ -71,6 +71,7 @@ export function CameraCapture({ onCapture, onClose, capturedCount }) {
   }, [stopCamera])
 
   const captureImage = useCallback(() => {
+    if (maxImages && capturedCount >= maxImages) return
     if (!videoRef.current) return
 
     const canvas = document.createElement('canvas')
@@ -87,7 +88,7 @@ export function CameraCapture({ onCapture, onClose, capturedCount }) {
 
     setShowFlash(true)
     setTimeout(() => setShowFlash(false), 150)
-  }, [onCapture])
+  }, [capturedCount, maxImages, onCapture])
 
   const handleClose = useCallback(() => {
     stopCamera()
@@ -112,7 +113,7 @@ export function CameraCapture({ onCapture, onClose, capturedCount }) {
 
         {capturedCount > 0 && (
           <div className="rounded-full bg-secondary px-3 py-1 text-sm font-medium text-secondary-foreground">
-            {capturedCount} foto{capturedCount !== 1 ? 's' : ''}
+            {capturedCount}{maxImages ? `/${maxImages}` : ''} foto{capturedCount !== 1 ? 's' : ''}
           </div>
         )}
 
@@ -157,6 +158,7 @@ export function CameraCapture({ onCapture, onClose, capturedCount }) {
             onClick={captureImage}
             size="lg"
             className="h-16 w-16 rounded-full bg-white hover:bg-white/90"
+            disabled={Boolean(maxImages && capturedCount >= maxImages)}
           >
             <Camera className="h-8 w-8 text-black" />
           </Button>
@@ -174,7 +176,7 @@ export function CameraCapture({ onCapture, onClose, capturedCount }) {
       )}
 
       <p className="pb-4 text-center text-sm text-white/70">
-        Tire varias fotos e toque no check para analisar
+        Tire ate {maxImages || 'varias'} fotos e toque no check para analisar
       </p>
     </div>
   )

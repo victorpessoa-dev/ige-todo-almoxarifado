@@ -23,9 +23,8 @@ export default function ProductFormFields({
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-
       <div>
-        <Label>Código</Label>
+        <Label>Codigo</Label>
         <Input {...register('cod', { required: true })} />
       </div>
 
@@ -35,17 +34,40 @@ export default function ProductFormFields({
       </div>
 
       <div>
-        <Label>Código de Barras</Label>
+        <Label>Codigo de Barras</Label>
         <Input {...register('cod_barra')} readOnly />
       </div>
 
-      <div className="grid grid-cols-3 gap-4">
-        <Input type="number" placeholder="Estoque" {...register('estoque', { valueAsNumber: true })} />
-        <Input type="number" placeholder="Min" {...register('min', { valueAsNumber: true })} />
-        <Input type="number" placeholder="Máx" {...register('max', { valueAsNumber: true })} />
+      <div className="grid gap-3 sm:grid-cols-3">
+        <div className="space-y-2">
+          <Label>Estoque</Label>
+          <Input
+            type="number"
+            min={0}
+            {...register('estoque', { valueAsNumber: true })}
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label>Min</Label>
+          <Input
+            type="number"
+            min={0}
+            {...register('min', { valueAsNumber: true })}
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label>Max</Label>
+          <Input
+            type="number"
+            min={0}
+            {...register('max', { valueAsNumber: true })}
+          />
+        </div>
       </div>
 
-      <Button type="submit">
+      <Button type="submit" className="w-full sm:w-auto">
         {buttonText}
       </Button>
     </form>

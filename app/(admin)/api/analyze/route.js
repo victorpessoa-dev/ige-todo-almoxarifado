@@ -1,6 +1,6 @@
 import { callAI } from '@/lib/server/ai-providers'
 
-const MAX_IMAGES = 10
+const MAX_IMAGES = 3
 const MAX_TOTAL_SIZE = 10 * 1024 * 1024
 
 function createUserError(message, status = 400) {

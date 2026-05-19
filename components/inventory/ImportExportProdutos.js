@@ -234,13 +234,20 @@ export default function ImportExportProdutos() {
 
   return (
     <>
-      <div className="flex items-center justify-center">
-        <div className="flex flex-row gap-2">
-          <Button onClick={exportToCSV}>Exp. CSV</Button>
+      <div className="flex w-full items-center justify-center sm:w-auto">
+        <div className="grid w-full grid-cols-1 gap-2 sm:w-auto sm:grid-cols-3">
+          <Button onClick={exportToCSV} className="w-full sm:w-auto">
+            Exp. CSV
+          </Button>
 
-          <Button onClick={exportToXLSX}>Exp. XLSX</Button>
+          <Button onClick={exportToXLSX} className="w-full sm:w-auto">
+            Exp. XLSX
+          </Button>
 
-          <Button onClick={() => fileInputRef.current?.click()}>
+          <Button
+            onClick={() => fileInputRef.current?.click()}
+            className="w-full sm:w-auto"
+          >
             Imp. Arquivo
           </Button>
 
@@ -266,12 +273,12 @@ export default function ImportExportProdutos() {
           }
         }}
       >
-        <DialogContent className="w-[95vw] max-w-4xl p-4 sm:p-6">
+        <DialogContent className="grid max-h-[calc(100vh-2rem)] w-[95vw] grid-rows-[auto_minmax(0,1fr)] overflow-hidden p-4 sm:max-w-5xl sm:p-6">
           <DialogHeader>
             <DialogTitle>Confirmar importacao</DialogTitle>
           </DialogHeader>
 
-          <div className="space-y-4">
+          <div className="flex min-h-0 flex-col gap-4">
             <p className="text-sm text-muted-foreground">
               Revise os produtos lidos antes de salvar no banco. Quando houver codigo duplicado,
               voce pode somar ao produto existente ou criar um novo com outro codigo.
@@ -304,7 +311,7 @@ export default function ImportExportProdutos() {
               </div>
             </div>
 
-            <div className="max-h-[60vh] space-y-3 overflow-y-auto pr-1">
+            <div className="min-h-0 flex-1 space-y-3 overflow-y-auto pr-1">
               {itemsWithDuplicates.map((item) => (
                 <div
                   key={item.id}
@@ -314,10 +321,12 @@ export default function ImportExportProdutos() {
                       : 'bg-card'
                   }`}
                 >
-                  <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                  <div className="grid gap-3 xl:grid-cols-[minmax(0,1fr)_minmax(280px,340px)]">
                     <div className="min-w-0 flex-1 space-y-1">
                       <div className="flex flex-wrap items-center gap-2">
-                        <p className="font-semibold">{item.nome}</p>
+                        <p className="min-w-0 break-words font-semibold">
+                          {item.nome}
+                        </p>
                         {item.duplicateProduct ? (
                           <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-900">
                             Codigo ja existe
@@ -329,12 +338,11 @@ export default function ImportExportProdutos() {
                         )}
                       </div>
 
-                      <p className="text-sm text-muted-foreground">
-                        Codigo lido: {item.originalCode} | Estoque: {item.estoque}
-                      </p>
-                      <p className="text-sm text-muted-foreground">
-                        Min: {item.min} | Max: {item.max}
-                      </p>
+                      <div className="grid gap-1 text-sm text-muted-foreground sm:grid-cols-3">
+                        <p>Codigo lido: {item.originalCode}</p>
+                        <p>Estoque: {item.estoque}</p>
+                        <p>Min: {item.min} | Max: {item.max}</p>
+                      </div>
 
                       {item.duplicateProduct && (
                         <div className="rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-900">
@@ -345,14 +353,15 @@ export default function ImportExportProdutos() {
                       )}
                     </div>
 
-                    <div className="w-full space-y-2 lg:w-[320px]">
+                    <div className="w-full space-y-2">
                       {item.duplicateProduct ? (
                         <>
-                          <div className="flex flex-col gap-2 rounded-lg border p-3">
-                            <label className="flex items-center gap-2 text-sm">
+                          <div className="grid gap-2 rounded-lg border bg-background/70 p-3">
+                            <label className="flex items-start gap-2 text-sm">
                               <input
                                 type="radio"
                                 name={`action-${item.id}`}
+                                className="mt-1"
                                 checked={item.action === 'sum'}
                                 onChange={() =>
                                   updateImportItem(item.id, {
@@ -364,10 +373,11 @@ export default function ImportExportProdutos() {
                               Somar ao produto existente
                             </label>
 
-                            <label className="flex items-center gap-2 text-sm">
+                            <label className="flex items-start gap-2 text-sm">
                               <input
                                 type="radio"
                                 name={`action-${item.id}`}
+                                className="mt-1"
                                 checked={item.action === 'create'}
                                 onChange={() =>
                                   updateImportItem(item.id, {
@@ -411,16 +421,21 @@ export default function ImportExportProdutos() {
               ))}
             </div>
 
-            <div className="flex flex-col justify-end gap-2 sm:flex-row">
+            <div className="flex flex-col justify-end gap-2 border-t pt-3 sm:flex-row">
               <Button
                 variant="outline"
                 onClick={resetImportState}
                 disabled={isImporting}
+                className="w-full sm:w-auto"
               >
                 Cancelar
               </Button>
 
-              <Button onClick={confirmImport} disabled={isImporting}>
+              <Button
+                onClick={confirmImport}
+                disabled={isImporting}
+                className="w-full whitespace-normal text-center sm:w-auto"
+              >
                 {isImporting
                   ? 'Importando...'
                   : `Confirmar importacao (${importSummary.create} criar, ${importSummary.sum} somar)`}

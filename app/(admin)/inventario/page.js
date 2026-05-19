@@ -283,7 +283,7 @@ export default function InventarioPage() {
             </Button>
           </DialogTrigger>
 
-          <DialogContent className="w-[95vw] max-w-[420px] p-4 sm:max-w-md sm:p-6">
+          <DialogContent className="max-h-[calc(100vh-2rem)] w-[95vw] overflow-y-auto p-4 sm:max-w-xl sm:p-6">
             <DialogHeader>
               <DialogTitle>Adicionar Produto</DialogTitle>
             </DialogHeader>
@@ -462,7 +462,7 @@ export default function InventarioPage() {
         open={!!editingProduto}
         onOpenChange={() => setEditingProduto(null)}
       >
-        <DialogContent className="w-[95vw] max-w-[420px] p-4 sm:p-6">
+        <DialogContent className="max-h-[calc(100vh-2rem)] w-[95vw] overflow-y-auto p-4 sm:max-w-xl sm:p-6">
           <DialogHeader>
             <DialogTitle>Editar Produto</DialogTitle>
           </DialogHeader>

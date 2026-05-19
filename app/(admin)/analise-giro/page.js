@@ -18,6 +18,7 @@ import { useData } from '@/contexts/data-context'
 import { getUserMessage } from '@/lib/user-messages'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
 import {
   Select,
@@ -50,6 +51,8 @@ const PERIOD_OPTIONS = [
   { value: '365', label: '1 ano', days: 365 },
   { value: '730', label: '2 anos', days: 365 * 2 }
 ]
+
+const MAX_TURNOVER_ANALYSIS_PRODUCTS = 5
 
 function buildTurnoverStats(produtos, movimentacoes, periodDays) {
   const now = new Date()
@@ -195,6 +198,7 @@ export default function AnaliseGiroPage() {
   const [selectedPeriod, setSelectedPeriod] = useState('30')
   const [search, setSearch] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
+  const [selectedAnalysisProductIds, setSelectedAnalysisProductIds] = useState([])
 
   const selectedPeriodDays =
     PERIOD_OPTIONS.find((option) => option.value === selectedPeriod)?.days || 30
@@ -216,6 +220,18 @@ export default function AnaliseGiroPage() {
       turnoverStats[0]
     )
   }, [turnoverStats, selectedProductId])
+
+  const selectedAnalysisItems = useMemo(() => {
+    if (selectedAnalysisProductIds.length > 0) {
+      return selectedAnalysisProductIds
+        .map((productId) =>
+          turnoverStats.find((item) => item.productId === productId)
+        )
+        .filter(Boolean)
+    }
+
+    return turnoverStats.slice(0, MAX_TURNOVER_ANALYSIS_PRODUCTS)
+  }, [selectedAnalysisProductIds, turnoverStats])
 
   const filteredItems = useMemo(() => {
     const normalizedSearch = search.trim().toLowerCase()
@@ -246,6 +262,14 @@ export default function AnaliseGiroPage() {
     }
   }, [currentPage, totalPages])
 
+  useEffect(() => {
+    setSelectedAnalysisProductIds((prev) =>
+      prev.filter((productId) =>
+        turnoverStats.some((item) => item.productId === productId)
+      )
+    )
+  }, [turnoverStats])
+
   const summary = useMemo(() => {
     return {
       total: turnoverStats.length,
@@ -255,9 +279,34 @@ export default function AnaliseGiroPage() {
     }
   }, [turnoverStats])
 
+  const toggleAnalysisProduct = (productId) => {
+    setSelectedAnalysisProductIds((prev) => {
+      if (prev.includes(productId)) {
+        return prev.filter((itemId) => itemId !== productId)
+      }
+
+      if (prev.length >= MAX_TURNOVER_ANALYSIS_PRODUCTS) {
+        toast.error(`Selecione no maximo ${MAX_TURNOVER_ANALYSIS_PRODUCTS} produtos para a IA.`)
+        return prev
+      }
+
+      return [...prev, productId]
+    })
+  }
+
   const handleAnalyzeTurnover = async () => {
     if (turnoverStats.length === 0) {
       toast.error('Ainda nao ha dados suficientes para analisar o giro.')
+      return
+    }
+
+    const productsForAnalysis = selectedAnalysisItems.slice(
+      0,
+      MAX_TURNOVER_ANALYSIS_PRODUCTS
+    )
+
+    if (productsForAnalysis.length === 0) {
+      toast.error('Selecione produtos ou mantenha a lista com movimentacoes disponiveis.')
       return
     }
 
@@ -269,7 +318,7 @@ export default function AnaliseGiroPage() {
       const response = await fetch('/api/inventory-turnover-analysis', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ products: turnoverStats })
+        body: JSON.stringify({ products: productsForAnalysis })
       })
 
       const data = await response.json()
@@ -403,23 +452,46 @@ export default function AnaliseGiroPage() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
+              <div className="rounded-xl border bg-muted/20 px-3 py-2 text-xs text-muted-foreground">
+                Marque ate {MAX_TURNOVER_ANALYSIS_PRODUCTS} produtos para a IA. Sem selecao, serao analisados os {MAX_TURNOVER_ANALYSIS_PRODUCTS} produtos com maior saida.
+              </div>
+
               <div className="space-y-2">
                 {paginatedItems.map((item) => (
-                  <button
+                  <div
                     key={item.productId}
-                    type="button"
+                    role="button"
+                    tabIndex={0}
                     onClick={() => setSelectedProductId(item.productId)}
+                    onKeyDown={(event) => {
+                      if (event.key === 'Enter' || event.key === ' ') {
+                        event.preventDefault()
+                        setSelectedProductId(item.productId)
+                      }
+                    }}
                     className={`flex w-full flex-col gap-2 rounded-xl border p-3 text-left transition-colors hover:bg-muted/40 ${selectedItem?.productId === item.productId
                       ? 'border-primary bg-primary/5'
                       : ''
                       }`}
                   >
                     <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                      <div className="min-w-0">
-                        <p className="truncate font-semibold">{item.name}</p>
-                        <p className="text-xs text-muted-foreground">
-                          Cod: {item.cod} | Estoque: {item.currentStock} | Min: {item.min} | Max: {item.max}
-                        </p>
+                      <div className="flex min-w-0 items-start gap-3">
+                        <span
+                          className="pt-1"
+                          onClick={(event) => event.stopPropagation()}
+                        >
+                          <Checkbox
+                            checked={selectedAnalysisProductIds.includes(item.productId)}
+                            onCheckedChange={() => toggleAnalysisProduct(item.productId)}
+                            aria-label={`Selecionar ${item.name} para analise por IA`}
+                          />
+                        </span>
+                        <div className="min-w-0">
+                          <p className="truncate font-semibold">{item.name}</p>
+                          <p className="text-xs text-muted-foreground">
+                            Cod: {item.cod} | Estoque: {item.currentStock} | Min: {item.min} | Max: {item.max}
+                          </p>
+                        </div>
                       </div>
                       <span
                         className={`rounded-full px-2 py-1 text-xs font-medium ${item.turnoverLabel === 'alto'
@@ -437,7 +509,7 @@ export default function AnaliseGiroPage() {
                       <span>Entrada {item.periodDays}d: {item.entrada30}</span>
                       <span>Media mensal: {item.avgMonthlyOut}</span>
                     </div>
-                  </button>
+                  </div>
                 ))}
               </div>
 
