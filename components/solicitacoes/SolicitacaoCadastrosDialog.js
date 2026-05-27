@@ -2,12 +2,15 @@
 
 import { useState } from 'react'
 import { toast } from 'sonner'
-import { Pencil, Plus, Trash2 } from 'lucide-react'
+import { Pencil, Plus, Trash2, UserRound, WalletCards } from 'lucide-react'
 
+import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle
 } from '@/components/ui/dialog'
@@ -23,6 +26,14 @@ import {
 } from '@/components/ui/alert-dialog'
 import { Input } from '@/components/ui/input'
 import { Switch } from '@/components/ui/switch'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow
+} from '@/components/ui/table'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import {
   Select,
@@ -56,10 +67,36 @@ function Field({ label, children }) {
 
 function AtivoField({ checked, onChange }) {
   return (
-    <div className="flex items-center justify-between rounded-lg border px-3 py-2">
-      <span className="text-sm font-medium">Ativo</span>
+    <div className="flex items-center justify-between rounded-lg border bg-muted/20 px-3 py-2">
+      <div>
+        <p className="text-sm font-medium">Cadastro ativo</p>
+        <p className="text-xs text-muted-foreground">
+          Itens ativos aparecem nas listas publicas.
+        </p>
+      </div>
       <Switch checked={checked} onCheckedChange={onChange} />
     </div>
+  )
+}
+
+function StatusBadge({ active }) {
+  return (
+    <Badge
+      variant={active ? 'secondary' : 'outline'}
+      className={active ? 'bg-emerald-500/15 text-emerald-200' : 'text-muted-foreground'}
+    >
+      {active ? 'Ativo' : 'Inativo'}
+    </Badge>
+  )
+}
+
+function EmptyRows({ colSpan, label }) {
+  return (
+    <TableRow>
+      <TableCell colSpan={colSpan} className="py-10 text-center text-sm text-muted-foreground">
+        {label}
+      </TableCell>
+    </TableRow>
   )
 }
 
@@ -82,10 +119,12 @@ export function SolicitacaoCadastrosDialog({
   onUpdateCentroCusto,
   onDeleteCentroCusto
 }) {
+  const [activeTab, setActiveTab] = useState('solicitantes')
   const [solicitanteForm, setSolicitanteForm] = useState(defaultSolicitante)
   const [centroCustoForm, setCentroCustoForm] = useState(defaultCentroCusto)
   const [editingSolicitante, setEditingSolicitante] = useState(null)
   const [editingCentroCusto, setEditingCentroCusto] = useState(null)
+  const [formDialogOpen, setFormDialogOpen] = useState(false)
   const [deleteTarget, setDeleteTarget] = useState(null)
 
   const resetSolicitante = () => {
@@ -96,6 +135,46 @@ export function SolicitacaoCadastrosDialog({
   const resetCentroCusto = () => {
     setCentroCustoForm(defaultCentroCusto)
     setEditingCentroCusto(null)
+  }
+
+  const closeFormDialog = () => {
+    setFormDialogOpen(false)
+    resetSolicitante()
+    resetCentroCusto()
+  }
+
+  const openNewSolicitante = () => {
+    resetSolicitante()
+    setActiveTab('solicitantes')
+    setFormDialogOpen(true)
+  }
+
+  const openEditSolicitante = (item) => {
+    setEditingSolicitante(item)
+    setSolicitanteForm({
+      nome: item.nome || '',
+      centro_custo_id: item.centro_custo_id || '',
+      ativo: item.ativo ?? true
+    })
+    setActiveTab('solicitantes')
+    setFormDialogOpen(true)
+  }
+
+  const openNewCentroCusto = () => {
+    resetCentroCusto()
+    setActiveTab('centros')
+    setFormDialogOpen(true)
+  }
+
+  const openEditCentroCusto = (item) => {
+    setEditingCentroCusto(item)
+    setCentroCustoForm({
+      nome: item.nome || '',
+      codigo: item.codigo || '',
+      ativo: item.ativo ?? true
+    })
+    setActiveTab('centros')
+    setFormDialogOpen(true)
   }
 
   const submitSolicitante = async (event) => {
@@ -114,7 +193,7 @@ export function SolicitacaoCadastrosDialog({
         await onAddSolicitante(solicitanteForm)
         toast.success('Solicitante cadastrado!')
       }
-      resetSolicitante()
+      closeFormDialog()
     } catch (error) {
       toast.error(getUserMessage(error, 'Nao foi possivel salvar o solicitante.'))
     }
@@ -131,7 +210,7 @@ export function SolicitacaoCadastrosDialog({
         await onAddCentroCusto(centroCustoForm)
         toast.success('Centro de custo cadastrado!')
       }
-      resetCentroCusto()
+      closeFormDialog()
     } catch (error) {
       toast.error(getUserMessage(error, 'Nao foi possivel salvar o centro de custo.'))
     }
@@ -162,22 +241,191 @@ export function SolicitacaoCadastrosDialog({
     }
   }
 
+  const isSolicitanteMode = activeTab === 'solicitantes'
+  const formTitle = isSolicitanteMode
+    ? editingSolicitante
+      ? 'Editar solicitante'
+      : 'Novo solicitante'
+    : editingCentroCusto
+      ? 'Editar centro de custo'
+      : 'Novo centro de custo'
+
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="max-h-[calc(100vh-2rem)] w-[95vw] overflow-y-auto p-4 sm:max-w-5xl sm:p-6">
           <DialogHeader>
             <DialogTitle>Cadastros de solicitacao</DialogTitle>
+            <DialogDescription>
+              Gerencie os solicitantes e centros de custo usados no formulario publico.
+            </DialogDescription>
           </DialogHeader>
 
-        <Tabs defaultValue="solicitantes">
-          <TabsList>
-            <TabsTrigger value="solicitantes">Solicitantes</TabsTrigger>
-            <TabsTrigger value="centros">Centros de custo</TabsTrigger>
-          </TabsList>
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="gap-4">
+            <TabsList className="grid h-auto w-full grid-cols-2">
+              <TabsTrigger value="solicitantes">
+                <UserRound className="h-4 w-4" />
+                Solicitantes
+              </TabsTrigger>
+              <TabsTrigger value="centros">
+                <WalletCards className="h-4 w-4" />
+                Centros de custo
+              </TabsTrigger>
+            </TabsList>
 
-          <TabsContent value="solicitantes" className="mt-4 grid gap-4 lg:grid-cols-[360px_minmax(0,1fr)]">
-            <form onSubmit={submitSolicitante} className="grid gap-3 rounded-xl border bg-card p-4">
+            <TabsContent value="solicitantes" className="space-y-4">
+              <div className="flex flex-col gap-3 rounded-lg border bg-muted/20 p-3 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <p className="text-sm font-semibold">Solicitantes cadastrados</p>
+                  <p className="text-xs text-muted-foreground">
+                    {solicitantes.length} registro{solicitantes.length === 1 ? '' : 's'}
+                  </p>
+                </div>
+                <Button type="button" onClick={openNewSolicitante}>
+                  <Plus className="h-4 w-4" />
+                  Novo solicitante
+                </Button>
+              </div>
+
+              <div className="overflow-hidden rounded-lg border">
+                <div className="overflow-x-auto">
+                  <Table className="min-w-[720px]">
+                    <TableHeader>
+                      <TableRow className="hover:bg-transparent">
+                        <TableHead>Nome</TableHead>
+                        <TableHead>Centro de custo</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead className="w-24 text-right">Acoes</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {solicitantes.length === 0 ? (
+                        <EmptyRows colSpan={4} label="Nenhum solicitante cadastrado." />
+                      ) : (
+                        solicitantes.map((item) => (
+                          <TableRow key={item.id}>
+                            <TableCell className="font-medium">{item.nome}</TableCell>
+                            <TableCell className="text-muted-foreground">
+                              {getCentroCustoLabel(centrosCusto, item.centro_custo_id) || '-'}
+                            </TableCell>
+                            <TableCell>
+                              <StatusBadge active={item.ativo} />
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <div className="flex justify-end gap-1">
+                                <Button
+                                  type="button"
+                                  size="icon"
+                                  variant="ghost"
+                                  onClick={() => openEditSolicitante(item)}
+                                >
+                                  <Pencil className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  type="button"
+                                  size="icon"
+                                  variant="ghost"
+                                  onClick={() => setDeleteTarget({ type: 'solicitante', item })}
+                                >
+                                  <Trash2 className="h-4 w-4 text-destructive" />
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="centros" className="space-y-4">
+              <div className="flex flex-col gap-3 rounded-lg border bg-muted/20 p-3 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <p className="text-sm font-semibold">Centros de custo cadastrados</p>
+                  <p className="text-xs text-muted-foreground">
+                    {centrosCusto.length} registro{centrosCusto.length === 1 ? '' : 's'}
+                  </p>
+                </div>
+                <Button type="button" onClick={openNewCentroCusto}>
+                  <Plus className="h-4 w-4" />
+                  Novo centro
+                </Button>
+              </div>
+
+              <div className="overflow-hidden rounded-lg border">
+                <div className="overflow-x-auto">
+                  <Table className="min-w-[640px]">
+                    <TableHeader>
+                      <TableRow className="hover:bg-transparent">
+                        <TableHead>Codigo</TableHead>
+                        <TableHead>Nome</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead className="w-24 text-right">Acoes</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {centrosCusto.length === 0 ? (
+                        <EmptyRows colSpan={4} label="Nenhum centro de custo cadastrado." />
+                      ) : (
+                        centrosCusto.map((item) => (
+                          <TableRow key={item.id}>
+                            <TableCell className="font-medium tabular-nums">
+                              {item.codigo || '-'}
+                            </TableCell>
+                            <TableCell>{item.nome}</TableCell>
+                            <TableCell>
+                              <StatusBadge active={item.ativo} />
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <div className="flex justify-end gap-1">
+                                <Button
+                                  type="button"
+                                  size="icon"
+                                  variant="ghost"
+                                  onClick={() => openEditCentroCusto(item)}
+                                >
+                                  <Pencil className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  type="button"
+                                  size="icon"
+                                  variant="ghost"
+                                  onClick={() => setDeleteTarget({ type: 'centro', item })}
+                                >
+                                  <Trash2 className="h-4 w-4 text-destructive" />
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
+              </div>
+            </TabsContent>
+          </Tabs>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={formDialogOpen} onOpenChange={(nextOpen) => {
+        if (!nextOpen) closeFormDialog()
+        else setFormDialogOpen(true)
+      }}>
+        <DialogContent className="w-[95vw] sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>{formTitle}</DialogTitle>
+            <DialogDescription>
+              {isSolicitanteMode
+                ? 'Informe o nome e o centro de custo padrao do solicitante.'
+                : 'Informe o nome, codigo e status do centro de custo.'}
+            </DialogDescription>
+          </DialogHeader>
+
+          {isSolicitanteMode ? (
+            <form onSubmit={submitSolicitante} className="grid gap-4">
               <Field label="Nome">
                 <Input
                   value={solicitanteForm.nome}
@@ -206,61 +454,17 @@ export function SolicitacaoCadastrosDialog({
                 checked={solicitanteForm.ativo}
                 onChange={(value) => setSolicitanteForm((prev) => ({ ...prev, ativo: value }))}
               />
-              <div className="flex gap-2">
-                <Button type="submit" className="flex-1">
-                  <Plus className="h-4 w-4" />
-                  {editingSolicitante ? 'Salvar' : 'Cadastrar'}
+              <DialogFooter>
+                <Button type="button" variant="outline" onClick={closeFormDialog}>
+                  Cancelar
                 </Button>
-                {editingSolicitante && (
-                  <Button type="button" variant="outline" onClick={resetSolicitante}>
-                    Cancelar
-                  </Button>
-                )}
-              </div>
+                <Button type="submit">
+                  {editingSolicitante ? 'Salvar alteracoes' : 'Cadastrar'}
+                </Button>
+              </DialogFooter>
             </form>
-
-            <div className="grid gap-2">
-              {solicitantes.map((item) => (
-                <div key={item.id} className="flex items-center justify-between gap-3 rounded-xl border bg-card p-3">
-                  <div className="min-w-0">
-                    <p className="truncate font-medium">{item.nome}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {getCentroCustoLabel(centrosCusto, item.centro_custo_id) || 'Sem centro de custo'}
-                      {!item.ativo ? ' | Inativo' : ''}
-                    </p>
-                  </div>
-                  <div className="flex gap-1">
-                    <Button
-                      type="button"
-                      size="icon"
-                      variant="ghost"
-                      onClick={() => {
-                        setEditingSolicitante(item)
-                        setSolicitanteForm({
-                          nome: item.nome || '',
-                          centro_custo_id: item.centro_custo_id || '',
-                          ativo: item.ativo ?? true
-                        })
-                      }}
-                    >
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      type="button"
-                      size="icon"
-                      variant="ghost"
-                      onClick={() => setDeleteTarget({ type: 'solicitante', item })}
-                    >
-                      <Trash2 className="h-4 w-4 text-destructive" />
-                    </Button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </TabsContent>
-
-          <TabsContent value="centros" className="mt-4 grid gap-4 lg:grid-cols-[360px_minmax(0,1fr)]">
-            <form onSubmit={submitCentroCusto} className="grid gap-3 rounded-xl border bg-card p-4">
+          ) : (
+            <form onSubmit={submitCentroCusto} className="grid gap-4">
               <Field label="Nome">
                 <Input
                   value={centroCustoForm.nome}
@@ -278,60 +482,16 @@ export function SolicitacaoCadastrosDialog({
                 checked={centroCustoForm.ativo}
                 onChange={(value) => setCentroCustoForm((prev) => ({ ...prev, ativo: value }))}
               />
-              <div className="flex gap-2">
-                <Button type="submit" className="flex-1">
-                  <Plus className="h-4 w-4" />
-                  {editingCentroCusto ? 'Salvar' : 'Cadastrar'}
+              <DialogFooter>
+                <Button type="button" variant="outline" onClick={closeFormDialog}>
+                  Cancelar
                 </Button>
-                {editingCentroCusto && (
-                  <Button type="button" variant="outline" onClick={resetCentroCusto}>
-                    Cancelar
-                  </Button>
-                )}
-              </div>
+                <Button type="submit">
+                  {editingCentroCusto ? 'Salvar alteracoes' : 'Cadastrar'}
+                </Button>
+              </DialogFooter>
             </form>
-
-            <div className="grid gap-2">
-              {centrosCusto.map((item) => (
-                <div key={item.id} className="flex items-center justify-between gap-3 rounded-xl border bg-card p-3">
-                  <div className="min-w-0">
-                    <p className="truncate font-medium">
-                      {[item.codigo, item.nome].filter(Boolean).join(' - ')}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {item.ativo ? 'Ativo' : 'Inativo'}
-                    </p>
-                  </div>
-                  <div className="flex gap-1">
-                    <Button
-                      type="button"
-                      size="icon"
-                      variant="ghost"
-                      onClick={() => {
-                        setEditingCentroCusto(item)
-                        setCentroCustoForm({
-                          nome: item.nome || '',
-                          codigo: item.codigo || '',
-                          ativo: item.ativo ?? true
-                        })
-                      }}
-                    >
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      type="button"
-                      size="icon"
-                      variant="ghost"
-                      onClick={() => setDeleteTarget({ type: 'centro', item })}
-                    >
-                      <Trash2 className="h-4 w-4 text-destructive" />
-                    </Button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </TabsContent>
-        </Tabs>
+          )}
         </DialogContent>
       </Dialog>
 

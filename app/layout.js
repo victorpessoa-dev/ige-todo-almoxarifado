@@ -2,11 +2,31 @@
 import './globals.css'
 import { AuthProvider } from '@/contexts/auth-context'
 import { DataProvider } from '@/contexts/data-context'
+import { PwaRegister } from '@/components/pwa/PwaRegister'
 import { Toaster } from 'sonner'
 
 export const metadata = {
-  title: 'IGE - Tarefas e Lembretes',
-  description: 'Sistema de gerenciamento de tarefas e lembretes',
+  title: 'IGE Almoxarifado',
+  description: 'Sistema de solicitacoes, compras e almoxarifado',
+  applicationName: 'IGE Almoxarifado',
+  manifest: '/manifest.json',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'black-translucent',
+    title: 'IGE'
+  },
+  icons: {
+    icon: [
+      { url: '/icons/icon-192.png', sizes: '192x192', type: 'image/png' },
+      { url: '/icons/icon-512.png', sizes: '512x512', type: 'image/png' }
+    ],
+    apple: [{ url: '/icons/icon-192.png', sizes: '192x192', type: 'image/png' }]
+  }
+}
+
+export const viewport = {
+  themeColor: '#020617',
+  viewportFit: 'cover'
 }
 
 export default function RootLayout({ children }) {
@@ -15,6 +35,7 @@ export default function RootLayout({ children }) {
       <body className="overflow-x-hidden bg-background text-foreground font-sans antialiased dark">
         <AuthProvider>
           <DataProvider>
+            <PwaRegister />
             <Toaster />
             {children}
           </DataProvider>
