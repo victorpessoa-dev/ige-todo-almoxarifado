@@ -11,6 +11,16 @@ import {
   DialogHeader,
   DialogTitle
 } from '@/components/ui/dialog'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle
+} from '@/components/ui/alert-dialog'
 import { Input } from '@/components/ui/input'
 import { Switch } from '@/components/ui/switch'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -76,6 +86,7 @@ export function SolicitacaoCadastrosDialog({
   const [centroCustoForm, setCentroCustoForm] = useState(defaultCentroCusto)
   const [editingSolicitante, setEditingSolicitante] = useState(null)
   const [editingCentroCusto, setEditingCentroCusto] = useState(null)
+  const [deleteTarget, setDeleteTarget] = useState(null)
 
   const resetSolicitante = () => {
     setSolicitanteForm(defaultSolicitante)
@@ -126,34 +137,38 @@ export function SolicitacaoCadastrosDialog({
     }
   }
 
-  const removeSolicitante = async (item) => {
-    if (!confirm(`Excluir ${item.nome}?`)) return
+  const confirmDelete = async () => {
+    if (!deleteTarget) return
+    const { type, item } = deleteTarget
 
     try {
-      await onDeleteSolicitante(item.id)
-      toast.success('Solicitante excluido!')
+      if (type === 'solicitante') {
+        await onDeleteSolicitante(item.id)
+        toast.success('Solicitante excluido!')
+      } else {
+        await onDeleteCentroCusto(item.id)
+        toast.success('Centro de custo excluido!')
+      }
+      setDeleteTarget(null)
     } catch (error) {
-      toast.error(getUserMessage(error, 'Nao foi possivel excluir o solicitante.'))
-    }
-  }
-
-  const removeCentroCusto = async (item) => {
-    if (!confirm(`Excluir ${item.nome}?`)) return
-
-    try {
-      await onDeleteCentroCusto(item.id)
-      toast.success('Centro de custo excluido!')
-    } catch (error) {
-      toast.error(getUserMessage(error, 'Nao foi possivel excluir o centro de custo.'))
+      toast.error(
+        getUserMessage(
+          error,
+          type === 'solicitante'
+            ? 'Nao foi possivel excluir o solicitante.'
+            : 'Nao foi possivel excluir o centro de custo.'
+        )
+      )
     }
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[calc(100vh-2rem)] w-[95vw] overflow-y-auto p-4 sm:max-w-5xl sm:p-6">
-        <DialogHeader>
-          <DialogTitle>Cadastros de solicitacao</DialogTitle>
-        </DialogHeader>
+    <>
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="max-h-[calc(100vh-2rem)] w-[95vw] overflow-y-auto p-4 sm:max-w-5xl sm:p-6">
+          <DialogHeader>
+            <DialogTitle>Cadastros de solicitacao</DialogTitle>
+          </DialogHeader>
 
         <Tabs defaultValue="solicitantes">
           <TabsList>
@@ -234,7 +249,7 @@ export function SolicitacaoCadastrosDialog({
                       type="button"
                       size="icon"
                       variant="ghost"
-                      onClick={() => removeSolicitante(item)}
+                      onClick={() => setDeleteTarget({ type: 'solicitante', item })}
                     >
                       <Trash2 className="h-4 w-4 text-destructive" />
                     </Button>
@@ -307,7 +322,7 @@ export function SolicitacaoCadastrosDialog({
                       type="button"
                       size="icon"
                       variant="ghost"
-                      onClick={() => removeCentroCusto(item)}
+                      onClick={() => setDeleteTarget({ type: 'centro', item })}
                     >
                       <Trash2 className="h-4 w-4 text-destructive" />
                     </Button>
@@ -317,7 +332,35 @@ export function SolicitacaoCadastrosDialog({
             </div>
           </TabsContent>
         </Tabs>
-      </DialogContent>
-    </Dialog>
+        </DialogContent>
+      </Dialog>
+
+      <AlertDialog
+        open={Boolean(deleteTarget)}
+        onOpenChange={(nextOpen) => {
+          if (!nextOpen) setDeleteTarget(null)
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              Excluir {deleteTarget?.item?.nome || 'cadastro'}?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta acao remove o cadastro selecionado e nao pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={confirmDelete}
+            >
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   )
 }

@@ -71,24 +71,13 @@ export function SolicitacoesSlide({ solicitacoes, active, onEnd }) {
 
   return (
     <div className="flex h-full flex-col overflow-hidden p-5 sm:p-8">
-      <div className="mb-6 flex items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <ShoppingCart className="h-9 w-9 text-primary" />
-          <div>
-            <h2 className="text-3xl font-bold">Solicitacoes de Compra</h2>
-            <p className="text-sm text-muted-foreground">
-              {abertas.length} compra(s) em aberto
-            </p>
-          </div>
+        <div className="mb-4 flex items-center justify-center gap-2 text-center sm:mb-6 sm:gap-3">
+          <ShoppingCart className="h-8 w-8 sm:h-10 sm:w-10 text-primary" />
+          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-foreground">
+            Solicitacoes de Compra
+            </h2>
         </div>
 
-        {totalAtencao > 0 && (
-          <Badge variant="outline" className="border-red-200 bg-red-50 text-red-700">
-            <AlertTriangle className="h-3 w-3" />
-            {totalAtencao} atencao
-          </Badge>
-        )}
-      </div>
 
       {importantes.length === 0 ? (
         <div className="flex flex-1 items-center justify-center rounded-xl border border-dashed bg-muted/30 text-muted-foreground">

@@ -18,6 +18,16 @@ import {
   DialogHeader,
   DialogTitle
 } from '@/components/ui/dialog'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle
+} from '@/components/ui/alert-dialog'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { defaultSolicitacaoForm } from './SolicitacaoForm'
 import { SolicitacaoStatusBadge } from './SolicitacaoStatusBadge'
@@ -188,6 +198,7 @@ export function SolicitacaoDetailsDialog({
   const [form, setForm] = useState(defaultSolicitacaoForm)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
 
   useEffect(() => {
     if (solicitacao) {
@@ -268,11 +279,11 @@ export function SolicitacaoDetailsDialog({
 
   const handleDelete = async () => {
     if (!solicitacao) return
-    if (!confirm('Deseja excluir esta solicitacao?')) return
 
     try {
       await onDelete(solicitacao.id)
       toast.success('Solicitacao excluida com sucesso!')
+      setDeleteConfirmOpen(false)
       onOpenChange(false)
     } catch (error) {
       toast.error(getUserMessage(error, 'Nao foi possivel excluir a solicitacao.'))
@@ -286,13 +297,14 @@ export function SolicitacaoDetailsDialog({
   ].filter(Boolean).join(' - ')
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[calc(100vh-2rem)] w-[95vw] overflow-y-auto p-4 sm:max-w-6xl sm:p-6">
-        <DialogHeader className="pr-10">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-            <DialogTitle className="line-clamp-2 pr-2 text-left">
-              {dialogTitle}
-            </DialogTitle>
+    <>
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="max-h-[calc(100vh-2rem)] w-[95vw] overflow-y-auto p-4 sm:max-w-6xl sm:p-6">
+          <DialogHeader className="pr-10">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+              <DialogTitle className="line-clamp-2 pr-2 text-left">
+                {dialogTitle}
+              </DialogTitle>
 
             <div className="flex shrink-0 gap-2">
               {isEditing ? (
@@ -689,13 +701,38 @@ export function SolicitacaoDetailsDialog({
                 Cancelar
               </Button>
 
-              <Button type="button" variant="destructive" onClick={handleDelete}>
+              <Button
+                type="button"
+                variant="destructive"
+                onClick={() => setDeleteConfirmOpen(true)}
+              >
                 Excluir solicitacao
               </Button>
             </div>
           </TabsContent>
         </Tabs>
-      </DialogContent>
-    </Dialog>
+        </DialogContent>
+      </Dialog>
+
+      <AlertDialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir solicitacao?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta acao remove o pedido permanentemente e nao pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={handleDelete}
+            >
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   )
 }

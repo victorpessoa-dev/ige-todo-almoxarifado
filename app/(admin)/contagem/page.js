@@ -6,6 +6,16 @@ import { AlertCircle, Camera, ImagePlus, Loader2, Sparkles, Trash2 } from 'lucid
 import { useData } from '@/contexts/data-context'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle
+} from '@/components/ui/alert-dialog'
 import { CameraCapture } from '@/components/contagem/CameraCapture'
 import { ImageGallery } from '@/components/contagem/ImageGallery'
 import { ProductList } from '@/components/contagem/ProductList'
@@ -91,6 +101,7 @@ export default function ContagemPage() {
   const [showCamera, setShowCamera] = useState(false)
   const [isAnalyzing, setIsAnalyzing] = useState(false)
   const [analyzingIndex, setAnalyzingIndex] = useState(null)
+  const [clearConfirmOpen, setClearConfirmOpen] = useState(false)
   const [error, setError] = useState(null)
 
   const addImage = useCallback((imageBase64) => {
@@ -260,9 +271,8 @@ export default function ContagemPage() {
   }, [products])
 
   const clearProducts = useCallback(() => {
-    if (confirm('Deseja limpar todos os produtos?')) {
-      setProducts([])
-    }
+    setProducts([])
+    setClearConfirmOpen(false)
   }, [])
 
   if (showCamera) {
@@ -388,8 +398,28 @@ export default function ContagemPage() {
         onUpdateQuantity={updateQuantity}
         onRemove={removeProduct}
         onDownload={handleDownload}
-        onClear={clearProducts}
+        onClear={() => setClearConfirmOpen(true)}
       />
+
+      <AlertDialog open={clearConfirmOpen} onOpenChange={setClearConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Limpar produtos contados?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta acao remove todos os produtos da contagem atual.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={clearProducts}
+            >
+              Limpar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

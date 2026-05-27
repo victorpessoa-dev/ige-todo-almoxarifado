@@ -140,7 +140,6 @@ export function SolicitacaoTable({ solicitacoes, onOpen }) {
                 </div>
 
                 <div className="mt-3 grid gap-1 text-xs text-muted-foreground">
-                  <span>Quantidade: {solicitacao.quantidade || 0}</span>
                   <span>Valor: {formatCurrency(solicitacao.valor_total)}</span>
                   <span>Previsao: {formatDate(solicitacao.previsao_entrega || solicitacao.previsao_desejada)}</span>
                 </div>
@@ -191,9 +190,6 @@ export function SolicitacaoTable({ solicitacoes, onOpen }) {
                       </TableCell>
                       <TableCell className="max-w-[320px]">
                         <p className="truncate font-medium">{solicitacao.descricao}</p>
-                        <p className="text-xs text-muted-foreground">
-                          Qtd: {solicitacao.quantidade || 0}
-                        </p>
                       </TableCell>
                       <TableCell>{solicitacao.solicitante || '-'}</TableCell>
                       <TableCell>{solicitacao.centro_custo || '-'}</TableCell>

@@ -1,8 +1,10 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { toast } from 'sonner'
 import { useAuth } from '@/contexts/auth-context'
+import { useData } from '@/contexts/data-context'
 import { Sidebar } from '@/components/sidebar'
 import { LoadingState } from '@/components/ui/spinner'
 import { Menu } from 'lucide-react'
@@ -10,8 +12,10 @@ import Image from 'next/image'
 
 export default function AdminLayout({ children }) {
   const { isAuthenticated, isLoading } = useAuth()
+  const { solicitacoesCompra = [] } = useData()
   const router = useRouter()
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const notifiedSolicitacoesRef = useRef(new Set())
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -32,6 +36,44 @@ export default function AdminLayout({ children }) {
       body.style.overflow = ''
     }
   }, [sidebarOpen])
+
+  useEffect(() => {
+    if (!isAuthenticated || isLoading) return
+
+    const novasSolicitacoes = solicitacoesCompra.filter(
+      (solicitacao) => solicitacao.status_geral === 'nova'
+    )
+    const solicitacoesNaoNotificadas = novasSolicitacoes.filter((solicitacao) => {
+      const key = solicitacao.id || solicitacao.codigo
+      return key && !notifiedSolicitacoesRef.current.has(key)
+    })
+
+    if (solicitacoesNaoNotificadas.length === 0) return
+
+    solicitacoesNaoNotificadas.forEach((solicitacao) => {
+      const key = solicitacao.id || solicitacao.codigo
+      notifiedSolicitacoesRef.current.add(key)
+    })
+
+    const primeiraSolicitacao = solicitacoesNaoNotificadas[0]
+    const total = solicitacoesNaoNotificadas.length
+
+    toast.info(
+      total === 1
+        ? 'Nova solicitacao recebida'
+        : `${total} novas solicitacoes recebidas`,
+      {
+        description:
+          total === 1
+            ? `${primeiraSolicitacao.codigo || 'Sem codigo'} - ${primeiraSolicitacao.descricao || 'Pedido sem descricao'}`
+            : 'Existem novos pedidos aguardando aceite.',
+        action: {
+          label: 'Ver',
+          onClick: () => router.push('/solicitacoes')
+        }
+      }
+    )
+  }, [isAuthenticated, isLoading, router, solicitacoesCompra])
 
   if (isLoading) {
     return <LoadingState className="min-h-screen bg-background" />
