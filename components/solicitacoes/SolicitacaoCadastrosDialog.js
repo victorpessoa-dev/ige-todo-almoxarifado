@@ -100,6 +100,14 @@ function EmptyRows({ colSpan, label }) {
   )
 }
 
+function EmptyCardList({ label }) {
+  return (
+    <div className="rounded-lg border border-dashed p-8 text-center text-sm text-muted-foreground">
+      {label}
+    </div>
+  )
+}
+
 function getCentroCustoLabel(centrosCusto = [], centroCustoId) {
   const centroCusto = centrosCusto.find((item) => item.id === centroCustoId)
   if (!centroCusto) return ''
@@ -253,7 +261,7 @@ export function SolicitacaoCadastrosDialog({
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-h-[calc(100vh-2rem)] w-[95vw] overflow-y-auto p-4 sm:max-w-5xl sm:p-6">
+        <DialogContent className="h-[100dvh] max-h-[100dvh] w-full max-w-none overflow-y-auto rounded-none p-4 sm:h-auto sm:max-h-[calc(100vh-2rem)] sm:w-[95vw] sm:max-w-5xl sm:rounded-lg sm:p-6">
           <DialogHeader>
             <DialogTitle>Cadastros de solicitacao</DialogTitle>
             <DialogDescription>
@@ -281,13 +289,55 @@ export function SolicitacaoCadastrosDialog({
                     {solicitantes.length} registro{solicitantes.length === 1 ? '' : 's'}
                   </p>
                 </div>
-                <Button type="button" onClick={openNewSolicitante}>
+                <Button type="button" className="w-full sm:w-auto" onClick={openNewSolicitante}>
                   <Plus className="h-4 w-4" />
                   Novo solicitante
                 </Button>
               </div>
 
-              <div className="overflow-hidden rounded-lg border">
+              <div className="grid gap-3 md:hidden">
+                {solicitantes.length === 0 ? (
+                  <EmptyCardList label="Nenhum solicitante cadastrado." />
+                ) : (
+                  solicitantes.map((item) => (
+                    <div key={item.id} className="rounded-lg border bg-card p-3">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="truncate font-medium">{item.nome}</p>
+                          <p className="mt-1 text-xs text-muted-foreground">
+                            {getCentroCustoLabel(centrosCusto, item.centro_custo_id) || '-'}
+                          </p>
+                        </div>
+                        <StatusBadge active={item.ativo} />
+                      </div>
+
+                      <div className="mt-3 grid grid-cols-2 gap-2">
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          onClick={() => openEditSolicitante(item)}
+                        >
+                          <Pencil className="h-4 w-4" />
+                          Editar
+                        </Button>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          className="text-destructive hover:text-destructive"
+                          onClick={() => setDeleteTarget({ type: 'solicitante', item })}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                          Excluir
+                        </Button>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+
+              <div className="hidden overflow-hidden rounded-lg border md:block">
                 <div className="overflow-x-auto">
                   <Table className="min-w-[720px]">
                     <TableHeader>
@@ -348,13 +398,53 @@ export function SolicitacaoCadastrosDialog({
                     {centrosCusto.length} registro{centrosCusto.length === 1 ? '' : 's'}
                   </p>
                 </div>
-                <Button type="button" onClick={openNewCentroCusto}>
+                <Button type="button" className="w-full sm:w-auto" onClick={openNewCentroCusto}>
                   <Plus className="h-4 w-4" />
                   Novo centro
                 </Button>
               </div>
 
-              <div className="overflow-hidden rounded-lg border">
+              <div className="grid gap-3 md:hidden">
+                {centrosCusto.length === 0 ? (
+                  <EmptyCardList label="Nenhum centro de custo cadastrado." />
+                ) : (
+                  centrosCusto.map((item) => (
+                    <div key={item.id} className="rounded-lg border bg-card p-3">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="font-medium tabular-nums">{item.codigo || '-'}</p>
+                          <p className="mt-1 truncate text-sm text-muted-foreground">{item.nome}</p>
+                        </div>
+                        <StatusBadge active={item.ativo} />
+                      </div>
+
+                      <div className="mt-3 grid grid-cols-2 gap-2">
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          onClick={() => openEditCentroCusto(item)}
+                        >
+                          <Pencil className="h-4 w-4" />
+                          Editar
+                        </Button>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          className="text-destructive hover:text-destructive"
+                          onClick={() => setDeleteTarget({ type: 'centro', item })}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                          Excluir
+                        </Button>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+
+              <div className="hidden overflow-hidden rounded-lg border md:block">
                 <div className="overflow-x-auto">
                   <Table className="min-w-[640px]">
                     <TableHeader>
@@ -414,7 +504,7 @@ export function SolicitacaoCadastrosDialog({
         if (!nextOpen) closeFormDialog()
         else setFormDialogOpen(true)
       }}>
-        <DialogContent className="w-[95vw] sm:max-w-lg">
+        <DialogContent className="w-[95vw] p-4 sm:max-w-lg sm:p-6">
           <DialogHeader>
             <DialogTitle>{formTitle}</DialogTitle>
             <DialogDescription>

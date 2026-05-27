@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { useAuth } from '@/contexts/auth-context'
 import { useData } from '@/contexts/data-context'
@@ -14,6 +14,7 @@ export default function AdminLayout({ children }) {
   const { isAuthenticated, isLoading } = useAuth()
   const { solicitacoesCompra = [] } = useData()
   const router = useRouter()
+  const pathname = usePathname()
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const notifiedSolicitacoesRef = useRef(new Set())
 
@@ -22,6 +23,14 @@ export default function AdminLayout({ children }) {
       router.push('/login')
     }
   }, [isAuthenticated, isLoading, router])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    if (!isAuthenticated || isLoading || pathname !== '/painel') return
+    if (!window.matchMedia('(max-width: 767px)').matches) return
+
+    router.replace('/solicitacoes')
+  }, [isAuthenticated, isLoading, pathname, router])
 
   useEffect(() => {
     const body = document.body
@@ -123,7 +132,7 @@ export default function AdminLayout({ children }) {
           <div className="w-6" aria-hidden="true" />
         </div>
 
-        <div className="admin-main-scroll scrollbar-soft flex-1 overflow-y-auto overflow-x-hidden px-4 py-4 sm:px-5 sm:py-5 md:px-7 md:py-6 lg:px-8">
+        <div className="admin-main-scroll scrollbar-soft flex-1 overflow-y-auto overflow-x-hidden px-3 py-3 sm:px-5 sm:py-5 md:px-7 md:py-6 lg:px-8">
           {children}
         </div>
       </main>

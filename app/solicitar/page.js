@@ -86,7 +86,7 @@ function StatusGrid({ solicitacao }) {
 
 function InfoItem({ label, value }) {
   return (
-    <div className="rounded-lg border bg-muted/20 px-3 py-2">
+    <div className="min-w-0 rounded-lg border bg-muted/20 px-3 py-2">
       <p className="text-xs uppercase text-muted-foreground">{label}</p>
       <p className="mt-1 break-words text-sm font-medium">{value || '-'}</p>
     </div>
@@ -192,9 +192,9 @@ function SolicitacaoPublicDetailsDialog({ solicitacao, open, onOpenChange }) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[calc(100vh-2rem)] w-[95vw] overflow-y-auto p-4 sm:max-w-3xl sm:p-6">
+      <DialogContent className="h-[100dvh] max-h-[100dvh] w-full max-w-none overflow-y-auto rounded-none p-4 sm:h-auto sm:max-h-[calc(100vh-2rem)] sm:w-[95vw] sm:max-w-3xl sm:rounded-lg sm:p-6">
         <DialogHeader>
-          <DialogTitle className="line-clamp-2 text-left">
+          <DialogTitle className="line-clamp-3 text-left text-base sm:text-lg">
             {solicitacao.codigo} - {solicitacao.descricao}
           </DialogTitle>
         </DialogHeader>
@@ -513,7 +513,7 @@ export default function SolicitarPage() {
         </Card>
 
         <Dialog open={pedidoDialogOpen} onOpenChange={setPedidoDialogOpen}>
-          <DialogContent className="max-h-[calc(100vh-2rem)] w-[95vw] overflow-y-auto p-4 sm:max-w-2xl sm:p-6">
+          <DialogContent className="h-[100dvh] max-h-[100dvh] w-full max-w-none overflow-y-auto rounded-none p-4 sm:h-auto sm:max-h-[calc(100vh-2rem)] sm:w-[95vw] sm:max-w-2xl sm:rounded-lg sm:p-6">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 <Send className="h-5 w-5 text-primary" />

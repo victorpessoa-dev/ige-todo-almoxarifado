@@ -22,7 +22,11 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (!isLoading && isAuthenticated) {
-      router.replace('/painel')
+      const isMobile =
+        typeof window !== 'undefined' &&
+        window.matchMedia('(max-width: 767px)').matches
+
+      router.replace(isMobile ? '/solicitacoes' : '/painel')
     }
   }, [isAuthenticated, isLoading, router])
 

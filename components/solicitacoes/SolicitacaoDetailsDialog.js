@@ -87,7 +87,7 @@ function formatCurrency(value) {
 
 function InfoItem({ label, value }) {
   return (
-    <div className="rounded-lg border bg-muted/20 px-3 py-2">
+    <div className="min-w-0 rounded-lg border bg-muted/20 px-3 py-2">
       <p className="text-xs uppercase text-muted-foreground">{label}</p>
       <p className="mt-1 break-words text-sm font-medium">{value || '-'}</p>
     </div>
@@ -299,14 +299,14 @@ export function SolicitacaoDetailsDialog({
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-h-[calc(100vh-2rem)] w-[95vw] overflow-y-auto p-4 sm:max-w-6xl sm:p-6">
+        <DialogContent className="h-[100dvh] max-h-[100dvh] w-full max-w-none overflow-y-auto rounded-none p-4 sm:h-auto sm:max-h-[calc(100vh-2rem)] sm:w-[95vw] sm:max-w-6xl sm:rounded-lg sm:p-6">
           <DialogHeader className="pr-10">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-              <DialogTitle className="line-clamp-2 pr-2 text-left">
+              <DialogTitle className="line-clamp-3 pr-2 text-left text-base sm:text-lg">
                 {dialogTitle}
               </DialogTitle>
 
-            <div className="flex shrink-0 gap-2">
+            <div className="grid shrink-0 grid-cols-2 gap-2 sm:flex">
               {isEditing ? (
                 <>
                   <Button
@@ -324,7 +324,7 @@ export function SolicitacaoDetailsDialog({
                   </Button>
                 </>
               ) : (
-                <Button type="button" onClick={() => setIsEditing(true)}>
+                <Button type="button" className="col-span-2 sm:col-span-1" onClick={() => setIsEditing(true)}>
                   Editar
                 </Button>
               )}
@@ -334,9 +334,9 @@ export function SolicitacaoDetailsDialog({
 
         <Tabs defaultValue="resumo" className="space-y-4">
           <TabsList className="grid h-auto w-full grid-cols-3 gap-1">
-            <TabsTrigger value="resumo">Resumo</TabsTrigger>
-            <TabsTrigger value="andamento">Andamento</TabsTrigger>
-            <TabsTrigger value="acoes">Acoes</TabsTrigger>
+            <TabsTrigger value="resumo" className="px-2 text-xs sm:text-sm">Resumo</TabsTrigger>
+            <TabsTrigger value="andamento" className="px-2 text-xs sm:text-sm">Andamento</TabsTrigger>
+            <TabsTrigger value="acoes" className="px-2 text-xs sm:text-sm">Acoes</TabsTrigger>
           </TabsList>
 
           <TabsContent value="resumo" className="space-y-4">
