@@ -12,7 +12,14 @@ import {
   DialogTitle,
   DialogTrigger
 } from '@/components/ui/dialog'
-import { Plus } from 'lucide-react'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from '@/components/ui/select'
+import { Plus, ShoppingCart } from 'lucide-react'
 import { useForm } from 'react-hook-form'
 import { toast } from 'sonner'
 
@@ -32,7 +39,10 @@ export default function InventarioPage() {
     updateProduto,
     deleteProduto,
     entradaProduto,
-    saidaProduto
+    saidaProduto,
+    addSolicitacao,
+    solicitantesCompra,
+    centrosCusto
   } = useData()
 
   const [deleteDialog, setDeleteDialog] = useState({
@@ -52,6 +62,16 @@ export default function InventarioPage() {
   const [bulkSaidaDialogOpen, setBulkSaidaDialogOpen] = useState(false)
   const [bulkSaidaQuantidade, setBulkSaidaQuantidade] = useState(1)
   const [bulkActionError, setBulkActionError] = useState('')
+  const [compraDialog, setCompraDialog] = useState({
+    open: false,
+    produto: null,
+    quantidade: 0
+  })
+  const [compraForm, setCompraForm] = useState({
+    centro_custo_id: '',
+    solicitante_id: ''
+  })
+  const [isSolicitandoCompra, setIsSolicitandoCompra] = useState(false)
 
   const [movimentoDialog, setMovimentoDialog] = useState({
     open: false,
@@ -73,7 +93,93 @@ export default function InventarioPage() {
   const selectedProducts = produtos.filter((produto) =>
     selectedProductIds.includes(produto.id)
   )
+  const lowStockProducts = produtos.filter(
+    (produto) =>
+      Number(produto.estoque || 0) <= Number(produto.min || 0) &&
+      Number(produto.max || 0) > Number(produto.estoque || 0)
+  )
 
+  const activeSolicitantes = solicitantesCompra.filter((item) => item.ativo !== false)
+  const activeCentrosCusto = centrosCusto.filter((item) => item.ativo !== false)
+
+  const getCentroCustoLabel = (centroCusto) => {
+    if (!centroCusto) return ''
+    return [centroCusto.codigo, centroCusto.nome].filter(Boolean).join(' - ')
+  }
+
+  const getSolicitanteCentroCusto = (solicitante) => {
+    if (!solicitante?.centro_custo_id) return null
+
+    return (
+      activeCentrosCusto.find((item) => item.id === solicitante.centro_custo_id) ||
+      solicitante.centros_custo ||
+      null
+    )
+  }
+
+  const openCompraDialog = (produto) => {
+    const quantidade = Math.max(
+      0,
+      Number(produto.max || 0) - Number(produto.estoque || 0)
+    )
+
+    setCompraDialog({ open: true, produto, quantidade })
+    setCompraForm({ centro_custo_id: '', solicitante_id: '' })
+  }
+
+  const updateCompraField = (field, value) => {
+    setCompraForm((prev) => {
+      const nextForm = { ...prev, [field]: value }
+
+      if (field === 'solicitante_id') {
+        const solicitante = activeSolicitantes.find((item) => item.id === value)
+        const centroCusto = getSolicitanteCentroCusto(solicitante)
+
+        if (centroCusto) {
+          nextForm.centro_custo_id = centroCusto.id
+        }
+      }
+
+      return nextForm
+    })
+  }
+
+  const handleSolicitarCompra = async () => {
+    const produto = compraDialog.produto
+
+    if (!produto) return
+    if (!compraForm.centro_custo_id || !compraForm.solicitante_id) {
+      toast.error('Selecione o centro de custo e o solicitante.')
+      return
+    }
+
+    if (!compraDialog.quantidade || compraDialog.quantidade <= 0) {
+      toast.error('Este produto nao tem quantidade pendente para completar o maximo.')
+      return
+    }
+
+    setIsSolicitandoCompra(true)
+
+    try {
+      const solicitacao = await addSolicitacao({
+        descricao: `${produto.cod ? `${produto.cod} - ` : ''}${produto.nome}`,
+        quantidade: compraDialog.quantidade,
+        prioridade: 'media',
+        centro_custo_id: compraForm.centro_custo_id,
+        solicitante_id: compraForm.solicitante_id,
+        produto_id: produto.id,
+        aplicacoes: `Reposicao de estoque baixo. Estoque atual: ${produto.estoque}. Maximo: ${produto.max}.`
+      })
+
+      setCompraDialog({ open: false, produto: null, quantidade: 0 })
+      setCompraForm({ centro_custo_id: '', solicitante_id: '' })
+      toast.success(`Solicitacao ${solicitacao.codigo || ''} criada com sucesso!`)
+    } catch (error) {
+      toast.error(getUserMessage(error, 'Nao foi possivel criar a solicitacao de compra.'))
+    } finally {
+      setIsSolicitandoCompra(false)
+    }
+  }
 
   const checkCodigoExists = async (cod, ignoreId = null) => {
     const { data, error } = await supabase
@@ -275,29 +381,47 @@ export default function InventarioPage() {
           <h1 className="text-xl font-bold sm:text-2xl md:text-3xl">Inventario</h1>
         </div>
 
-        <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-          <DialogTrigger asChild>
-            <Button className="w-full sm:w-auto md:px-6">
-              <Plus className="mr-2 h-4 w-4" />
-              Novo Produto
-            </Button>
-          </DialogTrigger>
+        <div className="grid gap-2 sm:grid-cols-2">
+          <Button
+            className="w-full sm:w-auto md:px-6"
+            variant="outline"
+            onClick={() => {
+              if (lowStockProducts.length === 0) {
+                toast.info('Nenhum produto com estoque baixo para solicitar compra.')
+                return
+              }
 
-          <DialogContent className="max-h-[calc(100vh-2rem)] w-[95vw] overflow-y-auto p-4 sm:max-w-xl sm:p-6">
-            <DialogHeader>
-              <DialogTitle>Adicionar Produto</DialogTitle>
-            </DialogHeader>
+              openCompraDialog(lowStockProducts[0])
+            }}
+          >
+            <ShoppingCart className="mr-2 h-4 w-4" />
+            Solicitar Compra
+          </Button>
 
-            <ProductFormFields
-              register={register}
-              handleSubmit={handleSubmit}
-              onSubmit={onSubmit}
-              buttonText="Salvar"
-              watch={watch}
-              setValue={setValue}
-            />
-          </DialogContent>
-        </Dialog>
+          <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+            <DialogTrigger asChild>
+              <Button className="w-full sm:w-auto md:px-6">
+                <Plus className="mr-2 h-4 w-4" />
+                Novo Produto
+              </Button>
+            </DialogTrigger>
+
+            <DialogContent className="max-h-[calc(100vh-2rem)] w-[95vw] overflow-y-auto p-4 sm:max-w-xl sm:p-6">
+              <DialogHeader>
+                <DialogTitle>Adicionar Produto</DialogTitle>
+              </DialogHeader>
+
+              <ProductFormFields
+                register={register}
+                handleSubmit={handleSubmit}
+                onSubmit={onSubmit}
+                buttonText="Salvar"
+                watch={watch}
+                setValue={setValue}
+              />
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
 
       <div className="flex flex-col gap-4 sm:gap-6">
@@ -339,6 +463,7 @@ export default function InventarioPage() {
                   setBulkSaidaQuantidade(1)
                   setBulkSaidaDialogOpen(true)
                 }}
+                onSolicitarCompra={openCompraDialog}
                 deleteProduto={(produto) =>
                   setDeleteDialog({ open: true, produto })
                 }
@@ -545,6 +670,133 @@ export default function InventarioPage() {
                 disabled={selectedProducts.length === 0}
               >
                 Confirmar baixa
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={compraDialog.open}
+        onOpenChange={(open) => {
+          if (!open) {
+            setCompraDialog({ open: false, produto: null, quantidade: 0 })
+            setCompraForm({ centro_custo_id: '', solicitante_id: '' })
+          } else {
+            setCompraDialog((prev) => ({ ...prev, open: true }))
+          }
+        }}
+      >
+        <DialogContent className="w-[95vw] max-w-[520px] p-4 sm:p-6">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <ShoppingCart className="h-5 w-5 text-primary" />
+              Solicitar compra
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div className="rounded-lg border bg-muted/20 p-3 text-sm">
+              <p className="font-medium">{compraDialog.produto?.nome}</p>
+              <p className="text-muted-foreground">
+                Codigo: {compraDialog.produto?.cod || '-'} | Estoque: {compraDialog.produto?.estoque || 0} | Max: {compraDialog.produto?.max || 0}
+              </p>
+              <p className="mt-2 font-semibold">
+                Quantidade a solicitar: {compraDialog.quantidade}
+              </p>
+            </div>
+
+            {lowStockProducts.length > 1 && (
+              <div className="grid gap-2">
+                <label className="text-sm font-medium">Produto com estoque baixo</label>
+                <Select
+                  value={compraDialog.produto?.id || ''}
+                  onValueChange={(value) => {
+                    const produto = lowStockProducts.find((item) => item.id === value)
+                    if (produto) {
+                      const quantidade = Math.max(
+                        0,
+                        Number(produto.max || 0) - Number(produto.estoque || 0)
+                      )
+
+                      setCompraDialog({ open: true, produto, quantidade })
+                    }
+                  }}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Selecione" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {lowStockProducts.map((produto) => (
+                      <SelectItem key={produto.id} value={produto.id}>
+                        {produto.cod ? `${produto.cod} - ${produto.nome}` : produto.nome}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="grid gap-2">
+                <label className="text-sm font-medium">Centro de custo</label>
+                <Select
+                  value={compraForm.centro_custo_id}
+                  onValueChange={(value) => updateCompraField('centro_custo_id', value)}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Selecione" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {activeCentrosCusto.map((centroCusto) => (
+                      <SelectItem key={centroCusto.id} value={centroCusto.id}>
+                        {getCentroCustoLabel(centroCusto)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="grid gap-2">
+                <label className="text-sm font-medium">Solicitante</label>
+                <Select
+                  value={compraForm.solicitante_id}
+                  onValueChange={(value) => updateCompraField('solicitante_id', value)}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Selecione" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {activeSolicitantes.map((solicitante) => (
+                      <SelectItem key={solicitante.id} value={solicitante.id}>
+                        {[
+                          solicitante.nome,
+                          getCentroCustoLabel(getSolicitanteCentroCusto(solicitante))
+                        ].filter(Boolean).join(' - ')}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="flex flex-col justify-end gap-2 sm:flex-row">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setCompraDialog({ open: false, produto: null, quantidade: 0 })
+                  setCompraForm({ centro_custo_id: '', solicitante_id: '' })
+                }}
+                disabled={isSolicitandoCompra}
+              >
+                Cancelar
+              </Button>
+
+              <Button
+                onClick={handleSolicitarCompra}
+                disabled={isSolicitandoCompra}
+              >
+                {isSolicitandoCompra ? 'Solicitando...' : 'Criar solicitacao'}
               </Button>
             </div>
           </div>

@@ -28,6 +28,7 @@ import {
   MoreHorizontal,
   Pencil,
   Printer,
+  ShoppingCart,
   Trash2,
   TrendingDown,
   TrendingUp
@@ -65,7 +66,8 @@ export default function ProductTable({
   onToggleSelectAll,
   onClearSelection,
   onBulkDelete,
-  onBulkSaida
+  onBulkSaida,
+  onSolicitarCompra
 }) {
   const [sortConfig, setSortConfig] = useState({
     key: null,
@@ -204,6 +206,10 @@ export default function ProductTable({
             {sortedProdutos.map((produto) => {
               const status = getStatus(produto)
               const isSelected = selectedIds.includes(produto.id)
+              const quantidadeCompra = Number(produto.max || 0) - Number(produto.estoque || 0)
+              const canSolicitarCompra =
+                Number(produto.estoque || 0) <= Number(produto.min || 0) &&
+                quantidadeCompra > 0
 
               return (
                 <TableRow
@@ -288,6 +294,16 @@ export default function ProductTable({
                         >
                           <Printer className="h-4 w-4" />
                           Imprimir etiqueta
+                        </DropdownMenuItem>
+
+                        <DropdownMenuSeparator />
+
+                        <DropdownMenuItem
+                          onClick={() => onSolicitarCompra?.(produto)}
+                          disabled={!canSolicitarCompra}
+                        >
+                          <ShoppingCart className="h-4 w-4" />
+                          Solicitar Compra
                         </DropdownMenuItem>
 
                         <DropdownMenuSeparator />

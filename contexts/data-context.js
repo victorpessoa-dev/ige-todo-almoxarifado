@@ -4,6 +4,7 @@ import { createContext, useContext, useEffect, useState, useCallback, useRef } f
 import { supabase } from '@/lib/supabaseClient'
 import {
   createCentroCusto,
+  createSolicitacaoCompra,
   createSolicitanteCompra,
   deleteCentroCusto,
   deleteSolicitacaoCompra,
@@ -715,6 +716,13 @@ export function DataProvider({ children }) {
     return solicitacaoNormalizada
   }
 
+  async function addSolicitacao(form) {
+    const data = await withRetry(() => createSolicitacaoCompra(form))
+    const solicitacaoNormalizada = normalizeSolicitacao(data, produtosRef.current)
+    setSolicitacoesCompra((prev) => upsertSorted(prev, solicitacaoNormalizada, sortByCreatedAtDesc))
+    return solicitacaoNormalizada
+  }
+
   async function deleteSolicitacao(id) {
     if (!id) throw new Error('ID Ã© obrigatÃ³rio')
 
@@ -943,6 +951,7 @@ export function DataProvider({ children }) {
       deleteProduto,
       entradaProduto,
       saidaProduto,
+      addSolicitacao,
       updateSolicitacao,
       deleteSolicitacao,
       addSolicitante,
