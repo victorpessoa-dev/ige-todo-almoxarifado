@@ -2,6 +2,7 @@
 
 import { useRef, useState, useCallback, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
+import { Spinner } from '@/components/ui/spinner'
 import { Camera, SwitchCamera, X, Check } from 'lucide-react'
 
 export function CameraCapture({ onCapture, onClose, capturedCount, maxImages }) {
@@ -160,7 +161,7 @@ export function CameraCapture({ onCapture, onClose, capturedCount, maxImages }) 
               disabled={isLoading}
               className="bg-white text-black hover:bg-white/90"
             >
-              {isLoading ? 'Iniciando...' : 'Iniciar Camera'}
+              {isLoading ? <Spinner className="h-4 w-4" /> : 'Iniciar Camera'}
             </Button>
 
             {cameraError && (

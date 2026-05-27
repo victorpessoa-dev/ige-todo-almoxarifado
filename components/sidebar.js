@@ -14,15 +14,17 @@ import {
   ListTodo,
   LogOut,
   Package,
+  ShoppingCart,
   StickyNote
 } from 'lucide-react'
 
 const menuItems = [
-  { href: '/painel', label: 'Painel', icon: LayoutDashboard },
+  { href: '/painel', label: 'Painel', icon: LayoutDashboard, desktopOnly: true },
   { href: '/tarefas', label: 'Tarefas', icon: ListTodo },
   { href: '/lembretes', label: 'Lembretes', icon: StickyNote },
   { href: '/calendario', label: 'Calendario', icon: CalendarDays },
   { href: '/inventario', label: 'Inventario', icon: Package },
+  { href: '/solicitacoes', label: 'Solicitacoes', icon: ShoppingCart },
   { href: '/contagem', label: 'Contagem', icon: Camera },
   { href: '/analise-giro', label: 'Analise de Giro', icon: ChartColumn }
 ]
@@ -34,7 +36,7 @@ export function Sidebar({ onNavigate }) {
 
   const handleLogout = () => {
     logout()
-    router.push('/')
+    router.push('/login')
   }
 
   const handleClick = () => {
@@ -60,7 +62,7 @@ export function Sidebar({ onNavigate }) {
             const isActive = pathname === item.href
 
             return (
-              <li key={item.href}>
+              <li key={item.href} className={item.desktopOnly ? 'hidden md:block' : undefined}>
                 <Link
                   href={item.href}
                   onClick={handleClick}

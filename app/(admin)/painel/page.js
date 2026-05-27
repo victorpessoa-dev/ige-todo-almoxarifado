@@ -3,11 +3,13 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useData } from '@/contexts/data-context'
 import { Button } from '@/components/ui/button'
+import { LoadingState } from '@/components/ui/spinner'
 import { CalendarioSlide } from '@/components/slides/CalendarioSlide'
 import { TarefasSlide } from '@/components/slides/TarefasSlide'
 import { LembretesSlide } from '@/components/slides/LembretesSlide'
+import { SolicitacoesSlide } from '@/components/slides/SolicitacoesSlide'
 import InventarioSlide from '@/components/slides/InventarioSlide'
-import { Clock, Maximize2, Minimize2 } from 'lucide-react'
+import { Clock, Maximize2, Minimize2, Monitor } from 'lucide-react'
 
 function RelogioSlide({ onEnd }) {
   const [time, setTime] = useState(new Date())
@@ -78,7 +80,7 @@ function RelogioSlide({ onEnd }) {
 }
 
 export default function PainelPage() {
-  const { tarefas, lembretes, produtos, isLoaded } = useData()
+  const { tarefas, lembretes, produtos, solicitacoesCompra, isLoaded } = useData()
   const [currentSlide, setCurrentSlide] = useState(0)
   const [cycleKey, setCycleKey] = useState(0)
   const [isFullscreen, setIsFullscreen] = useState(false)
@@ -86,6 +88,9 @@ export default function PainelPage() {
   const tarefasPendentes = tarefas.filter((tarefa) => tarefa.status !== 'concluido')
   const lembretesPendentes = lembretes.filter((lembrete) => lembrete.status !== 'concluido')
   const hasProdutosBaixos = produtos.some((produto) => produto.estoque <= produto.min)
+  const hasSolicitacoesAbertas = solicitacoesCompra.some(
+    (solicitacao) => !['concluida', 'cancelada'].includes(solicitacao.status_geral)
+  )
   const slideDefinitions = [
     ...(tarefasPendentes.length > 0
       ? [{ key: 'tarefas', label: 'Tarefas' }]
@@ -96,6 +101,9 @@ export default function PainelPage() {
     { key: 'calendario', label: 'Calendario' },
     ...(hasProdutosBaixos
       ? [{ key: 'inventario', label: 'Inventario' }]
+      : []),
+    ...(hasSolicitacoesAbertas
+      ? [{ key: 'solicitacoes', label: 'Solicitacoes' }]
       : []),
     { key: 'relogio', label: 'Relogio' }
   ]
@@ -171,6 +179,20 @@ export default function PainelPage() {
       }
     }
 
+    if (slide.key === 'solicitacoes') {
+      return {
+        ...slide,
+        component: (
+          <SolicitacoesSlide
+            key={`solicitacoes-${cycleKey}`}
+            solicitacoes={solicitacoesCompra}
+            onEnd={nextSlide}
+            active={safeCurrentSlide === index}
+          />
+        )
+      }
+    }
+
     return {
       ...slide,
       component: (
@@ -208,7 +230,7 @@ export default function PainelPage() {
   }, [nextSlide, prevSlide, isFullscreen])
 
   if (!isLoaded) {
-    return <div className="flex h-full items-center justify-center animate-pulse">Carregando...</div>
+    return <LoadingState className="h-full min-h-[60vh]" />
   }
 
   if (isFullscreen) {
@@ -245,34 +267,49 @@ export default function PainelPage() {
   }
 
   return (
-    <div className="flex h-full min-h-0 flex-col gap-3">
-      <div className="relative min-h-0 flex-1 overflow-hidden rounded-2xl border bg-card/40">
-        {slides[safeCurrentSlide].component}
-
-        <Button
-          variant="ghost"
-          size="icon"
-          className="absolute top-4 right-4 h-10 w-10 rounded-full bg-background/80 hover:bg-background"
-          onClick={toggleFullscreen}
-        >
-          <Maximize2 className="h-5 w-5" />
-        </Button>
+    <>
+      <div className="flex min-h-[60vh] items-center justify-center md:hidden">
+        <div className="w-full max-w-sm rounded-2xl border bg-card p-5 text-center shadow-sm">
+          <Monitor className="mx-auto mb-3 h-10 w-10 text-primary" />
+          <h1 className="text-xl font-bold">Painel disponivel no desktop</h1>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Esta tela usa slides operacionais e foi desativada no mobile para evitar cortes e sobreposicoes.
+          </p>
+          <Button asChild className="mt-4 w-full">
+            <a href="/solicitacoes">Abrir solicitacoes</a>
+          </Button>
+        </div>
       </div>
 
-      <div className="flex shrink-0 flex-wrap items-center justify-center gap-3 overflow-hidden rounded-2xl border bg-muted/30 p-3">
-        {slides.map((slide, index) => (
-          <button
-            key={index}
-            onClick={() => goToSlide(index)}
-            className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${safeCurrentSlide === index
-              ? 'bg-primary text-primary-foreground'
-              : 'bg-muted text-muted-foreground hover:bg-muted/80'
-              }`}
+      <div className="hidden h-full min-h-0 flex-col gap-3 md:flex">
+        <div className="relative min-h-0 flex-1 overflow-hidden rounded-2xl border bg-card/40">
+          {slides[safeCurrentSlide].component}
+
+          <Button
+            variant="ghost"
+            size="icon"
+            className="absolute top-4 right-4 h-10 w-10 rounded-full bg-background/80 hover:bg-background"
+            onClick={toggleFullscreen}
           >
-            {slide.label}
-          </button>
-        ))}
+            <Maximize2 className="h-5 w-5" />
+          </Button>
+        </div>
+
+        <div className="flex shrink-0 flex-wrap items-center justify-center gap-3 overflow-hidden rounded-2xl border bg-muted/30 p-3">
+          {slides.map((slide, index) => (
+            <button
+              key={index}
+              onClick={() => goToSlide(index)}
+              className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${safeCurrentSlide === index
+                ? 'bg-primary text-primary-foreground'
+                : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                }`}
+            >
+              {slide.label}
+            </button>
+          ))}
+        </div>
       </div>
-    </div>
+    </>
   )
 }

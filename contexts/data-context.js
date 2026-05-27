@@ -2,6 +2,19 @@
 
 import { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react'
 import { supabase } from '@/lib/supabaseClient'
+import {
+  createCentroCusto,
+  createSolicitanteCompra,
+  deleteCentroCusto,
+  deleteSolicitacaoCompra,
+  deleteSolicitanteCompra,
+  listCentrosCusto,
+  listSolicitacoesCompra,
+  listSolicitantesCompra,
+  updateCentroCusto,
+  updateSolicitacaoCompra,
+  updateSolicitanteCompra
+} from '@/lib/solicitacoes-service'
 
 const DataContext = createContext()
 
@@ -66,11 +79,34 @@ function normalizeMovimentacao(movimentacao, produtosBase = []) {
   }
 }
 
+function normalizeSolicitacao(solicitacao, produtosBase = []) {
+  if (!solicitacao) return solicitacao
+
+  const produtoRelacionado =
+    solicitacao.produtos ||
+    produtosBase.find((produto) => produto.id === solicitacao.produto_id) ||
+    null
+
+  return {
+    ...solicitacao,
+    produtos: produtoRelacionado
+      ? {
+          id: produtoRelacionado.id ?? solicitacao.produto_id,
+          nome: produtoRelacionado.nome ?? null,
+          cod: produtoRelacionado.cod ?? null
+        }
+      : null
+  }
+}
+
 export function DataProvider({ children }) {
   const [tarefas, setTarefas] = useState([])
   const [lembretes, setLembretes] = useState([])
   const [produtos, setProdutos] = useState([])
   const [movimentacoes, setMovimentacoes] = useState([])
+  const [solicitacoesCompra, setSolicitacoesCompra] = useState([])
+  const [solicitantesCompra, setSolicitantesCompra] = useState([])
+  const [centrosCusto, setCentrosCusto] = useState([])
   const [isLoaded, setIsLoaded] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState(null)
@@ -118,6 +154,27 @@ export function DataProvider({ children }) {
     return normalizeMovimentacao(data, produtosRef.current)
   }, [])
 
+  const refreshSolicitacaoById = useCallback(async (id) => {
+    const { data, error: queryError } = await supabase
+      .from('solicitacoes_compra')
+      .select(`
+        *,
+        produtos (
+          id,
+          nome,
+          cod
+        )
+      `)
+      .eq('id', id)
+      .maybeSingle()
+
+    if (queryError || !data) {
+      return null
+    }
+
+    return normalizeSolicitacao(data, produtosRef.current)
+  }, [])
+
   const syncProdutoInMovimentacoes = useCallback((produto) => {
     setMovimentacoes((prev) =>
       sortByCreatedAtDesc(
@@ -163,7 +220,10 @@ export function DataProvider({ children }) {
         { data: tarefasData, error: tarefasError },
         { data: lembretesData, error: lembretesError },
         { data: produtosData, error: produtosError },
-        { data: movimentacoesData, error: movimentacoesError }
+        { data: movimentacoesData, error: movimentacoesError },
+        solicitacoesResult,
+        solicitantesResult,
+        centrosCustoResult
       ] = await Promise.all([
         supabase
           .from('tarefas')
@@ -186,13 +246,31 @@ export function DataProvider({ children }) {
               cod
             )
           `)
-          .order('created_at', { ascending: false })
+          .order('created_at', { ascending: false }),
+        listSolicitacoesCompra()
+          .then((data) => ({ data, error: null }))
+          .catch((error) => ({ data: [], error })),
+        listSolicitantesCompra()
+          .then((data) => ({ data, error: null }))
+          .catch((error) => ({ data: [], error })),
+        listCentrosCusto()
+          .then((data) => ({ data, error: null }))
+          .catch((error) => ({ data: [], error }))
       ])
 
       if (tarefasError) throw tarefasError
       if (lembretesError) throw lembretesError
       if (produtosError) throw produtosError
       if (movimentacoesError) throw movimentacoesError
+      if (solicitacoesResult.error) {
+        console.warn('Erro ao carregar solicitacoes:', solicitacoesResult.error)
+      }
+      if (solicitantesResult.error) {
+        console.warn('Erro ao carregar solicitantes:', solicitantesResult.error)
+      }
+      if (centrosCustoResult.error) {
+        console.warn('Erro ao carregar centros de custo:', centrosCustoResult.error)
+      }
 
       if (isMounted.current) {
         const nextProdutos = sortProdutosByNomeAsc(produtosData || [])
@@ -203,6 +281,15 @@ export function DataProvider({ children }) {
         setMovimentacoes(
           sortByCreatedAtDesc((movimentacoesData || []).map((item) => normalizeMovimentacao(item, nextProdutos)))
         )
+        setSolicitacoesCompra(
+          sortByCreatedAtDesc(
+            (solicitacoesResult.data || []).map((item) =>
+              normalizeSolicitacao(item, nextProdutos)
+            )
+          )
+        )
+        setSolicitantesCompra(solicitantesResult.data || [])
+        setCentrosCusto(centrosCustoResult.data || [])
         setIsLoaded(true)
       }
     } catch (err) {
@@ -621,6 +708,74 @@ export function DataProvider({ children }) {
     }
   }
 
+  async function updateSolicitacao(id, updates) {
+    const data = await withRetry(() => updateSolicitacaoCompra(id, updates))
+    const solicitacaoNormalizada = normalizeSolicitacao(data, produtosRef.current)
+    setSolicitacoesCompra((prev) => upsertSorted(prev, solicitacaoNormalizada, sortByCreatedAtDesc))
+    return solicitacaoNormalizada
+  }
+
+  async function deleteSolicitacao(id) {
+    if (!id) throw new Error('ID Ã© obrigatÃ³rio')
+
+    const previousSolicitacoes = solicitacoesCompra
+    setSolicitacoesCompra((prev) => removeSorted(prev, id, sortByCreatedAtDesc))
+
+    try {
+      await withRetry(() => deleteSolicitacaoCompra(id))
+    } catch (deleteError) {
+      console.error('Erro ao deletar solicitacao:', deleteError)
+      if (isMounted.current) {
+        setSolicitacoesCompra(previousSolicitacoes)
+      }
+      throw deleteError
+    }
+  }
+
+  async function addSolicitante(form) {
+    const data = await withRetry(() => createSolicitanteCompra(form))
+    setSolicitantesCompra((prev) =>
+      [...prev, data].sort((a, b) => (a.nome || '').localeCompare(b.nome || ''))
+    )
+    return data
+  }
+
+  async function updateSolicitante(id, updates) {
+    const data = await withRetry(() => updateSolicitanteCompra(id, updates))
+    setSolicitantesCompra((prev) =>
+      prev.map((item) => (item.id === id ? data : item))
+        .sort((a, b) => (a.nome || '').localeCompare(b.nome || ''))
+    )
+    return data
+  }
+
+  async function deleteSolicitante(id) {
+    await withRetry(() => deleteSolicitanteCompra(id))
+    setSolicitantesCompra((prev) => prev.filter((item) => item.id !== id))
+  }
+
+  async function addCentroCusto(form) {
+    const data = await withRetry(() => createCentroCusto(form))
+    setCentrosCusto((prev) =>
+      [...prev, data].sort((a, b) => (a.nome || '').localeCompare(b.nome || ''))
+    )
+    return data
+  }
+
+  async function updateCentroCustoItem(id, updates) {
+    const data = await withRetry(() => updateCentroCusto(id, updates))
+    setCentrosCusto((prev) =>
+      prev.map((item) => (item.id === id ? data : item))
+        .sort((a, b) => (a.nome || '').localeCompare(b.nome || ''))
+    )
+    return data
+  }
+
+  async function deleteCentroCustoItem(id) {
+    await withRetry(() => deleteCentroCusto(id))
+    setCentrosCusto((prev) => prev.filter((item) => item.id !== id))
+  }
+
   useEffect(() => {
     loadData()
 
@@ -702,7 +857,58 @@ export function DataProvider({ children }) {
       setMovimentacoes((prev) => upsertSorted(prev, movimentacaoCompleta, sortByCreatedAtDesc))
     })
 
-    activeChannels.current = [tarefasChannel, lembretesChannel, produtosChannel, movimentacoesChannel]
+    const solicitacoesChannel = createChannel('realtime:solicitacoes_compra', 'solicitacoes_compra', async (payload) => {
+      if (payload.eventType === 'DELETE') {
+        setSolicitacoesCompra((prev) => removeSorted(prev, payload.old.id, sortByCreatedAtDesc))
+        return
+      }
+
+      if (!payload.new) {
+        return
+      }
+
+      const solicitacaoCompleta =
+        (await refreshSolicitacaoById(payload.new.id)) ||
+        normalizeSolicitacao(payload.new, produtosRef.current)
+
+      setSolicitacoesCompra((prev) => upsertSorted(prev, solicitacaoCompleta, sortByCreatedAtDesc))
+    })
+
+    const solicitantesChannel = createChannel('realtime:solicitantes_compra', 'solicitantes_compra', (payload) => {
+      if (payload.eventType === 'DELETE') {
+        setSolicitantesCompra((prev) => prev.filter((item) => item.id !== payload.old.id))
+        return
+      }
+
+      setSolicitantesCompra((prev) =>
+        upsertSorted(prev, payload.new, (items) =>
+          [...items].sort((a, b) => (a.nome || '').localeCompare(b.nome || ''))
+        )
+      )
+    })
+
+    const centrosCustoChannel = createChannel('realtime:centros_custo', 'centros_custo', (payload) => {
+      if (payload.eventType === 'DELETE') {
+        setCentrosCusto((prev) => prev.filter((item) => item.id !== payload.old.id))
+        return
+      }
+
+      setCentrosCusto((prev) =>
+        upsertSorted(prev, payload.new, (items) =>
+          [...items].sort((a, b) => (a.nome || '').localeCompare(b.nome || ''))
+        )
+      )
+    })
+
+    activeChannels.current = [
+      tarefasChannel,
+      lembretesChannel,
+      produtosChannel,
+      movimentacoesChannel,
+      solicitacoesChannel,
+      solicitantesChannel,
+      centrosCustoChannel
+    ]
 
     return () => {
       activeChannels.current.forEach(channel => {
@@ -712,7 +918,7 @@ export function DataProvider({ children }) {
       document.removeEventListener('visibilitychange', handleVisibilityChange)
       window.removeEventListener('online', handleOnline)
     }
-  }, [clearProdutoInMovimentacoes, loadData, refreshMovimentacaoById, syncProdutoInMovimentacoes])
+  }, [clearProdutoInMovimentacoes, loadData, refreshMovimentacaoById, refreshSolicitacaoById, syncProdutoInMovimentacoes])
 
   return (
     <DataContext.Provider value={{
@@ -720,6 +926,9 @@ export function DataProvider({ children }) {
       lembretes,
       produtos,
       movimentacoes,
+      solicitacoesCompra,
+      solicitantesCompra,
+      centrosCusto,
       isLoaded,
       isLoading,
       error,
@@ -734,6 +943,14 @@ export function DataProvider({ children }) {
       deleteProduto,
       entradaProduto,
       saidaProduto,
+      updateSolicitacao,
+      deleteSolicitacao,
+      addSolicitante,
+      updateSolicitante,
+      deleteSolicitante,
+      addCentroCusto,
+      updateCentroCusto: updateCentroCustoItem,
+      deleteCentroCusto: deleteCentroCustoItem,
       loadData,
       clearError: () => setError(null)
     }}>

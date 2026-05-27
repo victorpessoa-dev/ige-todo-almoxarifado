@@ -13,4 +13,18 @@ function Spinner({ className, ...props }: React.ComponentProps<'svg'>) {
   )
 }
 
-export { Spinner }
+function LoadingState({
+  className,
+  ...props
+}: React.ComponentProps<'div'>) {
+  return (
+    <div
+      className={cn('flex min-h-32 items-center justify-center', className)}
+      {...props}
+    >
+      <Spinner className="size-8 text-primary" />
+    </div>
+  )
+}
+
+export { LoadingState, Spinner }

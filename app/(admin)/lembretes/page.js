@@ -8,6 +8,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
+import { LoadingState } from '@/components/ui/spinner'
 import { toast } from 'sonner'
 import { Plus, Pencil, Trash2, CheckCircle2, Circle, Clock, ChevronDown, ChevronUp, StickyNote, Calendar } from 'lucide-react'
 import EventForm from '@/components/events/EventForm'
@@ -136,7 +137,7 @@ export default function LembretesPage() {
     setIsOpen(true)
   }
 
-  if (!isLoaded) return <div className="animate-pulse">Carregando...</div>
+  if (!isLoaded) return <LoadingState className="min-h-[60vh]" />
 
   const LembreteCard = ({ lembrete, isConcluido }) => {
     const prioridadeInfo = PRIORIDADE_OPTIONS.find(p => p.value === lembrete.prioridade) || PRIORIDADE_OPTIONS[2]

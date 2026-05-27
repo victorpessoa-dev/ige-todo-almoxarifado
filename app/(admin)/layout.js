@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/contexts/auth-context'
 import { Sidebar } from '@/components/sidebar'
+import { LoadingState } from '@/components/ui/spinner'
 import { Menu } from 'lucide-react'
 import Image from 'next/image'
 
@@ -14,7 +15,7 @@ export default function AdminLayout({ children }) {
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
-      router.push('/')
+      router.push('/login')
     }
   }, [isAuthenticated, isLoading, router])
 
@@ -33,11 +34,7 @@ export default function AdminLayout({ children }) {
   }, [sidebarOpen])
 
   if (isLoading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-background">
-        <div className="animate-pulse text-muted-foreground">Carregando...</div>
-      </div>
-    )
+    return <LoadingState className="min-h-screen bg-background" />
   }
 
   if (!isAuthenticated) return null

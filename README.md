@@ -64,6 +64,7 @@ app/
     lembretes/page.js             CRUD de lembretes
     calendario/page.js            Calendario de tarefas e lembretes
     inventario/page.js            Gestao de produtos e estoque
+    solicitacoes/page.js          Controle interno de compras
     contagem/page.js              Contagem de estoque por fotos
     analise-giro/page.js          Indicadores e analise de giro
     api/
@@ -77,6 +78,7 @@ components/
   sidebar.js                      Menu lateral da area admin
   events/                         Formulario compartilhado de tarefas/lembretes
   inventory/                      Componentes do modulo de inventario
+  solicitacoes/                   Componentes do modulo de compras
   contagem/                       Camera, galeria e lista de produtos contados
   slides/                         Slides do painel
   ui/                             Componentes de interface
@@ -93,6 +95,10 @@ lib/
 
 constants/
   task-config.js                  Status, prioridades e ordenacao
+  solicitacoes-config.js          Status e prioridades de compras
+
+database/
+  solicitacoes_compra.sql         SQL das tabelas de compras, trigger de codigo e RLS
 
 public/
   ige-supergesso.png              Logo usada no login e sidebar
@@ -102,7 +108,34 @@ public/
 
 ### `/`
 
+Redireciona para `/solicitar`, que e a entrada principal publica do sistema.
+
+### `/login`
+
 Tela de login do sistema. Usa Supabase Auth com email e senha. Quando o usuario ja esta autenticado, redireciona para `/painel`.
+
+### `/solicitar`
+
+Pagina principal publica para criacao e acompanhamento de solicitacoes de compra sem login.
+
+A primeira tela mostra uma lista limitada dos produtos solicitados que ja foram aceitos pelo administrativo e seus status de andamento. O formulario de criacao fica em um dialog aberto pelo botao `Fazer pedido`. Tambem ha um botao `Acesso admin` para entrar na area interna.
+
+Campos principais:
+
+- descricao do item;
+- quantidade;
+- prioridade;
+- previsao desejada;
+- centro de custo selecionado em lista;
+- aplicacoes especificas;
+- link de referencia ou imagem;
+- solicitante selecionado em lista.
+
+A pagina carrega apenas solicitantes e centros de custo ativos. Ao enviar, a solicitacao e criada por RPC segura e retorna um codigo numerico como `000001` para acompanhamento. Tambem existe uma consulta publica por codigo e uma lista publica limitada que mostram apenas dados de andamento.
+
+A seguranca depende da RLS e das funcoes SQL: usuarios anonimos podem ler apenas os cadastros ativos de `solicitantes_compra` e `centros_custo`, podem criar solicitacoes e podem consultar andamento por codigo via RPC, sem permissao de leitura direta, atualizacao ou exclusao das solicitacoes.
+
+A situacao exibida segue a regra operacional usada na planilha: cotacao nao iniciada, cotando, pedido em analise, aguardando pagamento, preparando pedido, disponivel para retirada, sem data de entrega, no prazo, atrasada, para chegar hoje ou entregue e conferido.
 
 ### `/painel`
 
@@ -112,6 +145,7 @@ Painel visual com slides automaticos:
 - lembretes pendentes;
 - calendario;
 - produtos com estoque baixo;
+- solicitacoes de compra urgentes ou atrasadas;
 - relogio local com indicador de aberto/fechado.
 
 Tambem possui modo tela cheia e navegacao por setas do teclado.
@@ -188,6 +222,28 @@ Campos do produto:
 - estoque;
 - minimo;
 - maximo.
+
+### `/solicitacoes`
+
+Area administrativa autenticada para controle interno das compras.
+
+Funcionalidades:
+
+- listar solicitacoes em uma tabela;
+- pesquisar por codigo, item, solicitante ou centro de custo;
+- filtrar por status geral e prioridade;
+- visualizar indicadores de total, abertas, urgentes, atrasadas e valor em aberto;
+- editar dados da solicitacao;
+- atualizar status geral, cotacao, pedido e transporte;
+- informar valor unitario, valor total, previsao de entrega, pedido e nota fiscal;
+- abrir link de referencia ou imagem anexado pelo solicitante;
+- cadastrar, editar, ativar/inativar e excluir solicitantes;
+- cadastrar, editar, ativar/inativar e excluir centros de custo;
+- vincular a solicitacao a um produto do inventario;
+- executar acoes rapidas como gerar pedido, marcar entregue, concluir e cancelar;
+- transformar solicitacao vinculada em entrada de estoque.
+
+O modulo segue o mesmo padrao do restante do sistema, usando componentes em `components/solicitacoes`, servico em `lib/solicitacoes-service.js` e realtime pelo `DataProvider`.
 
 ### `/contagem`
 
@@ -371,6 +427,151 @@ Relacionamento:
 
 A aplicacao consulta movimentacoes com join em `produtos` para exibir nome e codigo do produto relacionado.
 
+### Tabela `solicitacoes_compra`
+
+Usada no formulario publico `/solicitar`, na area admin `/solicitacoes` e no slide de compras do painel.
+
+Campos usados pela aplicacao:
+
+- `id`
+- `codigo`
+- `user_id`
+- `produto_id`
+- `solicitante_id`
+- `centro_custo_id`
+- `descricao`
+- `quantidade`
+- `prioridade`
+- `status_geral`
+- `status_cotacao`
+- `status_pedido`
+- `status_transporte`
+- `valor_unitario`
+- `valor_total`
+- `data_solicitacao`
+- `previsao_desejada`
+- `previsao_entrega`
+- `solicitante`
+- `centro_custo`
+- `pedido`
+- `nota_fiscal`
+- `aplicacoes`
+- `link_referencia`
+- `created_at`
+- `updated_at`
+
+Relacionamentos:
+
+- `solicitante_id` referencia `solicitantes_compra.id`;
+- `centro_custo_id` referencia `centros_custo.id`;
+- `produto_id` referencia `produtos.id`.
+
+Mesmo usando IDs, os campos de texto `solicitante` e `centro_custo` continuam salvos na solicitacao para manter historico e facilitar busca.
+
+Valores esperados de `prioridade`:
+
+- `baixa`
+- `media`
+- `alta`
+- `urgente`
+
+Valores esperados de `status_geral`:
+
+- `nova`
+- `aceita`
+- `em_cotacao`
+- `aprovacao`
+- `preparando_pedido`
+- `em_transporte`
+- `entregue`
+- `concluida`
+- `cancelada`
+
+Valores esperados de `status_cotacao`:
+
+- `nao_iniciado`
+- `cotando`
+- `cotacao_em_analise`
+- `cotacao_finalizada`
+- `cotacao_aprovada`
+- `adiada`
+- `cancelada`
+- `outra`
+
+Valores esperados de `status_pedido`:
+
+- `nao_digitado`
+- `pedido_digitado`
+- `pedido_em_analise`
+- `pedido_encerrado`
+- `pedido_aprovado`
+- `pedido_adiado`
+- `aguardando_pagamento`
+- `outra`
+- `preparando_pedido`
+
+Valores esperados de `status_transporte`:
+
+- `producao_separacao`
+- `disponivel_retirada`
+- `transporte`
+- `entregue`
+- `entrega_atrasada`
+- `entregue_conferido`
+- `cancelada`
+- `adiada`
+- `outra`
+
+Para criar a tabela com RLS, rode no SQL Editor do Supabase o arquivo:
+
+```txt
+database/solicitacoes_compra.sql
+```
+
+Politicas criadas:
+
+- `anon` e `authenticated` podem fazer apenas `INSERT` publico;
+- somente `authenticated` pode fazer `SELECT`, `UPDATE` e `DELETE`;
+- usuarios anonimos nao conseguem fazer `SELECT` direto em solicitacoes cadastradas.
+
+O arquivo tambem cria:
+
+- trigger para gerar codigos numericos como `000001`;
+- funcao `criar_solicitacao_compra_publica` para criar solicitacao publica e retornar o codigo;
+- funcao `buscar_solicitacao_compra_publica` para consultar andamento por codigo com retorno limitado;
+- funcao `listar_solicitacoes_compra_publica` para listar os ultimos produtos aceitos com dados limitados de status;
+- migracao de valores antigos de status para os novos status de cotacao, pedido e entrega.
+
+### Tabela `solicitantes_compra`
+
+Cadastro administrado em `/solicitacoes`, usado como lista no formulario publico.
+
+Campos principais:
+
+- `id`
+- `nome`
+- `centro_custo_id`
+- `ativo`
+- `created_at`
+- `updated_at`
+
+Usuarios anonimos podem ler somente registros com `ativo = true`. Usuarios autenticados podem listar, criar, editar e excluir.
+
+### Tabela `centros_custo`
+
+Cadastro administrado em `/solicitacoes`, usado como lista no formulario publico.
+
+Campos principais:
+
+- `id`
+- `nome`
+- `codigo`
+- `ativo`
+- `created_at`
+- `updated_at`
+
+Usuarios anonimos podem ler somente registros com `ativo = true`. Usuarios autenticados podem listar, criar, editar e excluir.
+
 ## Realtime e sincronizacao
 
 O `DataProvider` carrega os dados iniciais e assina eventos realtime do Supabase nas tabelas:
@@ -379,6 +580,9 @@ O `DataProvider` carrega os dados iniciais e assina eventos realtime do Supabase
 - `lembretes`
 - `produtos`
 - `movimentacoes_estoque`
+- `solicitacoes_compra`
+- `solicitantes_compra`
+- `centros_custo`
 
 Quando ha insert, update ou delete, o estado da aplicacao e atualizado automaticamente. O app tambem recarrega dados quando a aba volta a ficar visivel ou quando a conexao volta ao modo online.
 
