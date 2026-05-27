@@ -1,4 +1,4 @@
-const CACHE_NAME = 'ige-pwa-v1'
+const CACHE_NAME = 'ige-pwa-v2'
 const PRECACHE_URLS = [
   '/',
   '/solicitar',
@@ -14,7 +14,11 @@ self.addEventListener('install', (event) => {
     caches
       .open(CACHE_NAME)
       .then((cache) =>
-        Promise.allSettled(PRECACHE_URLS.map((url) => cache.add(url)))
+        Promise.allSettled(
+          PRECACHE_URLS.map((url) =>
+            cache.add(new Request(url, { cache: 'reload' }))
+          )
+        )
       )
       .then(() => self.skipWaiting())
   )
@@ -35,23 +39,38 @@ self.addEventListener('activate', (event) => {
   )
 })
 
+function isCacheableAsset(request, url) {
+  if (request.method !== 'GET') return false
+  if (url.origin !== self.location.origin) return false
+  if (url.pathname.startsWith('/api/')) return false
+  if (url.pathname.startsWith('/_next/webpack-hmr')) return false
+  if (request.headers.get('rsc')) return false
+  if (request.headers.get('next-router-prefetch')) return false
+  if (url.searchParams.has('_rsc')) return false
+
+  return (
+    url.pathname.startsWith('/_next/static/') ||
+    url.pathname.startsWith('/icons/') ||
+    url.pathname.match(/\.(?:png|jpg|jpeg|gif|webp|svg|ico|css|js|woff2?)$/)
+  )
+}
+
 self.addEventListener('fetch', (event) => {
   const { request } = event
-
-  if (request.method !== 'GET') return
-
   const url = new URL(request.url)
 
+  if (request.method !== 'GET') return
   if (url.origin !== self.location.origin) return
-  if (url.pathname.startsWith('/api/')) return
-  if (url.pathname.startsWith('/_next/webpack-hmr')) return
 
   if (request.mode === 'navigate') {
     event.respondWith(
       fetch(request)
         .then((response) => {
-          const responseClone = response.clone()
-          caches.open(CACHE_NAME).then((cache) => cache.put(request, responseClone))
+          if (response && response.ok) {
+            const responseClone = response.clone()
+            caches.open(CACHE_NAME).then((cache) => cache.put(request, responseClone))
+          }
+
           return response
         })
         .catch(() => caches.match(request).then((cached) => cached || caches.match('/')))
@@ -59,18 +78,23 @@ self.addEventListener('fetch', (event) => {
     return
   }
 
+  if (!isCacheableAsset(request, url)) {
+    event.respondWith(fetch(request))
+    return
+  }
+
   event.respondWith(
     caches.match(request).then((cached) => {
-      if (cached) return cached
-
-      return fetch(request).then((response) => {
-        if (!response || response.status !== 200) return response
-
-        const responseClone = response.clone()
-        caches.open(CACHE_NAME).then((cache) => cache.put(request, responseClone))
+      const fetchPromise = fetch(request).then((response) => {
+        if (response && response.ok && response.type === 'basic') {
+          const responseClone = response.clone()
+          caches.open(CACHE_NAME).then((cache) => cache.put(request, responseClone))
+        }
 
         return response
       })
+
+      return cached || fetchPromise
     })
   )
 })
