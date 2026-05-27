@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/select'
 import { Button } from '@/components/ui/button'
 import { PRIORIDADE_OPTIONS, STATUS_OPTIONS } from '@/constants/task-config'
+import { toDateInputValue } from '@/lib/date-utils'
 
 export default function EventForm({
   form,
@@ -112,13 +113,9 @@ export default function EventForm({
           <label className="text-sm font-medium">Data</label>
           <Input
             type="date"
-            value={
-              form.data
-                ? new Date(form.data).toISOString().split('T')[0]
-                : ''
-            }
+            value={toDateInputValue(form.data)}
             onChange={(e) =>
-              setForm({ ...form, data: new Date(e.target.value) })
+              setForm({ ...form, data: e.target.value || null })
             }
           />
         </div>

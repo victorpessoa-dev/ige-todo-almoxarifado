@@ -13,6 +13,7 @@ import { toast } from 'sonner'
 import { Plus, Pencil, Trash2, CheckCircle2, Circle, Clock, ChevronDown, ChevronUp, Calendar } from 'lucide-react'
 import EventForm from '@/components/events/EventForm'
 import { getUserMessage } from '@/lib/user-messages'
+import { formatDateBR, toDateInputValue } from '@/lib/date-utils'
 
 function groupByDate(items) {
   const groups = {}
@@ -44,9 +45,7 @@ function groupByDate(items) {
 }
 
 function formatDateLabel(value) {
-  if (!value) return ''
-  const date = value instanceof Date ? value : new Date(value)
-  return date.toLocaleDateString('pt-BR')
+  return formatDateBR(value, '')
 }
 
 export default function TarefasPage() {
@@ -93,7 +92,7 @@ export default function TarefasPage() {
     setForm({
       titulo: tarefa.titulo || '',
       descricao: tarefa.descricao || '',
-      data: tarefa.data ? new Date(tarefa.data) : new Date(),
+      data: toDateInputValue(tarefa.data) || toDateInputValue(new Date()),
       responsavel: tarefa.responsavel || '',
       status: tarefa.status,
       prioridade: tarefa.prioridade || 'medio'
@@ -350,7 +349,7 @@ export default function TarefasPage() {
             <Card>
               <CardContent className="flex flex-col items-center justify-center py-8">
                 <p className="text-muted-foreground">Nenhuma tarefa pendente</p>
-                <p className="text-sm text-muted-foreground">Clique em "Nova Tarefa" para comecar</p>
+                <p className="text-sm text-muted-foreground">Clique em &quot;Nova Tarefa&quot; para comecar</p>
               </CardContent>
             </Card>
           ) : (

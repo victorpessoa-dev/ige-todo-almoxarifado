@@ -15,6 +15,7 @@ import { SolicitacaoFilters } from '@/components/solicitacoes/SolicitacaoFilters
 import { SolicitacaoTable } from '@/components/solicitacoes/SolicitacaoTable'
 import { getUserMessage } from '@/lib/user-messages'
 import { downloadSolicitacoesExcel } from '@/lib/excel'
+import { getLocalDateTime } from '@/lib/date-utils'
 
 function isAtrasada(solicitacao) {
   const dateValue = solicitacao.previsao_entrega || solicitacao.previsao_desejada
@@ -28,10 +29,8 @@ function isAtrasada(solicitacao) {
   const today = new Date()
   today.setHours(0, 0, 0, 0)
 
-  const target = new Date(dateValue)
-  target.setHours(0, 0, 0, 0)
-
-  return target < today
+  const targetTime = getLocalDateTime(dateValue)
+  return targetTime !== null && targetTime < today.getTime()
 }
 
 function formatCurrency(value) {

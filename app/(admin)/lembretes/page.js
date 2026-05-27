@@ -13,6 +13,7 @@ import { toast } from 'sonner'
 import { Plus, Pencil, Trash2, CheckCircle2, Circle, Clock, ChevronDown, ChevronUp, StickyNote, Calendar } from 'lucide-react'
 import EventForm from '@/components/events/EventForm'
 import { getUserMessage } from '@/lib/user-messages'
+import { formatDateBR, toDateInputValue } from '@/lib/date-utils'
 
 function groupByDate(items) {
   const groups = {}
@@ -36,9 +37,7 @@ function groupByDate(items) {
 }
 
 function formatDateLabel(value) {
-  if (!value) return ''
-  const date = value instanceof Date ? value : new Date(value)
-  return date.toLocaleDateString('pt-BR')
+  return formatDateBR(value, '')
 }
 
 export default function LembretesPage() {
@@ -130,7 +129,7 @@ export default function LembretesPage() {
       titulo: lembrete.titulo || '',
       conteudo: lembrete.conteudo || '',
       destinatario: lembrete.destinatario || '',
-      data: lembrete.data ? new Date(lembrete.data) : null,
+      data: toDateInputValue(lembrete.data) || null,
       status: lembrete.status,
       prioridade: lembrete.prioridade || 'medio'
     })

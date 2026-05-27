@@ -9,6 +9,7 @@ import ptBrLocale from '@fullcalendar/core/locales/pt-br'
 import { CalendarDays } from 'lucide-react'
 import { toast } from 'sonner'
 import { getUserMessage } from '@/lib/user-messages'
+import { toDateInputValue } from '@/lib/date-utils'
 
 import { useData } from '@/contexts/data-context'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
@@ -27,9 +28,7 @@ const defaultForm = {
 }
 
 function formatDateForInput(value) {
-  if (!value) return ''
-  const date = value instanceof Date ? value : new Date(value)
-  return date.toISOString().split('T')[0]
+  return toDateInputValue(value)
 }
 
 export default function CalendarPage() {

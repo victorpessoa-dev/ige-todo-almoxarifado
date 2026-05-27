@@ -13,6 +13,7 @@ import {
   TableRow
 } from '@/components/ui/table'
 import { SolicitacaoStatusBadge } from '@/components/solicitacoes/SolicitacaoStatusBadge'
+import { formatDateBR, getLocalDateTime } from '@/lib/date-utils'
 
 function isAtrasada(solicitacao) {
   const dateValue = solicitacao.previsao_entrega || solicitacao.previsao_desejada
@@ -25,15 +26,12 @@ function isAtrasada(solicitacao) {
   const today = new Date()
   today.setHours(0, 0, 0, 0)
 
-  const target = new Date(dateValue)
-  target.setHours(0, 0, 0, 0)
-
-  return target < today
+  const targetTime = getLocalDateTime(dateValue)
+  return targetTime !== null && targetTime < today.getTime()
 }
 
 function formatDate(value) {
-  if (!value) return 'Sem previsao'
-  return new Date(value).toLocaleDateString('pt-BR')
+  return formatDateBR(value, 'Sem previsao')
 }
 
 export function SolicitacoesSlide({ solicitacoes, active, onEnd }) {

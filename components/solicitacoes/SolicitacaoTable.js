@@ -13,6 +13,7 @@ import {
 import { ArrowDown, ArrowUp, ArrowUpDown, ExternalLink, Eye } from 'lucide-react'
 import { SolicitacaoStatusBadge } from './SolicitacaoStatusBadge'
 import { getSolicitacaoSituacao } from '@/constants/solicitacoes-config'
+import { formatDateBR, getLocalDateTime } from '@/lib/date-utils'
 
 function formatCurrency(value) {
   const number = Number(value || 0)
@@ -25,8 +26,7 @@ function formatCurrency(value) {
 }
 
 function formatDate(value) {
-  if (!value) return '-'
-  return new Date(value).toLocaleDateString('pt-BR')
+  return formatDateBR(value)
 }
 
 export function SolicitacaoTable({ solicitacoes, onOpen }) {
@@ -54,8 +54,8 @@ export function SolicitacaoTable({ solicitacoes, onOpen }) {
       const bValue = b[sortConfig.key] || ''
 
       if (sortConfig.key.includes('data') || sortConfig.key.includes('created_at') || sortConfig.key.includes('previsao')) {
-        const aDate = aValue ? new Date(aValue).getTime() : 0
-        const bDate = bValue ? new Date(bValue).getTime() : 0
+        const aDate = getLocalDateTime(aValue) || 0
+        const bDate = getLocalDateTime(bValue) || 0
         return sortConfig.direction === 'asc' ? aDate - bDate : bDate - aDate
       }
 

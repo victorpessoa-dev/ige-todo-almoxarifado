@@ -43,10 +43,10 @@ import {
   getSolicitacaoOption,
   getSolicitacaoSituacao
 } from '@/constants/solicitacoes-config'
+import { formatDateBR } from '@/lib/date-utils'
 
 function formatDate(value) {
-  if (!value) return '-'
-  return new Date(value).toLocaleDateString('pt-BR')
+  return formatDateBR(value)
 }
 
 function DetailStatus({ label, value, options }) {

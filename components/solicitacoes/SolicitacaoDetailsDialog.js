@@ -41,10 +41,10 @@ import {
   getSolicitacaoOption,
   getSolicitacaoSituacao
 } from '@/constants/solicitacoes-config'
+import { formatDateBR, toDateInputValue } from '@/lib/date-utils'
 
 function toDateInput(value) {
-  if (!value) return ''
-  return new Date(value).toISOString().split('T')[0]
+  return toDateInputValue(value)
 }
 
 function parseDecimalValue(value) {
@@ -71,8 +71,7 @@ function formatDecimalInput(value) {
 }
 
 function formatDate(value) {
-  if (!value) return '-'
-  return new Date(value).toLocaleDateString('pt-BR')
+  return formatDateBR(value)
 }
 
 function formatCurrency(value) {

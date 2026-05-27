@@ -16,6 +16,7 @@ import {
   updateSolicitacaoCompra,
   updateSolicitanteCompra
 } from '@/lib/solicitacoes-service'
+import { toDateInputValue } from '@/lib/date-utils'
 
 const DataContext = createContext()
 
@@ -323,7 +324,7 @@ export function DataProvider({ children }) {
           responsavel: form.responsavel?.trim() || null,
           status: form.status || 'a_fazer',
           prioridade: form.prioridade || 'medio',
-          data: form.data || null
+          data: toDateInputValue(form.data) || null
         })
         .select()
         .single()
@@ -346,7 +347,8 @@ export function DataProvider({ children }) {
           ...updates,
           titulo: updates.titulo?.trim() || updates.titulo,
           descricao: updates.descricao?.trim() || updates.descricao,
-          responsavel: updates.responsavel?.trim() || updates.responsavel
+          responsavel: updates.responsavel?.trim() || updates.responsavel,
+          ...('data' in updates ? { data: toDateInputValue(updates.data) || null } : {})
         })
         .eq('id', id)
         .select()
@@ -403,7 +405,7 @@ export function DataProvider({ children }) {
           destinatario: form.destinatario?.trim() || null,
           status: form.status || 'a_fazer',
           prioridade: form.prioridade || 'medio',
-          data: form.data || null
+          data: toDateInputValue(form.data) || null
         })
         .select()
         .single()
@@ -426,7 +428,8 @@ export function DataProvider({ children }) {
           ...updates,
           titulo: updates.titulo?.trim() || updates.titulo,
           conteudo: updates.conteudo?.trim() || updates.conteudo,
-          destinatario: updates.destinatario?.trim() || updates.destinatario
+          destinatario: updates.destinatario?.trim() || updates.destinatario,
+          ...('data' in updates ? { data: toDateInputValue(updates.data) || null } : {})
         })
         .eq('id', id)
         .select()
