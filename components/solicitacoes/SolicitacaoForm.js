@@ -1,8 +1,10 @@
 'use client'
 
+import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import {
   Select,
   SelectContent,
@@ -35,8 +37,6 @@ export const defaultSolicitacaoForm = {
   valor_unitario: '',
   valor_total: '',
   previsao_entrega: '',
-  pedido: '',
-  nota_fiscal: '',
   status_cotacao: 'nao_iniciado',
   status_pedido: 'nao_digitado',
   status_transporte: 'producao_separacao',
@@ -49,6 +49,15 @@ function Field({ label, children }) {
       <label className="text-sm font-medium">{label}</label>
       {children}
     </div>
+  )
+}
+
+function Section({ title, children }) {
+  return (
+    <section className="grid gap-4 rounded-lg border bg-background/50 p-4">
+      <h3 className="text-sm font-semibold text-muted-foreground">{title}</h3>
+      {children}
+    </section>
   )
 }
 
@@ -97,11 +106,16 @@ export function SolicitacaoForm({
   submitLabel = 'Enviar solicitacao',
   isSubmitting = false,
   mode = 'public',
+  showSections = false,
+  sectionLayout = 'stack',
+  onCancel,
   produtos = [],
   solicitantes = [],
   centrosCusto = []
 }) {
   const isAdmin = mode === 'admin'
+  const useTabs = showSections && sectionLayout === 'tabs'
+  const [activeTab, setActiveTab] = useState('pedido')
   const quantidade = Number(form.quantidade || 0)
   const valorUnitario = parseDecimalValue(form.valor_unitario)
   const computedTotal = quantidade > 0 && valorUnitario > 0
@@ -149,26 +163,71 @@ export function SolicitacaoForm({
     setForm(nextForm)
   }
 
-  return (
-    <form onSubmit={onSubmit} className="grid gap-4">
+  const solicitanteFields = (
+    <div className="grid gap-4 sm:grid-cols-2">
+      <Field label="Nome do solicitante">
+        <Select
+          value={form.solicitante_id || ''}
+          onValueChange={(value) => updateField('solicitante_id', value)}
+          required={!useTabs}
+        >
+          <SelectTrigger>
+            <SelectValue placeholder="Selecione" />
+          </SelectTrigger>
+          <SelectContent>
+            {solicitantes.map((solicitante) => (
+              <SelectItem key={solicitante.id} value={solicitante.id}>
+                {[
+                  solicitante.nome,
+                  getCentroCustoLabel(getSolicitanteCentroCusto(solicitante, centrosCusto))
+                ].filter(Boolean).join(' - ')}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </Field>
+
+      <Field label="Centro de custo">
+        <Select
+          value={form.centro_custo_id || ''}
+          onValueChange={(value) => updateField('centro_custo_id', value)}
+          required={!useTabs}
+        >
+          <SelectTrigger>
+            <SelectValue placeholder="Selecione" />
+          </SelectTrigger>
+          <SelectContent>
+            {centrosCusto.map((centroCusto) => (
+              <SelectItem key={centroCusto.id} value={centroCusto.id}>
+                {[centroCusto.codigo, centroCusto.nome].filter(Boolean).join(' - ')}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </Field>
+    </div>
+  )
+
+  const itemFields = (
+    <>
       <Field label="Descricao do item">
         <Textarea
           value={form.descricao}
           onChange={(event) => updateField('descricao', event.target.value)}
           rows={4}
           placeholder="Informe o item, modelo, medida, marca ou referencia"
-          required
+          required={!useTabs}
         />
       </Field>
 
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="grid gap-4 sm:grid-cols-3">
         <Field label="Quantidade">
           <Input
             type="number"
             min={1}
             value={form.quantidade}
             onChange={(event) => updateField('quantidade', event.target.value)}
-            required
+            required={!useTabs}
           />
         </Field>
 
@@ -189,34 +248,13 @@ export function SolicitacaoForm({
             </SelectContent>
           </Select>
         </Field>
-      </div>
 
-      <div className="grid gap-4 sm:grid-cols-2">
         <Field label="Previsao desejada">
           <Input
             type="date"
             value={form.previsao_desejada || ''}
             onChange={(event) => updateField('previsao_desejada', event.target.value)}
           />
-        </Field>
-
-        <Field label="Centro de custo">
-          <Select
-            value={form.centro_custo_id || ''}
-            onValueChange={(value) => updateField('centro_custo_id', value)}
-            required
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Selecione" />
-            </SelectTrigger>
-            <SelectContent>
-              {centrosCusto.map((centroCusto) => (
-                <SelectItem key={centroCusto.id} value={centroCusto.id}>
-                  {[centroCusto.codigo, centroCusto.nome].filter(Boolean).join(' - ')}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
         </Field>
       </div>
 
@@ -237,29 +275,11 @@ export function SolicitacaoForm({
           placeholder="https://..."
         />
       </Field>
+    </>
+  )
 
-      <Field label="Nome do solicitante">
-        <Select
-          value={form.solicitante_id || ''}
-          onValueChange={(value) => updateField('solicitante_id', value)}
-          required
-        >
-          <SelectTrigger>
-            <SelectValue placeholder="Selecione" />
-          </SelectTrigger>
-          <SelectContent>
-            {solicitantes.map((solicitante) => (
-              <SelectItem key={solicitante.id} value={solicitante.id}>
-                {[
-                  solicitante.nome,
-                  getCentroCustoLabel(getSolicitanteCentroCusto(solicitante, centrosCusto))
-                ].filter(Boolean).join(' - ')}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </Field>
-
+  const adminFields = isAdmin ? (
+    <>
       {isAdmin && (
         <>
           <div className="grid gap-4 sm:grid-cols-2">
@@ -345,22 +365,6 @@ export function SolicitacaoForm({
             </Field>
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-2">
-            <Field label="Pedido">
-              <Input
-                value={form.pedido || ''}
-                onChange={(event) => updateField('pedido', event.target.value)}
-              />
-            </Field>
-
-            <Field label="Nota fiscal">
-              <Input
-                value={form.nota_fiscal || ''}
-                onChange={(event) => updateField('nota_fiscal', event.target.value)}
-              />
-            </Field>
-          </div>
-
           <div className="grid gap-4 sm:grid-cols-3">
             <Field label="Status da cotacao">
               <Select
@@ -418,10 +422,64 @@ export function SolicitacaoForm({
           </div>
         </>
       )}
+    </>
+  ) : null
 
-      <Button type="submit" disabled={isSubmitting}>
-        {isSubmitting ? 'Salvando...' : submitLabel}
-      </Button>
+  return (
+    <form onSubmit={onSubmit} className="grid gap-4">
+      {useTabs ? (
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="gap-4">
+          <TabsList className={`grid h-auto w-full gap-1 ${adminFields ? 'grid-cols-2' : 'grid-cols-1'}`}>
+            <TabsTrigger value="pedido" className="px-2 text-xs sm:text-sm">
+              Pedido
+            </TabsTrigger>
+            {adminFields && (
+              <TabsTrigger value="controle" className="px-2 text-xs sm:text-sm">
+                Controle
+              </TabsTrigger>
+            )}
+          </TabsList>
+
+          <TabsContent value="pedido" className="grid gap-4">
+            <Section title="Solicitante">{solicitanteFields}</Section>
+            <Section title="Item solicitado">{itemFields}</Section>
+          </TabsContent>
+
+          {adminFields && (
+            <TabsContent value="controle">
+              <Section title="Controle interno">{adminFields}</Section>
+            </TabsContent>
+          )}
+        </Tabs>
+      ) : showSections ? (
+        <>
+          <Section title="Solicitante">{solicitanteFields}</Section>
+          <Section title="Item solicitado">{itemFields}</Section>
+          {adminFields && <Section title="Controle interno">{adminFields}</Section>}
+        </>
+      ) : (
+        <>
+          {itemFields}
+          {solicitanteFields}
+          {adminFields}
+        </>
+      )}
+
+      <div className="flex flex-col-reverse gap-2 pt-1 sm:flex-row sm:justify-end">
+        {onCancel && (
+          <Button
+            type="button"
+            variant="outline"
+            onClick={onCancel}
+            disabled={isSubmitting}
+          >
+            Cancelar
+          </Button>
+        )}
+        <Button type="submit" disabled={isSubmitting}>
+          {isSubmitting ? 'Salvando...' : submitLabel}
+        </Button>
+      </div>
     </form>
   )
 }

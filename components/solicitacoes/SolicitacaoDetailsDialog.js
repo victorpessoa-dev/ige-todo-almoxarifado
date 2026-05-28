@@ -147,8 +147,6 @@ function buildFormFromSolicitacao(solicitacao) {
     valor_unitario: formatDecimalInput(solicitacao?.valor_unitario),
     valor_total: formatDecimalInput(solicitacao?.valor_total),
     previsao_entrega: toDateInput(solicitacao?.previsao_entrega),
-    pedido: solicitacao?.pedido || '',
-    nota_fiscal: solicitacao?.nota_fiscal || '',
     status_cotacao: solicitacao?.status_cotacao || 'nao_iniciado',
     status_pedido: solicitacao?.status_pedido || 'nao_digitado',
     status_transporte: solicitacao?.status_transporte || 'producao_separacao',
@@ -174,8 +172,6 @@ function buildPayload(form) {
     valor_unitario: parseDecimalValue(form.valor_unitario),
     valor_total: parseDecimalValue(form.valor_total),
     previsao_entrega: form.previsao_entrega || null,
-    pedido: form.pedido || null,
-    nota_fiscal: form.nota_fiscal || null,
     status_cotacao: form.status_cotacao,
     status_pedido: form.status_pedido,
     status_transporte: form.status_transporte,
@@ -564,12 +560,6 @@ export function SolicitacaoDetailsDialog({
                 </div>
 
                 <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                  <Field label="Pedido">
-                    <Input value={form.pedido || ''} onChange={(event) => updateField('pedido', event.target.value)} />
-                  </Field>
-                  <Field label="Nota fiscal">
-                    <Input value={form.nota_fiscal || ''} onChange={(event) => updateField('nota_fiscal', event.target.value)} />
-                  </Field>
                   <Field label="Valor unitario">
                     <Input
                       inputMode="decimal"
@@ -633,8 +623,6 @@ export function SolicitacaoDetailsDialog({
                 </div>
 
                 <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                  <InfoItem label="Pedido" value={solicitacao?.pedido} />
-                  <InfoItem label="Nota fiscal" value={solicitacao?.nota_fiscal} />
                   <InfoItem label="Valor unitario" value={formatCurrency(solicitacao?.valor_unitario)} />
                   <InfoItem label="Valor total" value={formatCurrency(solicitacao?.valor_total)} />
                 </div>

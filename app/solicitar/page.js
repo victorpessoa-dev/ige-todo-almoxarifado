@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Image from 'next/image'
-import { CheckCircle2, Eye, LogIn, PackageSearch, Plus, Search, Send } from 'lucide-react'
+import { CheckCircle2, LogIn, PackageSearch, Plus, Search, Send } from 'lucide-react'
 import { toast } from 'sonner'
 
 import {
@@ -47,6 +47,10 @@ import { formatDateBR } from '@/lib/date-utils'
 
 function formatDate(value) {
   return formatDateBR(value)
+}
+
+function getPrevisaoDate(solicitacao) {
+  return solicitacao.previsao_entrega || solicitacao.previsao_desejada
 }
 
 function DetailStatus({ label, value, options }) {
@@ -122,12 +126,14 @@ function SolicitacaoPublicTable({ solicitacoes, onOpen }) {
                   <p className="mt-1 text-xs text-muted-foreground">
                     {solicitacao.solicitante || '-'}
                   </p>
+                  <p className="mt-1 line-clamp-1 text-xs text-muted-foreground">
+                    {solicitacao.centro_custo || '-'}
+                  </p>
                 </div>
-                <Eye className="h-4 w-4 shrink-0 text-primary" />
               </div>
 
               <div className="mt-3 flex flex-wrap gap-2">
-                <SolicitacaoStatusBadge value={solicitacao.status_geral} />
+                <SolicitacaoStatusBadge type="prioridade" value={solicitacao.prioridade} />
                 {situacao.label && (
                   <span className={`rounded-md border px-2 py-1 text-xs font-semibold ${situacao.className}`}>
                     {situacao.label}
@@ -136,7 +142,7 @@ function SolicitacaoPublicTable({ solicitacoes, onOpen }) {
               </div>
 
               <p className="mt-3 text-xs text-muted-foreground">
-                Atualizado em {formatDate(solicitacao.updated_at)}
+                Previsao: {formatDate(getPrevisaoDate(solicitacao))}
               </p>
             </button>
           )
@@ -150,34 +156,50 @@ function SolicitacaoPublicTable({ solicitacoes, onOpen }) {
               <TableHead className="h-12 px-4">Cod.</TableHead>
               <TableHead className="h-12 px-4">Produto</TableHead>
               <TableHead className="h-12 px-4">Solicitante</TableHead>
-              <TableHead className="h-12 px-4">Status</TableHead>
-              <TableHead className="h-12 px-4">Atualizacao</TableHead>
-              <TableHead className="h-12 w-14 px-4 text-right">Ver</TableHead>
+              <TableHead className="h-12 px-4">Centro</TableHead>
+              <TableHead className="h-12 px-4">Prioridade</TableHead>
+              <TableHead className="h-12 px-4">Situacao</TableHead>
+              <TableHead className="h-12 px-4">Previsao</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {solicitacoes.map((solicitacao) => (
-              <TableRow
-                key={solicitacao.codigo}
-                className="cursor-pointer"
-                onClick={() => onOpen(solicitacao)}
-              >
-                <TableCell className="px-4 py-3 font-semibold tabular-nums">
-                  {solicitacao.codigo}
-                </TableCell>
-                <TableCell className="max-w-[420px] px-4 py-3">
-                  <p className="truncate font-medium">{solicitacao.descricao}</p>
-                </TableCell>
-                <TableCell className="px-4 py-3">{solicitacao.solicitante || '-'}</TableCell>
-                <TableCell className="px-4 py-3">
-                  <SolicitacaoStatusBadge value={solicitacao.status_geral} />
-                </TableCell>
-                <TableCell className="px-4 py-3">{formatDate(solicitacao.updated_at)}</TableCell>
-                <TableCell className="px-4 py-3 text-right">
-                  <Eye className="ml-auto h-4 w-4 text-primary" />
-                </TableCell>
-              </TableRow>
-            ))}
+            {solicitacoes.map((solicitacao) => {
+              const situacao = getSolicitacaoSituacao(solicitacao)
+
+              return (
+                <TableRow
+                  key={solicitacao.codigo}
+                  className="cursor-pointer"
+                  onClick={() => onOpen(solicitacao)}
+                >
+                  <TableCell className="px-4 py-3 font-semibold tabular-nums">
+                    {solicitacao.codigo}
+                  </TableCell>
+                  <TableCell className="max-w-[420px] px-4 py-3">
+                    <p className="truncate font-medium">{solicitacao.descricao}</p>
+                  </TableCell>
+                  <TableCell className="px-4 py-3">{solicitacao.solicitante || '-'}</TableCell>
+                  <TableCell className="max-w-[220px] px-4 py-3">
+                    <p className="truncate" title={solicitacao.centro_custo || '-'}>
+                      {solicitacao.centro_custo || '-'}
+                    </p>
+                  </TableCell>
+                  <TableCell className="px-4 py-3">
+                    <SolicitacaoStatusBadge type="prioridade" value={solicitacao.prioridade} />
+                  </TableCell>
+                  <TableCell className="px-4 py-3">
+                    {situacao.label ? (
+                      <span className={`rounded-md border px-2 py-1 text-xs font-semibold ${situacao.className}`}>
+                        {situacao.label}
+                      </span>
+                    ) : (
+                      '-'
+                    )}
+                  </TableCell>
+                  <TableCell className="px-4 py-3">{formatDate(getPrevisaoDate(solicitacao))}</TableCell>
+                </TableRow>
+              )
+            })}
           </TableBody>
         </Table>
       </div>
@@ -252,7 +274,8 @@ export default function SolicitarPage() {
       [
         solicitacao.codigo,
         solicitacao.descricao,
-        solicitacao.solicitante
+        solicitacao.solicitante,
+        solicitacao.centro_custo
       ]
         .filter(Boolean)
         .some((value) => String(value).toLowerCase().includes(publicSearch))
@@ -513,7 +536,7 @@ export default function SolicitarPage() {
         </Card>
 
         <Dialog open={pedidoDialogOpen} onOpenChange={setPedidoDialogOpen}>
-          <DialogContent className="h-[100dvh] max-h-[100dvh] w-full max-w-none overflow-y-auto rounded-none p-4 sm:h-auto sm:max-h-[calc(100vh-2rem)] sm:w-[95vw] sm:max-w-2xl sm:rounded-lg sm:p-6">
+          <DialogContent className="h-[100dvh] max-h-[100dvh] w-full max-w-none overflow-y-auto rounded-none p-4 sm:h-auto sm:max-h-[calc(100vh-2rem)] sm:w-[95vw] sm:max-w-3xl sm:rounded-lg sm:p-6">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 <Send className="h-5 w-5 text-primary" />
@@ -535,6 +558,7 @@ export default function SolicitarPage() {
                 submitLabel="Enviar solicitacao"
                 isSubmitting={isSubmitting}
                 mode="public"
+                showSections
                 solicitantes={solicitantes}
                 centrosCusto={centrosCusto}
               />

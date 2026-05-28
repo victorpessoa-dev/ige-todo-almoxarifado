@@ -2,16 +2,21 @@
 
 import { useMemo, useState } from 'react'
 import { toast } from 'sonner'
-import { Download, ShoppingCart } from 'lucide-react'
+import { Download, Plus, ShoppingCart } from 'lucide-react'
 
 import { useData } from '@/contexts/data-context'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { LoadingState } from '@/components/ui/spinner'
 import { SolicitacaoCadastrosDialog } from '@/components/solicitacoes/SolicitacaoCadastrosDialog'
 import { SolicitacaoCard } from '@/components/solicitacoes/SolicitacaoCard'
 import { SolicitacaoDetailsDialog } from '@/components/solicitacoes/SolicitacaoDetailsDialog'
 import { SolicitacaoFilters } from '@/components/solicitacoes/SolicitacaoFilters'
+import {
+  SolicitacaoForm,
+  defaultSolicitacaoForm
+} from '@/components/solicitacoes/SolicitacaoForm'
 import { SolicitacaoTable } from '@/components/solicitacoes/SolicitacaoTable'
 import { getUserMessage } from '@/lib/user-messages'
 import { downloadSolicitacoesExcel } from '@/lib/excel'
@@ -49,6 +54,7 @@ export default function SolicitacoesPage() {
     centrosCusto,
     produtos,
     updateSolicitacao,
+    addSolicitacao,
     deleteSolicitacao,
     addSolicitante,
     updateSolicitante,
@@ -68,6 +74,9 @@ export default function SolicitacoesPage() {
   const [selectedSolicitacao, setSelectedSolicitacao] = useState(null)
   const [detailsOpen, setDetailsOpen] = useState(false)
   const [cadastrosOpen, setCadastrosOpen] = useState(false)
+  const [newPedidoOpen, setNewPedidoOpen] = useState(false)
+  const [newPedidoForm, setNewPedidoForm] = useState(defaultSolicitacaoForm)
+  const [isSubmittingNewPedido, setIsSubmittingNewPedido] = useState(false)
 
   const filteredSolicitacoes = useMemo(() => {
     const search = filters.search.trim().toLowerCase()
@@ -151,6 +160,44 @@ export default function SolicitacoesPage() {
     downloadSolicitacoesExcel(filteredSolicitacoes, `solicitacoes-${date}.xlsx`)
   }
 
+  const handleTogglePublic = async (solicitacao, visivelPublico) => {
+    try {
+      await updateSolicitacao(solicitacao.id, {
+        visivel_publico: visivelPublico ? 1 : 0
+      })
+      toast.success(
+        visivelPublico
+          ? 'Solicitacao visivel no publico.'
+          : 'Solicitacao oculta do publico.'
+      )
+    } catch (error) {
+      toast.error(getUserMessage(error, 'Nao foi possivel alterar a visibilidade publica.'))
+    }
+  }
+
+  const handleNewPedidoOpenChange = (open) => {
+    setNewPedidoOpen(open)
+
+    if (!open) {
+      setNewPedidoForm(defaultSolicitacaoForm)
+    }
+  }
+
+  const handleNewPedidoSubmit = async (event) => {
+    event.preventDefault()
+    setIsSubmittingNewPedido(true)
+
+    try {
+      await addSolicitacao(newPedidoForm)
+      toast.success('Solicitacao criada com sucesso!')
+      handleNewPedidoOpenChange(false)
+    } catch (error) {
+      toast.error(getUserMessage(error, 'Nao foi possivel criar a solicitacao.'))
+    } finally {
+      setIsSubmittingNewPedido(false)
+    }
+  }
+
   if (!isLoaded) {
     return <LoadingState className="min-h-[60vh]" />
   }
@@ -168,7 +215,11 @@ export default function SolicitacoesPage() {
           </p>
         </div>
 
-        <div className="grid gap-2 sm:grid-cols-3">
+        <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
+          <Button className="w-full" onClick={() => setNewPedidoOpen(true)}>
+            <Plus className="h-4 w-4" />
+            Novo pedido
+          </Button>
           <Button
             className="w-full"
             variant="outline"
@@ -212,6 +263,7 @@ export default function SolicitacoesPage() {
         <SolicitacaoTable
           solicitacoes={filteredSolicitacoes}
           onOpen={openDetails}
+          onTogglePublic={handleTogglePublic}
         />
       )}
 
@@ -226,6 +278,29 @@ export default function SolicitacoesPage() {
         solicitantes={solicitantesCompra}
         centrosCusto={centrosCusto}
       />
+
+      <Dialog open={newPedidoOpen} onOpenChange={handleNewPedidoOpenChange}>
+        <DialogContent className="h-[100dvh] max-h-[100dvh] w-full max-w-none overflow-y-auto rounded-none p-4 sm:h-auto sm:max-h-[calc(100vh-2rem)] sm:w-[95vw] sm:max-w-3xl sm:rounded-lg sm:p-6">
+          <DialogHeader>
+            <DialogTitle>Novo pedido</DialogTitle>
+          </DialogHeader>
+
+          <SolicitacaoForm
+            form={newPedidoForm}
+            setForm={setNewPedidoForm}
+            onSubmit={handleNewPedidoSubmit}
+            submitLabel="Criar solicitacao"
+            isSubmitting={isSubmittingNewPedido}
+            mode="admin"
+            showSections
+            sectionLayout="tabs"
+            onCancel={() => handleNewPedidoOpenChange(false)}
+            produtos={produtos}
+            solicitantes={solicitantesCompra}
+            centrosCusto={centrosCusto}
+          />
+        </DialogContent>
+      </Dialog>
 
       <SolicitacaoCadastrosDialog
         open={cadastrosOpen}

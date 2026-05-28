@@ -12,7 +12,11 @@ import {
 } from '@/components/ui/table'
 import { ArrowDown, ArrowUp, ArrowUpDown, ExternalLink, Eye } from 'lucide-react'
 import { SolicitacaoStatusBadge } from './SolicitacaoStatusBadge'
-import { getSolicitacaoSituacao } from '@/constants/solicitacoes-config'
+import {
+  SOLICITACAO_STATUS_GERAL_OPTIONS,
+  getSolicitacaoOption,
+  getSolicitacaoSituacao
+} from '@/constants/solicitacoes-config'
 import { formatDateBR, getLocalDateTime } from '@/lib/date-utils'
 
 function formatCurrency(value) {
@@ -29,11 +33,73 @@ function formatDate(value) {
   return formatDateBR(value)
 }
 
-export function SolicitacaoTable({ solicitacoes, onOpen }) {
+function getStatusDotClass(status) {
+  const option = getSolicitacaoOption(SOLICITACAO_STATUS_GERAL_OPTIONS, status)
+
+  if (option.className.includes('emerald')) return 'bg-emerald-500'
+  if (option.className.includes('green')) return 'bg-green-500'
+  if (option.className.includes('red')) return 'bg-red-500'
+  if (option.className.includes('amber')) return 'bg-amber-500'
+  if (option.className.includes('orange')) return 'bg-orange-500'
+  if (option.className.includes('violet')) return 'bg-violet-500'
+  if (option.className.includes('indigo')) return 'bg-indigo-500'
+  if (option.className.includes('blue')) return 'bg-blue-500'
+  if (option.className.includes('slate')) return 'bg-slate-500'
+
+  return 'bg-sky-500'
+}
+
+function isPublicVisible(value) {
+  return value === true || value === 1 || value === '1'
+}
+
+function PublicVisibilityToggle({ checked, disabled, onChange }) {
+  return (
+    <button
+      type="button"
+      disabled={disabled}
+      onClick={(event) => {
+        event.stopPropagation()
+        onChange(!checked)
+      }}
+      className="inline-flex h-7 w-12 items-center justify-center rounded-full bg-transparent transition disabled:cursor-wait disabled:opacity-60"
+      aria-pressed={checked}
+      aria-label="Alternar visibilidade publica"
+      title={checked ? 'Visivel no publico' : 'Oculto do publico'}
+    >
+      <span
+        className={`relative h-5 w-10 rounded-full border bg-transparent transition ${
+          checked ? 'border-emerald-500' : 'border-red-500'
+        }`}
+      >
+        <span
+          className={`absolute top-0.5 h-4 w-4 rounded-full shadow-sm transition ${
+            checked ? 'left-[18px] bg-emerald-500' : 'left-0.5 bg-red-500'
+          }`}
+        />
+      </span>
+    </button>
+  )
+}
+
+export function SolicitacaoTable({ solicitacoes, onOpen, onTogglePublic }) {
+  const [updatingPublicIds, setUpdatingPublicIds] = useState([])
   const [sortConfig, setSortConfig] = useState({
     key: 'created_at',
     direction: 'desc'
   })
+
+  const handleTogglePublic = async (solicitacao, checked) => {
+    if (!onTogglePublic) return
+
+    setUpdatingPublicIds((prev) => [...prev, solicitacao.id])
+
+    try {
+      await onTogglePublic(solicitacao, checked)
+    } finally {
+      setUpdatingPublicIds((prev) => prev.filter((id) => id !== solicitacao.id))
+    }
+  }
 
   const handleSort = (key) => {
     setSortConfig((prev) => {
@@ -46,6 +112,13 @@ export function SolicitacaoTable({ solicitacoes, onOpen }) {
 
       return { key, direction: 'asc' }
     })
+  }
+
+  const handleCardKeyDown = (event, solicitacao) => {
+    if (event.key !== 'Enter' && event.key !== ' ') return
+
+    event.preventDefault()
+    onOpen(solicitacao)
   }
 
   const sortedSolicitacoes = useMemo(() => {
@@ -106,15 +179,20 @@ export function SolicitacaoTable({ solicitacoes, onOpen }) {
             const situacao = getSolicitacaoSituacao(solicitacao)
 
             return (
-              <button
+              <div
                 key={solicitacao.id}
-                type="button"
+                role="button"
+                tabIndex={0}
                 onClick={() => onOpen(solicitacao)}
+                onKeyDown={(event) => handleCardKeyDown(event, solicitacao)}
                 className="rounded-xl border bg-card p-4 text-left shadow-sm transition hover:border-primary/40"
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
-                    <p className="font-semibold">{solicitacao.codigo || '-'}</p>
+                    <p className="flex items-center gap-2 font-semibold">
+                      <span className={`h-2.5 w-2.5 rounded-full ${getStatusDotClass(solicitacao.status_geral)}`} />
+                      <span>{solicitacao.codigo || '-'}</span>
+                    </p>
                     <p className="mt-1 line-clamp-2 text-sm">
                       {solicitacao.descricao}
                     </p>
@@ -122,8 +200,6 @@ export function SolicitacaoTable({ solicitacoes, onOpen }) {
                       {solicitacao.solicitante || '-'} | {solicitacao.centro_custo || '-'}
                     </p>
                   </div>
-
-                  <Eye className="h-4 w-4 shrink-0 text-muted-foreground" />
                 </div>
 
                 <div className="mt-3 flex flex-wrap gap-2">
@@ -131,7 +207,6 @@ export function SolicitacaoTable({ solicitacoes, onOpen }) {
                     type="prioridade"
                     value={solicitacao.prioridade}
                   />
-                  <SolicitacaoStatusBadge value={solicitacao.status_geral} />
                   {situacao.label && (
                     <span className={`rounded-md border px-2 py-1 text-xs font-semibold ${situacao.className}`}>
                       {situacao.label}
@@ -143,7 +218,14 @@ export function SolicitacaoTable({ solicitacoes, onOpen }) {
                   <span>Valor: {formatCurrency(solicitacao.valor_total)}</span>
                   <span>Previsao: {formatDate(solicitacao.previsao_entrega || solicitacao.previsao_desejada)}</span>
                 </div>
-              </button>
+                <div className="mt-3">
+                  <PublicVisibilityToggle
+                    checked={isPublicVisible(solicitacao.visivel_publico)}
+                    disabled={updatingPublicIds.includes(solicitacao.id)}
+                    onChange={(checked) => handleTogglePublic(solicitacao, checked)}
+                  />
+                </div>
+              </div>
             )
           })
         )}
@@ -151,7 +233,7 @@ export function SolicitacaoTable({ solicitacoes, onOpen }) {
 
       <div className="hidden overflow-hidden rounded-2xl border bg-card shadow-sm md:block">
         <div className="inventory-table-scroll overflow-x-auto">
-          <Table className="min-w-[1180px]">
+          <Table className="min-w-[1040px] [&_td:first-child]:pl-4 [&_td:last-child]:pr-4 [&_td]:px-3 [&_td]:py-2.5 [&_th:first-child]:pl-4 [&_th:last-child]:pr-4 [&_th]:px-3 [&_th]:py-2">
             <TableHeader>
               <TableRow className="hover:bg-transparent">
                 <SortHeader label="Codigo" columnKey="codigo" />
@@ -159,19 +241,20 @@ export function SolicitacaoTable({ solicitacoes, onOpen }) {
                 <SortHeader label="Solicitante" columnKey="solicitante" />
                 <SortHeader label="Centro" columnKey="centro_custo" />
                 <TableHead>Prioridade</TableHead>
-                <TableHead>Status</TableHead>
                 <TableHead>Situacao</TableHead>
                 <TableHead>Ref.</TableHead>
                 <SortHeader label="Valor" columnKey="valor_total" />
                 <SortHeader label="Previsao" columnKey="previsao_entrega" />
-                <TableHead className="w-14 text-right">Acoes</TableHead>
+                <TableHead className="w-16 text-center">
+                  <Eye className="mx-auto h-4 w-4 text-muted-foreground" />
+                </TableHead>
               </TableRow>
             </TableHeader>
 
             <TableBody>
               {sortedSolicitacoes.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={11} className="py-10 text-center text-muted-foreground">
+                  <TableCell colSpan={10} className="py-10 text-center text-muted-foreground">
                     Nenhuma solicitacao encontrada.
                   </TableCell>
                 </TableRow>
@@ -186,21 +269,25 @@ export function SolicitacaoTable({ solicitacoes, onOpen }) {
                       onClick={() => onOpen(solicitacao)}
                     >
                       <TableCell className="font-medium">
-                        {solicitacao.codigo || '-'}
+                        <span className="flex items-center gap-2">
+                          <span className={`h-2.5 w-2.5 rounded-full ${getStatusDotClass(solicitacao.status_geral)}`} />
+                          <span>{solicitacao.codigo || '-'}</span>
+                        </span>
                       </TableCell>
                       <TableCell className="max-w-[320px]">
                         <p className="truncate font-medium">{solicitacao.descricao}</p>
                       </TableCell>
                       <TableCell>{solicitacao.solicitante || '-'}</TableCell>
-                      <TableCell>{solicitacao.centro_custo || '-'}</TableCell>
+                      <TableCell className="max-w-[180px]">
+                        <p className="truncate" title={solicitacao.centro_custo || '-'}>
+                          {solicitacao.centro_custo || '-'}
+                        </p>
+                      </TableCell>
                       <TableCell>
                         <SolicitacaoStatusBadge
                           type="prioridade"
                           value={solicitacao.prioridade}
                         />
-                      </TableCell>
-                      <TableCell>
-                        <SolicitacaoStatusBadge value={solicitacao.status_geral} />
                       </TableCell>
                       <TableCell>
                         {situacao.label ? (
@@ -237,18 +324,12 @@ export function SolicitacaoTable({ solicitacoes, onOpen }) {
                       <TableCell>
                         {formatDate(solicitacao.previsao_entrega || solicitacao.previsao_desejada)}
                       </TableCell>
-                      <TableCell className="text-right">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8"
-                          onClick={(event) => {
-                            event.stopPropagation()
-                            onOpen(solicitacao)
-                          }}
-                        >
-                          <Eye className="h-4 w-4" />
-                        </Button>
+                      <TableCell className="text-center">
+                        <PublicVisibilityToggle
+                          checked={isPublicVisible(solicitacao.visivel_publico)}
+                          disabled={updatingPublicIds.includes(solicitacao.id)}
+                          onChange={(checked) => handleTogglePublic(solicitacao, checked)}
+                        />
                       </TableCell>
                     </TableRow>
                   )

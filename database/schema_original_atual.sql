@@ -1,11 +1,55 @@
+-- Schema original do projeto atual.
+-- Use este arquivo para criar o banco do zero no Supabase.
+
 create extension if not exists pgcrypto;
 
-create table if not exists public.solicitantes_compra (
+create table if not exists public.tarefas (
   id uuid primary key default gen_random_uuid(),
-  nome text not null,
-  ativo boolean not null default true,
+  user_id uuid references auth.users(id) on delete set null,
+  titulo text not null,
+  descricao text,
+  responsavel text,
+  status text not null default 'a_fazer',
+  prioridade text not null default 'medio',
+  data date,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
+);
+
+create table if not exists public.lembretes (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid references auth.users(id) on delete set null,
+  titulo text not null,
+  conteudo text,
+  destinatario text,
+  status text not null default 'a_fazer',
+  prioridade text not null default 'medio',
+  data date,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create table if not exists public.produtos (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid references auth.users(id) on delete set null,
+  cod text not null unique,
+  nome text not null,
+  cod_barra text,
+  estoque numeric not null default 0,
+  min numeric not null default 0,
+  max numeric not null default 0,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create table if not exists public.movimentacoes_estoque (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid references auth.users(id) on delete set null,
+  produto_id uuid references public.produtos(id) on delete set null,
+  tipo text not null check (tipo in ('entrada', 'saida')),
+  quantidade numeric not null check (quantidade > 0),
+  motivo text,
+  created_at timestamptz not null default now()
 );
 
 create table if not exists public.centros_custo (
@@ -17,17 +61,14 @@ create table if not exists public.centros_custo (
   updated_at timestamptz not null default now()
 );
 
-alter table public.solicitantes_compra
-  drop column if exists email;
-
-alter table public.centros_custo
-  drop column if exists descricao;
-
-alter table public.solicitantes_compra
-  add column if not exists centro_custo_id uuid references public.centros_custo(id) on delete set null;
-
-alter table public.solicitantes_compra
-  drop column if exists setor;
+create table if not exists public.solicitantes_compra (
+  id uuid primary key default gen_random_uuid(),
+  nome text not null,
+  centro_custo_id uuid references public.centros_custo(id) on delete set null,
+  ativo boolean not null default true,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
 
 create table if not exists public.solicitacoes_compra (
   id uuid primary key default gen_random_uuid(),
@@ -50,107 +91,28 @@ create table if not exists public.solicitacoes_compra (
   previsao_entrega date,
   solicitante text not null,
   centro_custo text,
-  pedido text,
-  nota_fiscal text,
   aplicacoes text,
   link_referencia text,
+  visivel_publico smallint not null default 0 check (visivel_publico in (0, 1)),
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
 
-alter table public.solicitacoes_compra
-  add column if not exists solicitante_id uuid references public.solicitantes_compra(id) on delete set null;
-
-alter table public.solicitacoes_compra
-  add column if not exists centro_custo_id uuid references public.centros_custo(id) on delete set null;
-
-alter table public.solicitacoes_compra
-  add column if not exists link_referencia text;
-
-alter table public.solicitacoes_compra
-  alter column status_cotacao set default 'nao_iniciado';
-
-alter table public.solicitacoes_compra
-  alter column status_pedido set default 'nao_digitado';
-
-alter table public.solicitacoes_compra
-  alter column status_transporte set default 'producao_separacao';
-
-update public.solicitacoes_compra
-set status_cotacao = case status_cotacao
-  when 'aguardando' then 'nao_iniciado'
-  when 'em_cotacao' then 'cotando'
-  when 'cotacao_recebida' then 'cotacao_em_analise'
-  when 'dispensada' then 'outra'
-  else status_cotacao
-end
-where status_cotacao in (
-  'aguardando',
-  'em_cotacao',
-  'cotacao_recebida',
-  'dispensada'
-);
-
-update public.solicitacoes_compra
-set status_pedido = case status_pedido
-  when 'aguardando' then 'nao_digitado'
-  when 'pedido_gerado' then 'pedido_digitado'
-  when 'pedido_enviado' then 'pedido_em_analise'
-  when 'faturado' then 'pedido_encerrado'
-  else status_pedido
-end
-where status_pedido in (
-  'aguardando',
-  'pedido_gerado',
-  'pedido_enviado',
-  'faturado'
-);
-
-update public.solicitacoes_compra
-set status_transporte = case status_transporte
-  when 'aguardando' then 'producao_separacao'
-  when 'coleta_agendada' then 'disponivel_retirada'
-  when 'em_transporte' then 'transporte'
-  else status_transporte
-end
-where status_transporte in (
-  'aguardando',
-  'coleta_agendada',
-  'em_transporte'
-);
-
-create index if not exists solicitantes_compra_nome_idx
-  on public.solicitantes_compra (nome);
-
-create index if not exists solicitantes_compra_centro_custo_idx
-  on public.solicitantes_compra (centro_custo_id);
-
-create index if not exists centros_custo_nome_idx
-  on public.centros_custo (nome);
-
-create index if not exists solicitacoes_compra_status_idx
-  on public.solicitacoes_compra (status_geral);
-
-create index if not exists solicitacoes_compra_prioridade_idx
-  on public.solicitacoes_compra (prioridade);
-
-create index if not exists solicitacoes_compra_created_at_idx
-  on public.solicitacoes_compra (created_at desc);
+create index if not exists tarefas_created_at_idx on public.tarefas (created_at desc);
+create index if not exists lembretes_created_at_idx on public.lembretes (created_at desc);
+create index if not exists produtos_nome_idx on public.produtos (nome);
+create index if not exists produtos_cod_barra_idx on public.produtos (cod_barra);
+create index if not exists movimentacoes_estoque_produto_idx on public.movimentacoes_estoque (produto_id, created_at desc);
+create index if not exists solicitantes_compra_nome_idx on public.solicitantes_compra (nome);
+create index if not exists solicitantes_compra_centro_custo_idx on public.solicitantes_compra (centro_custo_id);
+create index if not exists centros_custo_nome_idx on public.centros_custo (nome);
+create index if not exists solicitacoes_compra_status_idx on public.solicitacoes_compra (status_geral);
+create index if not exists solicitacoes_compra_prioridade_idx on public.solicitacoes_compra (prioridade);
+create index if not exists solicitacoes_compra_created_at_idx on public.solicitacoes_compra (created_at desc);
+create index if not exists solicitacoes_compra_visivel_publico_idx
+  on public.solicitacoes_compra (visivel_publico, created_at desc);
 
 create sequence if not exists public.solicitacoes_compra_codigo_seq;
-
-select setval(
-  'public.solicitacoes_compra_codigo_seq',
-  greatest(
-    1,
-    coalesce((
-      select max(codigo::bigint)
-      from public.solicitacoes_compra
-      where codigo ~ '^[0-9]+$'
-    ), 0)
-  ),
-  true
-);
 
 create or replace function public.set_updated_at()
 returns trigger as $$
@@ -159,18 +121,6 @@ begin
   return new;
 end;
 $$ language plpgsql;
-
-drop trigger if exists trg_solicitantes_compra_updated_at on public.solicitantes_compra;
-
-create trigger trg_solicitantes_compra_updated_at
-before update on public.solicitantes_compra
-for each row execute function public.set_updated_at();
-
-drop trigger if exists trg_centros_custo_updated_at on public.centros_custo;
-
-create trigger trg_centros_custo_updated_at
-before update on public.centros_custo
-for each row execute function public.set_updated_at();
 
 create or replace function public.set_solicitacao_compra_codigo()
 returns trigger as $$
@@ -207,8 +157,32 @@ begin
 end;
 $$ language plpgsql;
 
-drop trigger if exists trg_solicitacao_compra_codigo on public.solicitacoes_compra;
+drop trigger if exists trg_tarefas_updated_at on public.tarefas;
+create trigger trg_tarefas_updated_at
+before update on public.tarefas
+for each row execute function public.set_updated_at();
 
+drop trigger if exists trg_lembretes_updated_at on public.lembretes;
+create trigger trg_lembretes_updated_at
+before update on public.lembretes
+for each row execute function public.set_updated_at();
+
+drop trigger if exists trg_produtos_updated_at on public.produtos;
+create trigger trg_produtos_updated_at
+before update on public.produtos
+for each row execute function public.set_updated_at();
+
+drop trigger if exists trg_solicitantes_compra_updated_at on public.solicitantes_compra;
+create trigger trg_solicitantes_compra_updated_at
+before update on public.solicitantes_compra
+for each row execute function public.set_updated_at();
+
+drop trigger if exists trg_centros_custo_updated_at on public.centros_custo;
+create trigger trg_centros_custo_updated_at
+before update on public.centros_custo
+for each row execute function public.set_updated_at();
+
+drop trigger if exists trg_solicitacao_compra_codigo on public.solicitacoes_compra;
 create trigger trg_solicitacao_compra_codigo
 before insert or update on public.solicitacoes_compra
 for each row execute function public.set_solicitacao_compra_codigo();
@@ -300,9 +274,7 @@ begin
 end;
 $$;
 
-create or replace function public.buscar_solicitacao_compra_publica(
-  p_codigo text
-)
+create or replace function public.buscar_solicitacao_compra_publica(p_codigo text)
 returns table (
   codigo text,
   descricao text,
@@ -341,6 +313,7 @@ as $$
     s.updated_at
   from public.solicitacoes_compra s
   where upper(trim(s.codigo)) = upper(trim(p_codigo))
+    and s.visivel_publico = 1
   limit 1;
 $$;
 
@@ -382,29 +355,13 @@ as $$
     s.data_solicitacao,
     s.updated_at
   from public.solicitacoes_compra s
-  where s.status_geral in (
-    'aceita',
-    'em_cotacao',
-    'aprovacao',
-    'preparando_pedido',
-    'em_transporte',
-    'entregue',
-    'concluida'
-  )
+  where s.visivel_publico = 1
   order by s.created_at desc
   limit 100;
 $$;
 
-grant execute on function public.criar_solicitacao_compra_publica(
-  text,
-  numeric,
-  text,
-  date,
-  uuid,
-  text,
-  text,
-  uuid
-) to anon, authenticated;
+grant execute on function public.criar_solicitacao_compra_publica(text, numeric, text, date, uuid, text, text, uuid)
+to anon, authenticated;
 
 grant execute on function public.buscar_solicitacao_compra_publica(text)
 to anon, authenticated;
@@ -412,110 +369,102 @@ to anon, authenticated;
 grant execute on function public.listar_solicitacoes_compra_publica()
 to anon, authenticated;
 
+alter table public.tarefas enable row level security;
+alter table public.lembretes enable row level security;
+alter table public.produtos enable row level security;
+alter table public.movimentacoes_estoque enable row level security;
 alter table public.solicitacoes_compra enable row level security;
 alter table public.solicitantes_compra enable row level security;
 alter table public.centros_custo enable row level security;
 
+drop policy if exists "Authenticated users can manage tasks" on public.tarefas;
+create policy "Authenticated users can manage tasks"
+on public.tarefas for all to authenticated
+using (true) with check (true);
+
+drop policy if exists "Authenticated users can manage reminders" on public.lembretes;
+create policy "Authenticated users can manage reminders"
+on public.lembretes for all to authenticated
+using (true) with check (true);
+
+drop policy if exists "Authenticated users can manage products" on public.produtos;
+create policy "Authenticated users can manage products"
+on public.produtos for all to authenticated
+using (true) with check (true);
+
+drop policy if exists "Authenticated users can manage stock movements" on public.movimentacoes_estoque;
+create policy "Authenticated users can manage stock movements"
+on public.movimentacoes_estoque for all to authenticated
+using (true) with check (true);
+
 drop policy if exists "Public can read active requesters" on public.solicitantes_compra;
 create policy "Public can read active requesters"
-on public.solicitantes_compra
-for select
+on public.solicitantes_compra for select
 to anon, authenticated
 using (ativo = true);
 
-drop policy if exists "Authenticated users can read all requesters" on public.solicitantes_compra;
-create policy "Authenticated users can read all requesters"
-on public.solicitantes_compra
-for select
-to authenticated
-using (true);
-
-drop policy if exists "Authenticated users can create requesters" on public.solicitantes_compra;
-create policy "Authenticated users can create requesters"
-on public.solicitantes_compra
-for insert
-to authenticated
-with check (true);
-
-drop policy if exists "Authenticated users can update requesters" on public.solicitantes_compra;
-create policy "Authenticated users can update requesters"
-on public.solicitantes_compra
-for update
-to authenticated
-using (true)
-with check (true);
-
-drop policy if exists "Authenticated users can delete requesters" on public.solicitantes_compra;
-create policy "Authenticated users can delete requesters"
-on public.solicitantes_compra
-for delete
-to authenticated
-using (true);
+drop policy if exists "Authenticated users can manage requesters" on public.solicitantes_compra;
+create policy "Authenticated users can manage requesters"
+on public.solicitantes_compra for all to authenticated
+using (true) with check (true);
 
 drop policy if exists "Public can read active cost centers" on public.centros_custo;
 create policy "Public can read active cost centers"
-on public.centros_custo
-for select
+on public.centros_custo for select
 to anon, authenticated
 using (ativo = true);
 
-drop policy if exists "Authenticated users can read all cost centers" on public.centros_custo;
-create policy "Authenticated users can read all cost centers"
-on public.centros_custo
-for select
-to authenticated
-using (true);
-
-drop policy if exists "Authenticated users can create cost centers" on public.centros_custo;
-create policy "Authenticated users can create cost centers"
-on public.centros_custo
-for insert
-to authenticated
-with check (true);
-
-drop policy if exists "Authenticated users can update cost centers" on public.centros_custo;
-create policy "Authenticated users can update cost centers"
-on public.centros_custo
-for update
-to authenticated
-using (true)
-with check (true);
-
-drop policy if exists "Authenticated users can delete cost centers" on public.centros_custo;
-create policy "Authenticated users can delete cost centers"
-on public.centros_custo
-for delete
-to authenticated
-using (true);
+drop policy if exists "Authenticated users can manage cost centers" on public.centros_custo;
+create policy "Authenticated users can manage cost centers"
+on public.centros_custo for all to authenticated
+using (true) with check (true);
 
 drop policy if exists "Public can create purchase requests" on public.solicitacoes_compra;
 create policy "Public can create purchase requests"
-on public.solicitacoes_compra
-for insert
+on public.solicitacoes_compra for insert
 to anon, authenticated
 with check (true);
 
-drop policy if exists "Authenticated users can read purchase requests" on public.solicitacoes_compra;
-create policy "Authenticated users can read purchase requests"
-on public.solicitacoes_compra
-for select
-to authenticated
-using (true);
+drop policy if exists "Authenticated users can manage purchase requests" on public.solicitacoes_compra;
+create policy "Authenticated users can manage purchase requests"
+on public.solicitacoes_compra for all to authenticated
+using (true) with check (true);
 
-drop policy if exists "Authenticated users can update purchase requests" on public.solicitacoes_compra;
-create policy "Authenticated users can update purchase requests"
-on public.solicitacoes_compra
-for update
-to authenticated
-using (true)
-with check (true);
+do $$
+begin
+  alter publication supabase_realtime add table public.tarefas;
+exception
+  when duplicate_object then null;
+  when undefined_object then null;
+end;
+$$;
 
-drop policy if exists "Authenticated users can delete purchase requests" on public.solicitacoes_compra;
-create policy "Authenticated users can delete purchase requests"
-on public.solicitacoes_compra
-for delete
-to authenticated
-using (true);
+do $$
+begin
+  alter publication supabase_realtime add table public.lembretes;
+exception
+  when duplicate_object then null;
+  when undefined_object then null;
+end;
+$$;
+
+do $$
+begin
+  alter publication supabase_realtime add table public.produtos;
+exception
+  when duplicate_object then null;
+  when undefined_object then null;
+end;
+$$;
+
+do $$
+begin
+  alter publication supabase_realtime add table public.movimentacoes_estoque;
+exception
+  when duplicate_object then null;
+  when undefined_object then null;
+end;
+$$;
 
 do $$
 begin
