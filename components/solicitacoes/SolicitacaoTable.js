@@ -15,6 +15,7 @@ import { SolicitacaoStatusBadge } from './SolicitacaoStatusBadge'
 import {
   SOLICITACAO_STATUS_GERAL_OPTIONS,
   getSolicitacaoOption,
+  getSolicitacaoPrioridadeOrder,
   getSolicitacaoSituacao
 } from '@/constants/solicitacoes-config'
 import { formatDateBR, getLocalDateTime } from '@/lib/date-utils'
@@ -38,6 +39,7 @@ function getStatusDotClass(status) {
 
   if (option.className.includes('emerald')) return 'bg-emerald-500'
   if (option.className.includes('green')) return 'bg-green-500'
+  if (option.className.includes('yellow')) return 'bg-yellow-500'
   if (option.className.includes('red')) return 'bg-red-500'
   if (option.className.includes('amber')) return 'bg-amber-500'
   if (option.className.includes('orange')) return 'bg-orange-500'
@@ -82,7 +84,11 @@ function PublicVisibilityToggle({ checked, disabled, onChange }) {
   )
 }
 
-export function SolicitacaoTable({ solicitacoes, onOpen, onTogglePublic }) {
+export function SolicitacaoTable({
+  solicitacoes,
+  onOpen,
+  onTogglePublic
+}) {
   const [updatingPublicIds, setUpdatingPublicIds] = useState([])
   const [sortConfig, setSortConfig] = useState({
     key: 'created_at',
@@ -125,6 +131,12 @@ export function SolicitacaoTable({ solicitacoes, onOpen, onTogglePublic }) {
     return [...solicitacoes].sort((a, b) => {
       const aValue = a[sortConfig.key] || ''
       const bValue = b[sortConfig.key] || ''
+
+      if (sortConfig.key === 'prioridade') {
+        const aOrder = getSolicitacaoPrioridadeOrder(aValue)
+        const bOrder = getSolicitacaoPrioridadeOrder(bValue)
+        return sortConfig.direction === 'asc' ? aOrder - bOrder : bOrder - aOrder
+      }
 
       if (sortConfig.key.includes('data') || sortConfig.key.includes('created_at') || sortConfig.key.includes('previsao')) {
         const aDate = getLocalDateTime(aValue) || 0
@@ -240,7 +252,7 @@ export function SolicitacaoTable({ solicitacoes, onOpen, onTogglePublic }) {
                 <SortHeader label="Item" columnKey="descricao" />
                 <SortHeader label="Solicitante" columnKey="solicitante" />
                 <SortHeader label="Centro" columnKey="centro_custo" />
-                <TableHead>Prioridade</TableHead>
+                <SortHeader label="Prioridade" columnKey="prioridade" />
                 <TableHead>Situacao</TableHead>
                 <TableHead>Ref.</TableHead>
                 <SortHeader label="Valor" columnKey="valor_total" />

@@ -19,7 +19,7 @@ import {
   SelectTrigger,
   SelectValue
 } from '@/components/ui/select'
-import { Plus, ShoppingCart } from 'lucide-react'
+import { Package, Plus, ShoppingCart } from 'lucide-react'
 import { useForm } from 'react-hook-form'
 import { toast } from 'sonner'
 
@@ -378,7 +378,10 @@ export default function InventarioPage() {
 
       <div className="flex flex-col gap-3 rounded-2xl border bg-card/70 p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between sm:p-5">
         <div className="space-y-1">
-          <h1 className="text-xl font-bold sm:text-2xl md:text-3xl">Inventario</h1>
+          <h1 className="flex items-center gap-3 text-xl font-bold sm:text-2xl md:text-3xl">
+            <Package className="h-7 w-7 text-primary" />
+            Inventario
+          </h1>
         </div>
 
         <div className="grid gap-2 sm:grid-cols-2">

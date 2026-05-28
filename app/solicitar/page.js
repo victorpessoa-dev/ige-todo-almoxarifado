@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import Image from 'next/image'
 import { CheckCircle2, LogIn, PackageSearch, Plus, Search, Send } from 'lucide-react'
 import { toast } from 'sonner'
@@ -41,6 +41,7 @@ import {
   SOLICITACAO_STATUS_PEDIDO_OPTIONS,
   SOLICITACAO_STATUS_TRANSPORTE_OPTIONS,
   getSolicitacaoOption,
+  getSolicitacaoPrioridadeOrder,
   getSolicitacaoSituacao
 } from '@/constants/solicitacoes-config'
 import { formatDateBR } from '@/lib/date-utils'
@@ -269,18 +270,32 @@ export default function SolicitarPage() {
     ? getSolicitacaoSituacao(statusResult)
     : null
   const publicSearch = codigoBusca.trim().toLowerCase()
-  const filteredSolicitacoesPublicas = publicSearch
-    ? solicitacoesPublicas.filter((solicitacao) =>
-      [
-        solicitacao.codigo,
-        solicitacao.descricao,
-        solicitacao.solicitante,
-        solicitacao.centro_custo
-      ]
-        .filter(Boolean)
-        .some((value) => String(value).toLowerCase().includes(publicSearch))
-    )
-    : solicitacoesPublicas
+  const filteredSolicitacoesPublicas = useMemo(() => {
+    const filtered = publicSearch
+      ? solicitacoesPublicas.filter((solicitacao) =>
+        [
+          solicitacao.codigo,
+          solicitacao.descricao,
+          solicitacao.solicitante,
+          solicitacao.centro_custo
+        ]
+          .filter(Boolean)
+          .some((value) => String(value).toLowerCase().includes(publicSearch))
+      )
+      : solicitacoesPublicas
+
+    return [...filtered].sort((a, b) => {
+      const priorityDiff =
+        getSolicitacaoPrioridadeOrder(a.prioridade) -
+        getSolicitacaoPrioridadeOrder(b.prioridade)
+
+      if (priorityDiff !== 0) return priorityDiff
+
+      return String(b.codigo || '').localeCompare(String(a.codigo || ''), 'pt-BR', {
+        numeric: true
+      })
+    })
+  }, [publicSearch, solicitacoesPublicas])
 
   const loadPublicSolicitacoes = async () => {
     setIsLoadingSolicitacoes(true)

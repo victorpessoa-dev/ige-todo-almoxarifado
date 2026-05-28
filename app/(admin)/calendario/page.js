@@ -191,9 +191,11 @@ export default function CalendarPage() {
   return (
     <div className="flex h-full min-h-0 flex-col gap-4">
       <div className="rounded-2xl border bg-card/70 p-4 shadow-sm sm:p-5">
-        <div className="flex items-center gap-3">
-          <CalendarDays className="h-8 w-8 text-primary sm:h-10 sm:w-10" />
-          <h1 className="text-2xl font-bold text-foreground sm:text-3xl">Calendario</h1>
+        <div className="space-y-1">
+          <h1 className="flex items-center gap-3 text-xl font-bold sm:text-2xl md:text-3xl">
+            <CalendarDays className="h-7 w-7 text-primary" />
+            Calendario
+          </h1>
         </div>
       </div>
 

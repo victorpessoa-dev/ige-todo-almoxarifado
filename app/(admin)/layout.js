@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { useAuth } from '@/contexts/auth-context'
@@ -121,13 +122,15 @@ export default function AdminLayout({ children }) {
             <Menu className="h-6 w-6" />
           </button>
 
-          <Image
-            src="/ige-supergesso.png"
-            alt="Logo"
-            width={100}
-            height={75}
-            className="mx-auto"
-          />
+          <Link href="/solicitacoes" aria-label="Ir para solicitacoes">
+            <Image
+              src="/ige-supergesso.png"
+              alt="Logo"
+              width={100}
+              height={75}
+              className="mx-auto"
+            />
+          </Link>
 
           <div className="w-6" aria-hidden="true" />
         </div>

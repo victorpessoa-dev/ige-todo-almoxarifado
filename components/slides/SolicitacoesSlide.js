@@ -3,7 +3,6 @@
 import { useEffect } from 'react'
 import { AlertTriangle, ShoppingCart } from 'lucide-react'
 
-import { Badge } from '@/components/ui/badge'
 import {
   Table,
   TableBody,
@@ -13,6 +12,7 @@ import {
   TableRow
 } from '@/components/ui/table'
 import { SolicitacaoStatusBadge } from '@/components/solicitacoes/SolicitacaoStatusBadge'
+import { getSolicitacaoPrioridadeOrder } from '@/constants/solicitacoes-config'
 import { formatDateBR, getLocalDateTime } from '@/lib/date-utils'
 
 function isAtrasada(solicitacao) {
@@ -38,15 +38,16 @@ export function SolicitacoesSlide({ solicitacoes, active, onEnd }) {
   const abertas = solicitacoes.filter(
     (item) => !['concluida', 'cancelada'].includes(item.status_geral)
   )
-  const importantes = abertas
+  const importantes = [...abertas]
     .sort((a, b) => {
       const aAtrasada = isAtrasada(a) ? 1 : 0
       const bAtrasada = isAtrasada(b) ? 1 : 0
       if (aAtrasada !== bAtrasada) return bAtrasada - aAtrasada
 
-      const aUrgente = a.prioridade === 'urgente' ? 1 : 0
-      const bUrgente = b.prioridade === 'urgente' ? 1 : 0
-      if (aUrgente !== bUrgente) return bUrgente - aUrgente
+      const priorityDiff =
+        getSolicitacaoPrioridadeOrder(a.prioridade) -
+        getSolicitacaoPrioridadeOrder(b.prioridade)
+      if (priorityDiff !== 0) return priorityDiff
 
       const aDate = a.created_at ? new Date(a.created_at).getTime() : 0
       const bDate = b.created_at ? new Date(b.created_at).getTime() : 0

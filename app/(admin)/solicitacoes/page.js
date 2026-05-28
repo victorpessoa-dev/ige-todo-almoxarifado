@@ -93,9 +93,16 @@ export default function SolicitacoesPage() {
           .filter(Boolean)
           .some((value) => String(value).toLowerCase().includes(search))
 
+      const hiddenStatus = {
+        exceto_concluidas: ['concluida'],
+        exceto_canceladas: ['cancelada'],
+        exceto_concluidas_canceladas: ['concluida', 'cancelada']
+      }[filters.status] || []
       const matchesStatus =
         filters.status === 'todos' ||
-        solicitacao.status_geral === filters.status
+        (hiddenStatus.length > 0
+          ? !hiddenStatus.includes(solicitacao.status_geral)
+          : solicitacao.status_geral === filters.status)
 
       const matchesPrioridade =
         filters.prioridade === 'todas' ||
@@ -210,9 +217,6 @@ export default function SolicitacoesPage() {
             <ShoppingCart className="h-7 w-7 text-primary" />
             Solicitacoes de Compra
           </h1>
-          <p className="text-sm text-muted-foreground">
-            Controle interno de cotacao, pedido, transporte e entrega.
-          </p>
         </div>
 
         <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">

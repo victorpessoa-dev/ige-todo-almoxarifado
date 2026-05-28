@@ -35,6 +35,9 @@ export function SolicitacaoFilters({ filters, setFilters }) {
         </SelectTrigger>
         <SelectContent>
           <SelectItem value="todos">Todos os status</SelectItem>
+          <SelectItem value="exceto_concluidas">Exceto concluidas</SelectItem>
+          <SelectItem value="exceto_canceladas">Exceto canceladas</SelectItem>
+          <SelectItem value="exceto_concluidas_canceladas">Exceto concluidas e canceladas</SelectItem>
           {SOLICITACAO_STATUS_GERAL_OPTIONS.map((option) => (
             <SelectItem key={option.value} value={option.value}>
               {option.label}
@@ -59,6 +62,7 @@ export function SolicitacaoFilters({ filters, setFilters }) {
           ))}
         </SelectContent>
       </Select>
+
     </div>
   )
 }

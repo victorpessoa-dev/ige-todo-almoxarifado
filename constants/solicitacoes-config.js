@@ -23,7 +23,7 @@ export const SOLICITACAO_PRIORIDADE_OPTIONS = [
 
 export const SOLICITACAO_STATUS_GERAL_OPTIONS = [
   { value: 'nova', label: 'Nova', className: 'border-sky-200 bg-sky-50 text-sky-700' },
-  { value: 'aceita', label: 'Aceita', className: 'border-emerald-200 bg-emerald-50 text-emerald-700' },
+  { value: 'aceita', label: 'Aceita', className: 'border-yellow-200 bg-yellow-50 text-yellow-700' },
   { value: 'em_cotacao', label: 'Em cotacao', className: 'border-violet-200 bg-violet-50 text-violet-700' },
   { value: 'aprovacao', label: 'Em aprovacao', className: 'border-amber-200 bg-amber-50 text-amber-700' },
   { value: 'preparando_pedido', label: 'Preparando pedido', className: 'border-blue-200 bg-blue-50 text-blue-700' },
@@ -70,6 +70,17 @@ export const SOLICITACAO_STATUS_TRANSPORTE_OPTIONS = [
 
 export function getSolicitacaoOption(options, value) {
   return options.find((option) => option.value === value) || options[0]
+}
+
+export function getSolicitacaoPrioridadeOrder(prioridade) {
+  const order = {
+    urgente: 0,
+    alta: 1,
+    media: 2,
+    baixa: 3
+  }
+
+  return order[prioridade] ?? 99
 }
 
 function startOfLocalDay(value) {
