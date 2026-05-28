@@ -4,6 +4,7 @@ import { useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
 
 export default function ProductFormFields({
   register,
@@ -31,6 +32,43 @@ export default function ProductFormFields({
       <div>
         <Label>Nome</Label>
         <Input {...register('nome', { required: true })} />
+      </div>
+
+      <div className="grid gap-3 sm:grid-cols-2">
+        <div className="space-y-2">
+          <Label>Categoria</Label>
+          <Input {...register('categoria')} />
+        </div>
+
+        <div className="space-y-2">
+          <Label>Medidas</Label>
+          <Input {...register('medidas')} />
+        </div>
+      </div>
+
+      <div>
+        <Label>Aplicação</Label>
+        <Textarea {...register('aplicacao')} rows={3} />
+      </div>
+
+      <div>
+        <Label>Marcas disponíveis</Label>
+        <Input
+          placeholder="Ex.: Condor, Tigre; Atlas / Vonder"
+          {...register('marcas')}
+        />
+        <p className="mt-1 text-xs text-muted-foreground">
+          Para mais de uma marca, separe por vírgula, ponto e vírgula ou barra. Ex.: Condor, Tigre; Atlas / Vonder.
+        </p>
+      </div>
+
+      <div>
+        <Label>Link da imagem técnica</Label>
+        <Input
+          type="url"
+          placeholder="https://..."
+          {...register('img_url')}
+        />
       </div>
 
       <div>

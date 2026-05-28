@@ -235,6 +235,11 @@ export default function InventarioPage() {
       cod: produto.cod,
       nome: produto.nome,
       cod_barra: produto.cod_barra,
+      categoria: produto.categoria || '',
+      aplicacao: produto.aplicacao || '',
+      medidas: produto.medidas || '',
+      marcas: produto.marcas || '',
+      img_url: produto.img_url || '',
       max: produto.max,
       min: produto.min,
       estoque: produto.estoque

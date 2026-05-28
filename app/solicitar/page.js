@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { useEffect, useMemo, useState } from 'react'
 import Image from 'next/image'
 import { CheckCircle2, LogIn, PackageSearch, Plus, Search, Send } from 'lucide-react'
@@ -435,6 +436,13 @@ export default function SolicitarPage() {
             <Button className="w-full lg:w-auto" onClick={() => setPedidoDialogOpen(true)}>
               <Plus className="h-4 w-4" />
               Fazer pedido
+            </Button>
+
+            <Button asChild variant="outline" className="w-full lg:w-auto">
+              <Link href="/catalogo-publico" rel="noreferrer">
+                <PackageSearch className="h-4 w-4" />
+                Catálogo público
+              </Link>
             </Button>
 
             <Button asChild variant="outline" className="w-full lg:w-auto">

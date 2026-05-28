@@ -15,6 +15,40 @@ import {
   DialogHeader,
   DialogTitle
 } from '@/components/ui/dialog'
+import { BookOpen, Download, Eye } from 'lucide-react'
+
+export const catalogThemeClasses = {
+  classico: {
+    label: 'Classico',
+    accent: '#2563eb',
+    accentSoft: '#dbeafe',
+    text: '#111827',
+    muted: '#6b7280',
+    border: '#d1d5db',
+    page: '#f8fafc',
+    card: '#ffffff'
+  },
+  estoque: {
+    label: 'Estoque',
+    accent: '#059669',
+    accentSoft: '#d1fae5',
+    text: '#0f172a',
+    muted: '#64748b',
+    border: '#cbd5e1',
+    page: '#f8fafc',
+    card: '#ffffff'
+  },
+  premium: {
+    label: 'Premium',
+    accent: '#7c2d12',
+    accentSoft: '#ffedd5',
+    text: '#1f2937',
+    muted: '#6b7280',
+    border: '#fed7aa',
+    page: '#fff7ed',
+    card: '#ffffff'
+  }
+}
 
 function normalizeImportedProducts(rows) {
   return rows.reduce((acc, item, index) => {
@@ -25,6 +59,11 @@ function normalizeImportedProducts(rows) {
       originalCode: String(item.cod).trim(),
       code: String(item.cod).trim(),
       nome: String(item.nome).trim(),
+      categoria: String(item.categoria || '').trim(),
+      aplicacao: String(item.aplicacao || '').trim(),
+      medidas: String(item.medidas || '').trim(),
+      marcas: String(item.marcas || '').trim(),
+      img_url: String(item.img_url || '').trim(),
       estoque: Number(item.estoque || 0),
       max: Number(item.max || 0),
       min: Number(item.min || 0),
@@ -35,12 +74,420 @@ function normalizeImportedProducts(rows) {
   }, [])
 }
 
+function getStockStatus(produto) {
+  const estoque = Number(produto.estoque || 0)
+  const min = Number(produto.min || 0)
+  const max = Number(produto.max || 0)
+
+  if (estoque <= min) {
+    return {
+      label: 'Baixo',
+      className: 'low',
+      suggestion: Math.max(0, max - estoque)
+    }
+  }
+
+  if (max > 0 && estoque >= max) {
+    return {
+      label: 'Cheio',
+      className: 'full',
+      suggestion: 0
+    }
+  }
+
+  return {
+    label: 'Normal',
+    className: 'normal',
+    suggestion: 0
+  }
+}
+
+function escapeHtml(value) {
+  return String(value ?? '')
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#39;')
+}
+
+function getCatalogProducts(produtos, options = {}) {
+  return produtos
+    .filter((produto) => {
+      if (!options.onlyLowStock) return true
+      const status = getStockStatus(produto)
+      return status.className === 'low'
+    })
+    .sort((a, b) => String(a.nome || '').localeCompare(String(b.nome || ''), 'pt-BR'))
+}
+
+function getCatalogProductDetails(produto) {
+  return {
+    produto: produto.nome || '-',
+    categoria: produto.categoria || '-',
+    aplicacao: produto.aplicacao || '-',
+    medidas: produto.medidas || '-',
+    marcas: produto.marcas || '-',
+    estoque: Number(produto.estoque || 0),
+    min: Number(produto.min || 0),
+    max: Number(produto.max || 0),
+    imagem: produto.img_url || ''
+  }
+}
+
+function makeCatalogHtml(produtos, options) {
+  const theme = catalogThemeClasses[options.theme] || catalogThemeClasses.classico
+  const date = new Date().toLocaleDateString('pt-BR')
+  const filteredProducts = getCatalogProducts(produtos, options)
+  const totalEstoque = filteredProducts.reduce(
+    (acc, produto) => acc + Number(produto.estoque || 0),
+    0
+  )
+  const lowStockTotal = filteredProducts.filter(
+    (produto) => getStockStatus(produto).className === 'low'
+  ).length
+
+  const rows = filteredProducts.map((produto) => {
+    const details = getCatalogProductDetails(produto)
+    const image = details.imagem
+      ? `<a href="${escapeHtml(details.imagem)}" target="_blank" rel="noreferrer">
+          <img src="${escapeHtml(details.imagem)}" alt="Imagem tecnica de ${escapeHtml(details.produto)}" loading="lazy" />
+        </a>`
+      : '<span class="empty-image">Sem imagem</span>'
+
+    return `
+      <tr>
+        <td><strong>${escapeHtml(details.produto)}</strong></td>
+        <td>${escapeHtml(details.categoria)}</td>
+        <td>${escapeHtml(details.aplicacao)}</td>
+        <td>${escapeHtml(details.medidas)}</td>
+        <td>${escapeHtml(details.marcas)}</td>
+        <td>${escapeHtml(details.estoque)}</td>
+        <td>Min: ${escapeHtml(details.min)}<br />Max: ${escapeHtml(details.max)}</td>
+        <td class="image-cell">${image}</td>
+      </tr>
+    `
+  }).join('')
+
+  return `<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>${escapeHtml(options.title)}</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: ${theme.page};
+      color: ${theme.text};
+      font-family: Arial, Helvetica, sans-serif;
+      line-height: 1.45;
+    }
+    .page { max-width: 1240px; margin: 0 auto; padding: 28px 18px 42px; }
+    .hero {
+      display: grid;
+      gap: 12px;
+      border: 1px solid ${theme.border};
+      background: ${theme.card};
+      border-radius: 12px;
+      padding: 22px;
+      margin-bottom: 14px;
+    }
+    h1 { margin: 0; font-size: 30px; letter-spacing: 0; }
+    .subtitle, .meta, footer { color: ${theme.muted}; }
+    .summary {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+    .summary div {
+      border: 1px solid ${theme.border};
+      background: ${theme.card};
+      border-radius: 10px;
+      padding: 12px;
+    }
+    .summary span { display: block; color: ${theme.muted}; font-size: 12px; text-transform: uppercase; }
+    .summary strong { display: block; font-size: 22px; }
+    .table-wrap { overflow-x: auto; border: 1px solid ${theme.border}; border-radius: 12px; background: ${theme.card}; }
+    table { width: 100%; min-width: 1040px; border-collapse: collapse; }
+    th, td { border-bottom: 1px solid ${theme.border}; padding: 11px 10px; text-align: left; vertical-align: top; font-size: 13px; }
+    th { background: ${theme.accentSoft}; color: ${theme.text}; font-size: 12px; text-transform: uppercase; position: sticky; top: 0; z-index: 1; }
+    tr:last-child td { border-bottom: 0; }
+    .image-cell { width: 150px; }
+    img {
+      display: block;
+      width: 128px;
+      height: 96px;
+      object-fit: contain;
+      border: 1px solid ${theme.border};
+      border-radius: 8px;
+      background: #fff;
+    }
+    .empty-image { display: inline-flex; width: 128px; height: 96px; align-items: center; justify-content: center; border: 1px dashed ${theme.border}; border-radius: 8px; color: ${theme.muted}; }
+    .empty { border: 1px dashed ${theme.border}; border-radius: 12px; padding: 24px; background: ${theme.card}; color: ${theme.muted}; }
+    footer { margin-top: 20px; text-align: center; font-size: 12px; }
+    @media (max-width: 720px) {
+      .page { padding: 14px 10px 28px; }
+      .summary { grid-template-columns: 1fr; }
+      h1 { font-size: 24px; }
+    }
+    @media print {
+      body { background: #fff; }
+      .page { max-width: none; padding: 0; }
+      th { position: static; }
+      img, tr { break-inside: avoid; }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <section class="hero">
+      <h1>${escapeHtml(options.title)}</h1>
+      ${options.subtitle ? `<p class="subtitle">${escapeHtml(options.subtitle)}</p>` : ''}
+      <p class="meta">Gerado em ${date} | ${filteredProducts.length} produto(s)</p>
+    </section>
+    <section class="summary">
+      <div><span>Produtos no catalogo</span><strong>${filteredProducts.length}</strong></div>
+      <div><span>Estoque disponivel total</span><strong>${totalEstoque}</strong></div>
+      <div><span>Estoque baixo</span><strong>${lowStockTotal}</strong></div>
+    </section>
+    ${filteredProducts.length === 0
+      ? '<section class="empty">Nenhum produto encontrado para os filtros escolhidos.</section>'
+      : `<section class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Produto</th>
+                <th>Categoria</th>
+                <th>Aplicacao</th>
+                <th>Medidas</th>
+                <th>Marcas disponiveis</th>
+                <th>Estoque disponivel</th>
+                <th>Max e Min</th>
+                <th>Imagem tecnica</th>
+              </tr>
+            </thead>
+            <tbody>${rows}</tbody>
+          </table>
+        </section>`}
+    <footer>${escapeHtml(options.footer)}</footer>
+  </main>
+</body>
+</html>`
+}
+
+function hexToRgb(hex) {
+  const normalized = hex.replace('#', '')
+
+  return [
+    parseInt(normalized.slice(0, 2), 16) / 255,
+    parseInt(normalized.slice(2, 4), 16) / 255,
+    parseInt(normalized.slice(4, 6), 16) / 255
+  ]
+}
+
+function pdfText(value) {
+  return String(value ?? '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^\x20-\x7E]/g, '')
+    .replaceAll('\\', '\\\\')
+    .replaceAll('(', '\\(')
+    .replaceAll(')', '\\)')
+}
+
+function wrapText(value, maxChars) {
+  const words = String(value ?? '').split(/\s+/).filter(Boolean)
+  const lines = []
+  let line = ''
+
+  words.forEach((word) => {
+    const nextLine = line ? `${line} ${word}` : word
+
+    if (nextLine.length <= maxChars) {
+      line = nextLine
+      return
+    }
+
+    if (line) lines.push(line)
+    line = word
+  })
+
+  if (line) lines.push(line)
+  return lines.length > 0 ? lines : ['-']
+}
+
+function makePdfBytes(pages) {
+  const objects = []
+  const pageCount = pages.length
+  const catalogId = 1
+  const pagesId = 2
+  const fontRegularId = 3
+  const fontBoldId = 4
+  const firstPageId = 5
+  const firstContentId = firstPageId + pageCount
+
+  objects[catalogId] = `<< /Type /Catalog /Pages ${pagesId} 0 R >>`
+  objects[pagesId] = `<< /Type /Pages /Kids ${Array.from(
+    { length: pageCount },
+    (_, index) => `${firstPageId + index} 0 R`
+  ).join(' ')} /Count ${pageCount} >>`
+  objects[fontRegularId] = '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>'
+  objects[fontBoldId] = '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>'
+
+  pages.forEach((content, index) => {
+    const pageId = firstPageId + index
+    const contentId = firstContentId + index
+    const stream = `${content}\n`
+    const streamLength = stream.length
+
+    objects[pageId] =
+      `<< /Type /Page /Parent ${pagesId} 0 R /MediaBox [0 0 595 842] ` +
+      `/Resources << /Font << /F1 ${fontRegularId} 0 R /F2 ${fontBoldId} 0 R >> >> ` +
+      `/Contents ${contentId} 0 R >>`
+    objects[contentId] = `<< /Length ${streamLength} >>\nstream\n${stream}endstream`
+  })
+
+  const parts = ['%PDF-1.4\n']
+  const offsets = [0]
+
+  for (let index = 1; index < objects.length; index += 1) {
+    offsets[index] = parts.join('').length
+    parts.push(`${index} 0 obj\n${objects[index]}\nendobj\n`)
+  }
+
+  const xrefOffset = parts.join('').length
+  parts.push(`xref\n0 ${objects.length}\n`)
+  parts.push('0000000000 65535 f \n')
+
+  for (let index = 1; index < objects.length; index += 1) {
+    parts.push(`${String(offsets[index]).padStart(10, '0')} 00000 n \n`)
+  }
+
+  parts.push(
+    `trailer\n<< /Size ${objects.length} /Root ${catalogId} 0 R >>\nstartxref\n${xrefOffset}\n%%EOF`
+  )
+
+  return new TextEncoder().encode(parts.join(''))
+}
+
+export function makeCatalogPdf(produtos, options) {
+  const date = new Date().toLocaleDateString('pt-BR')
+  const filteredProducts = getCatalogProducts(produtos, options)
+
+  const totalEstoque = filteredProducts.reduce(
+    (acc, produto) => acc + Number(produto.estoque || 0),
+    0
+  )
+  const lowStockTotal = filteredProducts.filter(
+    (produto) => getStockStatus(produto).className === 'low'
+  ).length
+
+  const pages = []
+  const pageWidth = 595
+  const pageHeight = 842
+  const margin = 42
+  let content = ''
+  let y = 0
+  let pageNumber = 0
+
+  const command = (value) => {
+    content += `${value}\n`
+  }
+
+  const line = (x1, y1, x2, y2) => {
+    command(`${x1} ${y1} m ${x2} ${y2} l S`)
+  }
+  const text = (value, x, nextY, size = 10, bold = false) => {
+    command(`BT /${bold ? 'F2' : 'F1'} ${size} Tf ${x} ${nextY} Td (${pdfText(value)}) Tj ET`)
+  }
+  const textBlock = (value, x, nextY, maxChars, maxLines, size = 9, bold = false, lineHeight = 11) =>
+    wrapText(value, maxChars)
+      .slice(0, maxLines)
+      .forEach((lineText, index) => text(lineText, x, nextY - index * lineHeight, size, bold))
+
+  const addPage = () => {
+    if (content) {
+      line(margin, 42, pageWidth - margin, 42)
+      text(options.footer || 'IGE Supergesso', margin, 24, 8)
+      text(`Pagina ${pageNumber}`, pageWidth - margin - 48, 24, 8)
+      pages.push(content)
+    }
+
+    content = ''
+    pageNumber += 1
+    y = pageHeight - margin
+    text(options.title || 'Catalogo de Produtos IGE', margin, y, pageNumber === 1 ? 18 : 12, true)
+    text(`Gerado em ${date}`, pageWidth - margin - 92, y, 9)
+    y -= pageNumber === 1 ? 28 : 20
+    line(margin, y, pageWidth - margin, y)
+    y -= 20
+  }
+  const ensureSpace = (height) => {
+    if (y - height < 64) addPage()
+  }
+
+  addPage()
+  text(`Produtos no catalogo: ${filteredProducts.length}`, margin, y, 10, true)
+  text(`Estoque total: ${totalEstoque}`, margin + 180, y, 10, true)
+  text(`Estoque baixo: ${lowStockTotal}`, margin + 330, y, 10, true)
+  y -= 26
+
+  if (filteredProducts.length === 0) {
+    text('Nenhum produto encontrado para os filtros escolhidos.', margin, y, 11)
+  } else {
+    filteredProducts.forEach((produto) => {
+      const details = getCatalogProductDetails(produto)
+      const status = getStockStatus(produto)
+      const rowHeight = 86
+
+      ensureSpace(rowHeight)
+      textBlock(details.produto, margin, y, 62, 1, 11, true)
+      text(status.label, pageWidth - margin - 48, y, 9, true)
+      y -= 15
+      text(`Categoria: ${details.categoria}`, margin, y, 9)
+      text(`Estoque: ${details.estoque}`, margin + 260, y, 9, true)
+      text(`Max: ${details.max}  Min: ${details.min}`, margin + 350, y, 9)
+      y -= 13
+      textBlock(`Marcas: ${details.marcas}`, margin, y, 88, 1, 9)
+      y -= 13
+      textBlock(`Medidas: ${details.medidas}`, margin, y, 88, 1, 9)
+      y -= 13
+      textBlock(`Aplicacao: ${details.aplicacao}`, margin, y, 92, 2, 8)
+      y -= 28
+      line(margin, y, pageWidth - margin, y)
+      y -= 14
+    })
+  }
+
+  line(margin, 42, pageWidth - margin, 42)
+  text(options.footer || 'IGE Supergesso', margin, 24, 8)
+  text(`Pagina ${pageNumber}`, pageWidth - margin - 48, 24, 8)
+  pages.push(content)
+  return makePdfBytes(pages)
+}
+
 export default function ImportExportProdutos() {
   const { produtos, loadData } = useData()
   const fileInputRef = useRef(null)
   const [previewOpen, setPreviewOpen] = useState(false)
+  const [catalogOpen, setCatalogOpen] = useState(false)
   const [isImporting, setIsImporting] = useState(false)
   const [importItems, setImportItems] = useState([])
+  const [catalogOptions, setCatalogOptions] = useState({
+    title: 'Catalogo de Produtos IGE',
+    subtitle: 'Lista atualizada de materiais do almoxarifado.',
+    footer: 'IGE Supergesso - Catalogo gerado pelo sistema de inventario.',
+    layout: 'cards',
+    theme: 'classico',
+    showStock: true,
+    showLimits: true,
+    showBarcode: true,
+    showPurchaseSuggestion: true,
+    onlyLowStock: false
+  })
 
   const itemsWithDuplicates = useMemo(() => {
     return importItems.map((item) => {
@@ -91,13 +538,29 @@ export default function ImportExportProdutos() {
   }, [produtos])
 
   const exportToCSV = () => {
-    const headers = ['cod', 'nome', 'estoque', 'max', 'min']
+    const headers = [
+      'cod',
+      'nome',
+      'categoria',
+      'aplicacao',
+      'medidas',
+      'marcas',
+      'estoque',
+      'max',
+      'min',
+      'img_url'
+    ]
     const rows = produtos.map((produto) => [
       produto.cod,
       produto.nome,
+      produto.categoria,
+      produto.aplicacao,
+      produto.medidas,
+      produto.marcas,
       produto.estoque,
       produto.max,
-      produto.min
+      produto.min,
+      produto.img_url
     ])
 
     const csv = [headers, ...rows].map((row) => row.join(';')).join('\n')
@@ -116,9 +579,14 @@ export default function ImportExportProdutos() {
     const data = produtos.map((produto) => ({
       cod: produto.cod,
       nome: produto.nome,
+      categoria: produto.categoria,
+      aplicacao: produto.aplicacao,
+      medidas: produto.medidas,
+      marcas: produto.marcas,
       estoque: produto.estoque,
       max: produto.max,
-      min: produto.min
+      min: produto.min,
+      img_url: produto.img_url
     }))
 
     const ws = XLSX.utils.json_to_sheet(data)
@@ -143,6 +611,44 @@ export default function ImportExportProdutos() {
     XLSX.utils.book_append_sheet(wb, ws, 'Lista de compra')
     XLSX.writeFile(wb, 'produtos-para-comprar.xlsx')
     toast.success('Lista de compra baixada com sucesso!')
+  }
+
+  const updateCatalogOption = (field, value) => {
+    setCatalogOptions((prev) => ({
+      ...prev,
+      [field]: value
+    }))
+  }
+
+  const downloadCatalog = () => {
+    const pdfBytes = makeCatalogPdf(produtos, catalogOptions)
+    const blob = new Blob([pdfBytes], { type: 'application/pdf' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    const timestamp = new Date().toISOString().slice(0, 10)
+
+    link.href = url
+    link.download = `catalogo-produtos-${timestamp}.pdf`
+    link.click()
+
+    URL.revokeObjectURL(url)
+    setCatalogOpen(false)
+    toast.success('Catalogo em PDF baixado com sucesso!')
+  }
+
+  const openCatalogOnline = () => {
+    const html = makeCatalogHtml(produtos, catalogOptions)
+    const blob = new Blob([html], { type: 'text/html;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const opened = window.open(url, '_blank', 'noopener,noreferrer')
+
+    if (!opened) {
+      toast.error('Permita pop-ups para visualizar o catalogo online.')
+      URL.revokeObjectURL(url)
+      return
+    }
+
+    setTimeout(() => URL.revokeObjectURL(url), 60_000)
   }
 
   const updateImportItem = (id, updates) => {
@@ -251,6 +757,11 @@ export default function ImportExportProdutos() {
           user_id: user.id,
           cod: item.code,
           nome: item.nome,
+          categoria: item.categoria || null,
+          aplicacao: item.aplicacao || null,
+          medidas: item.medidas || null,
+          marcas: item.marcas || null,
+          img_url: item.img_url || null,
           estoque: item.estoque,
           max: item.max,
           min: item.min,
@@ -274,7 +785,7 @@ export default function ImportExportProdutos() {
   return (
     <>
       <div className="flex w-full items-center justify-center sm:w-auto">
-        <div className="grid w-full grid-cols-1 gap-2 sm:w-auto sm:grid-cols-4">
+        <div className="grid w-full grid-cols-1 gap-2 sm:w-auto sm:grid-cols-2 lg:grid-cols-5">
           <Button onClick={exportToCSV} className="w-full sm:w-auto">
             Exp. CSV
           </Button>
@@ -285,6 +796,11 @@ export default function ImportExportProdutos() {
 
           <Button onClick={exportLowStockPurchaseList} className="w-full sm:w-auto">
             Lista de Compra
+          </Button>
+
+          <Button onClick={() => setCatalogOpen(true)} className="w-full sm:w-auto">
+            <BookOpen className="mr-2 h-4 w-4" />
+            Catalogo
           </Button>
 
           <Button
@@ -303,6 +819,113 @@ export default function ImportExportProdutos() {
           />
         </div>
       </div>
+
+      <Dialog open={catalogOpen} onOpenChange={setCatalogOpen}>
+        <DialogContent className="max-h-[calc(100vh-2rem)] w-[95vw] overflow-y-auto p-4 sm:max-w-3xl sm:p-6">
+          <DialogHeader>
+            <DialogTitle>Baixar catalogo personalizado</DialogTitle>
+          </DialogHeader>
+
+          <div className="grid gap-5">
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="grid gap-2">
+                <label className="text-sm font-medium">Titulo</label>
+                <Input
+                  value={catalogOptions.title}
+                  onChange={(event) => updateCatalogOption('title', event.target.value)}
+                />
+              </div>
+
+              <div className="grid gap-2">
+                <label className="text-sm font-medium">Tema</label>
+                <select
+                  value={catalogOptions.theme}
+                  onChange={(event) => updateCatalogOption('theme', event.target.value)}
+                  className="h-10 rounded-md border bg-background px-3 text-sm"
+                >
+                  {Object.entries(catalogThemeClasses).map(([value, theme]) => (
+                    <option key={value} value={value}>
+                      {theme.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div className="grid gap-2">
+              <label className="text-sm font-medium">Subtitulo</label>
+              <Input
+                value={catalogOptions.subtitle}
+                onChange={(event) => updateCatalogOption('subtitle', event.target.value)}
+              />
+            </div>
+
+            <div className="grid gap-2">
+              <label className="text-sm font-medium">Rodape</label>
+              <Input
+                value={catalogOptions.footer}
+                onChange={(event) => updateCatalogOption('footer', event.target.value)}
+              />
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="grid gap-2">
+                <label className="text-sm font-medium">Formato</label>
+                <div className="grid grid-cols-2 gap-2">
+                  <Button
+                    type="button"
+                    variant={catalogOptions.layout === 'cards' ? 'default' : 'outline'}
+                    onClick={() => updateCatalogOption('layout', 'cards')}
+                  >
+                    Cards
+                  </Button>
+                  <Button
+                    type="button"
+                    variant={catalogOptions.layout === 'tabela' ? 'default' : 'outline'}
+                    onClick={() => updateCatalogOption('layout', 'tabela')}
+                  >
+                    Tabela
+                  </Button>
+                </div>
+              </div>
+
+              <div className="grid gap-2 rounded-lg border p-3">
+                {[
+                  ['onlyLowStock', 'Somente estoque baixo']
+                ].map(([field, label]) => (
+                  <label key={field} className="flex items-center gap-2 text-sm">
+                    <input
+                      type="checkbox"
+                      checked={catalogOptions[field]}
+                      onChange={(event) => updateCatalogOption(field, event.target.checked)}
+                      className="h-4 w-4 accent-primary"
+                    />
+                    {label}
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            <div className="rounded-lg border bg-muted/30 p-3 text-sm text-muted-foreground">
+              O catalogo online abre uma tabela com imagem tecnica carregada pelo link. O PDF baixa as mesmas informacoes em formato paginado.
+            </div>
+
+            <div className="flex flex-col justify-end gap-2 sm:flex-row">
+              <Button variant="outline" onClick={() => setCatalogOpen(false)}>
+                Cancelar
+              </Button>
+              <Button variant="outline" onClick={openCatalogOnline}>
+                <Eye className="mr-2 h-4 w-4" />
+                Ver online
+              </Button>
+              <Button onClick={downloadCatalog}>
+                <Download className="mr-2 h-4 w-4" />
+                Baixar PDF
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <Dialog
         open={previewOpen}

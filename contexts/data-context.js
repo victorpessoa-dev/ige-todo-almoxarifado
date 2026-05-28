@@ -487,6 +487,11 @@ export function DataProvider({ children }) {
           cod: form.cod.trim(),
           nome: form.nome.trim(),
           cod_barra: form.cod_barra?.trim() || form.cod.trim(),
+          categoria: form.categoria?.trim() || null,
+          aplicacao: form.aplicacao?.trim() || null,
+          medidas: form.medidas?.trim() || null,
+          marcas: form.marcas?.trim() || null,
+          img_url: form.img_url?.trim() || null,
           max: form.max || 0,
           min: form.min || 0,
           estoque: form.estoque || 0
@@ -518,7 +523,12 @@ export function DataProvider({ children }) {
           ...updates,
           cod: updates.cod?.trim() || updates.cod,
           nome: updates.nome?.trim() || updates.nome,
-          cod_barra: updates.cod_barra?.trim() || updates.cod_barra
+          cod_barra: updates.cod_barra?.trim() || updates.cod_barra,
+          categoria: updates.categoria?.trim?.() || updates.categoria,
+          aplicacao: updates.aplicacao?.trim?.() || updates.aplicacao,
+          medidas: updates.medidas?.trim?.() || updates.medidas,
+          marcas: updates.marcas?.trim?.() || updates.marcas,
+          img_url: updates.img_url?.trim?.() || updates.img_url
         })
         .eq('id', id)
         .select()

@@ -8,6 +8,7 @@ import { cn } from '@/lib/utils'
 import Image from 'next/image'
 import {
   CalendarDays,
+  BookOpen,
   Camera,
   ChartColumn,
   LayoutDashboard,
@@ -24,6 +25,7 @@ const menuItems = [
   { href: '/lembretes', label: 'Lembretes', icon: StickyNote },
   { href: '/calendario', label: 'Calendario', icon: CalendarDays },
   { href: '/inventario', label: 'Inventario', icon: Package },
+  { href: '/catalogo', label: 'Catalogo', icon: BookOpen },
   { href: '/solicitacoes', label: 'Solicitacoes', icon: ShoppingCart },
   { href: '/contagem', label: 'Contagem', icon: Camera },
   { href: '/analise-giro', label: 'Análise de Giro', icon: ChartColumn }
