@@ -98,15 +98,21 @@ function makeFrameHtml(produtos) {
   const totalCategorias = countUniqueCategories(produtos)
   const totalMarcas = countUniqueBrands(produtos)
 
-  const rows = Array.from(groupedProducts.values()).map(({ label: categoria, items }) => {
-    const productsHtml = items.map((produto) => {
-      const min = Number(produto.min || 0)
-      const max = Number(produto.max || 0)
-      const marcas = getUniqueBrandNames(produto.marcas)
-      const marcasText = marcas.length > 0 ? marcas.join(', ') : '-'
-      const image = produto.img_url
-        ? `<img src="${escapeHtml(produto.img_url)}" alt="Imagem técnica de ${escapeHtml(produto.nome || 'produto')}" />`
-        : '<div class="image-placeholder">Sem imagem</div>'
+  const rows = Array.from(groupedProducts.values())
+    .sort((a, b) => a.label.localeCompare(b.label, 'pt-BR'))
+    .map(({ label: categoria, items }) => {
+      const sortedItems = [...items].sort((a, b) =>
+        String(a.nome || '').localeCompare(String(b.nome || ''), 'pt-BR')
+      )
+
+      const productsHtml = sortedItems.map((produto) => {
+        const min = Number(produto.min || 0)
+        const max = Number(produto.max || 0)
+        const marcas = getUniqueBrandNames(produto.marcas)
+        const marcasText = marcas.length > 0 ? marcas.join(', ') : '-'
+        const image = produto.img_url
+          ? `<img src="${escapeHtml(produto.img_url)}" alt="Imagem técnica de ${escapeHtml(produto.nome || 'produto')}" />`
+          : '<div class="image-placeholder">Sem imagem</div>'
 
       return `
         <article class="product">
