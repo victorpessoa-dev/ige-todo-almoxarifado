@@ -66,8 +66,8 @@ function PublicVisibilityToggle({ checked, disabled, onChange }) {
       }}
       className="inline-flex h-7 w-12 items-center justify-center rounded-full bg-transparent transition disabled:cursor-wait disabled:opacity-60"
       aria-pressed={checked}
-      aria-label="Alternar visibilidade publica"
-      title={checked ? 'Visivel no publico' : 'Oculto do publico'}
+      aria-label="Alternar visibilidade pública"
+      title={checked ? 'Visível no público' : 'Oculto do público'}
     >
       <span
         className={`relative h-5 w-10 rounded-full border bg-transparent transition ${
@@ -184,7 +184,7 @@ export function SolicitacaoTable({
       <div className="grid gap-3 md:hidden">
         {sortedSolicitacoes.length === 0 ? (
           <div className="rounded-xl border border-dashed bg-card p-8 text-center text-sm text-muted-foreground">
-            Nenhuma solicitacao encontrada.
+            Nenhuma solicitação encontrada.
           </div>
         ) : (
           sortedSolicitacoes.map((solicitacao) => {
@@ -228,7 +228,7 @@ export function SolicitacaoTable({
 
                 <div className="mt-3 grid gap-1 text-xs text-muted-foreground">
                   <span>Valor: {formatCurrency(solicitacao.valor_total)}</span>
-                  <span>Previsao: {formatDate(solicitacao.previsao_entrega || solicitacao.previsao_desejada)}</span>
+                  <span>Previsão: {formatDate(solicitacao.previsao_entrega || solicitacao.previsao_desejada)}</span>
                 </div>
                 <div className="mt-3">
                   <PublicVisibilityToggle
@@ -248,15 +248,15 @@ export function SolicitacaoTable({
           <Table className="min-w-[1040px] [&_td:first-child]:pl-4 [&_td:last-child]:pr-4 [&_td]:px-3 [&_td]:py-2.5 [&_th:first-child]:pl-4 [&_th:last-child]:pr-4 [&_th]:px-3 [&_th]:py-2">
             <TableHeader>
               <TableRow className="hover:bg-transparent">
-                <SortHeader label="Codigo" columnKey="codigo" />
+                <SortHeader label="Código" columnKey="codigo" />
                 <SortHeader label="Item" columnKey="descricao" />
                 <SortHeader label="Solicitante" columnKey="solicitante" />
                 <SortHeader label="Centro" columnKey="centro_custo" />
                 <SortHeader label="Prioridade" columnKey="prioridade" />
-                <TableHead>Situacao</TableHead>
+                <TableHead>Situação</TableHead>
                 <TableHead>Ref.</TableHead>
                 <SortHeader label="Valor" columnKey="valor_total" />
-                <SortHeader label="Previsao" columnKey="previsao_entrega" />
+                <SortHeader label="Previsão" columnKey="previsao_entrega" />
                 <TableHead className="w-16 text-center">
                   <Eye className="mx-auto h-4 w-4 text-muted-foreground" />
                 </TableHead>
@@ -267,7 +267,7 @@ export function SolicitacaoTable({
               {sortedSolicitacoes.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={10} className="py-10 text-center text-muted-foreground">
-                    Nenhuma solicitacao encontrada.
+                    Nenhuma solicitação encontrada.
                   </TableCell>
                 </TableRow>
               ) : (
@@ -323,7 +323,7 @@ export function SolicitacaoTable({
                               href={solicitacao.link_referencia}
                               target="_blank"
                               rel="noreferrer"
-                              aria-label="Abrir referencia"
+                              aria-label="Abrir referência"
                             >
                               <ExternalLink className="h-4 w-4" />
                             </a>

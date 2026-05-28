@@ -286,7 +286,7 @@ export default function AnaliseGiroPage() {
       }
 
       if (prev.length >= MAX_TURNOVER_ANALYSIS_PRODUCTS) {
-        toast.error(`Selecione no maximo ${MAX_TURNOVER_ANALYSIS_PRODUCTS} produtos para a IA.`)
+        toast.error(`Selecione no máximo ${MAX_TURNOVER_ANALYSIS_PRODUCTS} produtos para a IA.`)
         return prev
       }
 
@@ -296,7 +296,7 @@ export default function AnaliseGiroPage() {
 
   const handleAnalyzeTurnover = async () => {
     if (turnoverStats.length === 0) {
-      toast.error('Ainda nao ha dados suficientes para analisar o giro.')
+      toast.error('Ainda não há dados suficientes para analisar o giro.')
       return
     }
 
@@ -324,12 +324,12 @@ export default function AnaliseGiroPage() {
       const data = await response.json()
 
       if (!response.ok) {
-        throw new Error(data?.error || 'Nao foi possivel analisar o giro agora.')
+        throw new Error(data?.error || 'Não foi possível analisar o giro agora.')
       }
 
       setTurnoverAnalysis(data)
     } catch (error) {
-      toast.error(getUserMessage(error, 'Nao foi possivel analisar o giro agora.'))
+      toast.error(getUserMessage(error, 'Não foi possível analisar o giro agora.'))
       setTurnoverAnalysis(null)
     } finally {
       setIsAnalyzingTurnover(false)
@@ -342,7 +342,7 @@ export default function AnaliseGiroPage() {
         <div className="space-y-1">
           <h1 className="flex items-center gap-3 text-xl font-bold sm:text-2xl md:text-3xl">
             <BarChart3 className="h-7 w-7 text-primary" />
-            Analise de Giro
+            Análise de Giro
           </h1>
         </div>
 
@@ -415,7 +415,7 @@ export default function AnaliseGiroPage() {
           <CardContent className="flex flex-col items-center justify-center py-12 text-center">
             <BarChart3 className="mb-4 h-12 w-12 text-primary/50" />
             <p className="text-muted-foreground">
-              Ainda nao ha movimentacoes suficientes para analisar o giro dos produtos.
+              Ainda não há movimentacoes suficientes para analisar o giro dos produtos.
             </p>
           </CardContent>
         </Card>
@@ -432,7 +432,7 @@ export default function AnaliseGiroPage() {
                 comparisonPeriodDays={comparisonPeriodDays}
               />
               <p className="text-sm text-muted-foreground">
-                Panorama consolidado de entradas e saidas no periodo escolhido.
+                Panorama consolidado de entradas e saídas no período escolhido.
               </p>
             </CardContent>
           </Card>
@@ -444,14 +444,14 @@ export default function AnaliseGiroPage() {
                 <Input
                   value={search}
                   onChange={(event) => setSearch(event.target.value)}
-                  placeholder="Buscar por nome ou codigo"
+                  placeholder="Buscar por nome ou código"
                   className="w-full sm:w-[280px]"
                 />
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
               <div className="rounded-xl border bg-muted/20 px-3 py-2 text-xs text-muted-foreground">
-                Marque ate {MAX_TURNOVER_ANALYSIS_PRODUCTS} produtos para a IA. Sem selecao, serao analisados os {MAX_TURNOVER_ANALYSIS_PRODUCTS} produtos com maior saida.
+                Marque até {MAX_TURNOVER_ANALYSIS_PRODUCTS} produtos para a IA. Sem seleção, serão analisados os {MAX_TURNOVER_ANALYSIS_PRODUCTS} produtos com maior saída.
               </div>
 
               <div className="space-y-2">
@@ -481,7 +481,7 @@ export default function AnaliseGiroPage() {
                           <Checkbox
                             checked={selectedAnalysisProductIds.includes(item.productId)}
                             onCheckedChange={() => toggleAnalysisProduct(item.productId)}
-                            aria-label={`Selecionar ${item.name} para analise por IA`}
+                            aria-label={`Selecionar ${item.name} para análise por IA`}
                           />
                         </span>
                         <div className="min-w-0">
@@ -503,9 +503,9 @@ export default function AnaliseGiroPage() {
                       </span>
                     </div>
                     <div className="grid gap-2 text-xs text-muted-foreground sm:grid-cols-3">
-                      <span>Saida {item.periodDays}d: {item.saida30}</span>
+                      <span>Saída {item.periodDays}d: {item.saida30}</span>
                       <span>Entrada {item.periodDays}d: {item.entrada30}</span>
-                      <span>Media mensal: {item.avgMonthlyOut}</span>
+                      <span>Média mensal: {item.avgMonthlyOut}</span>
                     </div>
                   </div>
                 ))}
@@ -586,13 +586,13 @@ export default function AnaliseGiroPage() {
                 </div>
 
                 <div className="grid gap-2 text-sm text-muted-foreground sm:grid-cols-2 lg:grid-cols-3">
-                  <p>Saida {selectedItem.periodDays} dias: {selectedItem.saida30}</p>
-                  <p>Saida {selectedItem.comparisonPeriodDays} dias: {selectedItem.saidaComparacao}</p>
+                  <p>Saída {selectedItem.periodDays} dias: {selectedItem.saida30}</p>
+                  <p>Saída {selectedItem.comparisonPeriodDays} dias: {selectedItem.saidaComparacao}</p>
                   <p>Entrada {selectedItem.periodDays} dias: {selectedItem.entrada30}</p>
                   <p>Entrada {selectedItem.comparisonPeriodDays} dias: {selectedItem.entradaComparacao}</p>
-                  <p>Media mensal de saida: {selectedItem.avgMonthlyOut}</p>
+                  <p>Média mensal de saída: {selectedItem.avgMonthlyOut}</p>
                   <p>
-                    Dias sem saida:{' '}
+                    Dias sem saída:{' '}
                     {selectedItem.daysWithoutSales == null
                       ? 'sem registro'
                       : selectedItem.daysWithoutSales}
@@ -633,7 +633,7 @@ export default function AnaliseGiroPage() {
                     <p className="mt-2 text-sm">{turnoverAnalysis.summary}</p>
                     {turnoverAnalysis.source === 'local' && (
                       <p className="mt-2 text-xs text-muted-foreground">
-                        A IA externa nao respondeu ou nao esta configurada; foi usada uma analise local pelos dados de giro.
+                        A IA externa não respondeu ou não está configurada; foi usada uma análise local pelos dados de giro.
                       </p>
                     )}
                   </div>
@@ -649,7 +649,7 @@ export default function AnaliseGiroPage() {
                         >
                           <p className="font-semibold">{item.name}</p>
                           <p className="mt-1 text-sm text-muted-foreground">
-                            Sugestao de minimo: {item.minSuggestion ?? '-'} | Sugestao de maximo: {item.maxSuggestion ?? '-'}
+                            Sugestão de mínimo: {item.minSuggestion ?? '-'} | Sugestão de máximo: {item.maxSuggestion ?? '-'}
                           </p>
                           {item.recommendation && (
                             <p className="mt-2 text-sm">{item.recommendation}</p>

@@ -70,12 +70,12 @@ export default function AdminLayout({ children }) {
 
     toast.info(
       total === 1
-        ? 'Nova solicitacao recebida'
-        : `${total} novas solicitacoes recebidas`,
+        ? 'Nova solicitação recebida'
+        : `${total} novas solicitações recebidas`,
       {
         description:
           total === 1
-            ? `${primeiraSolicitacao.codigo || 'Sem codigo'} - ${primeiraSolicitacao.descricao || 'Pedido sem descricao'}`
+            ? `${primeiraSolicitacao.codigo || 'Sem código'} - ${primeiraSolicitacao.descricao || 'Pedido sem descrição'}`
             : 'Existem novos pedidos aguardando aceite.',
         action: {
           label: 'Ver',

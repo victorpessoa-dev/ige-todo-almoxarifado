@@ -103,7 +103,7 @@ export function SolicitacaoForm({
   form,
   setForm,
   onSubmit,
-  submitLabel = 'Enviar solicitacao',
+  submitLabel = 'Enviar solicitação',
   isSubmitting = false,
   mode = 'public',
   showSections = false,
@@ -210,12 +210,12 @@ export function SolicitacaoForm({
 
   const itemFields = (
     <>
-      <Field label="Descricao do item">
+      <Field label="Descrição do item">
         <Textarea
           value={form.descricao}
           onChange={(event) => updateField('descricao', event.target.value)}
           rows={4}
-          placeholder="Informe o item, modelo, medida, marca ou referencia"
+          placeholder="Informe o item, modelo, medida, marca ou referência"
           required={!useTabs}
         />
       </Field>
@@ -249,7 +249,7 @@ export function SolicitacaoForm({
           </Select>
         </Field>
 
-        <Field label="Previsao desejada">
+        <Field label="Previsão desejada">
           <Input
             type="date"
             value={form.previsao_desejada || ''}
@@ -258,16 +258,16 @@ export function SolicitacaoForm({
         </Field>
       </div>
 
-      <Field label="Aplicacoes especificas">
+      <Field label="Aplicações específicas">
         <Textarea
           value={form.aplicacoes || ''}
           onChange={(event) => updateField('aplicacoes', event.target.value)}
           rows={3}
-          placeholder="Onde sera usado, maquina, local, cliente ou observacao tecnica"
+          placeholder="Onde será usado, máquina, local, cliente ou observação técnica"
         />
       </Field>
 
-      <Field label="Link de referencia ou imagem">
+      <Field label="Link de referência ou imagem">
         <Input
           type="url"
           value={form.link_referencia || ''}
@@ -324,7 +324,7 @@ export function SolicitacaoForm({
           </div>
 
           <div className="grid gap-4 sm:grid-cols-3">
-            <Field label="Valor unitario">
+            <Field label="Valor unitário">
               <div className="relative">
                 <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
                   R$
@@ -356,7 +356,7 @@ export function SolicitacaoForm({
               </div>
             </Field>
 
-            <Field label="Previsao de entrega">
+            <Field label="Previsão de entrega">
               <Input
                 type="date"
                 value={form.previsao_entrega || ''}
@@ -366,7 +366,7 @@ export function SolicitacaoForm({
           </div>
 
           <div className="grid gap-4 sm:grid-cols-3">
-            <Field label="Status da cotacao">
+            <Field label="Status da cotação">
               <Select
                 value={form.status_cotacao}
                 onValueChange={(value) => updateField('status_cotacao', value)}

@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
@@ -40,7 +40,7 @@ export default function LoginPage() {
       toast.success('Login realizado com sucesso!')
     } else {
       toast.error(
-        getUserMessage(result.error, 'Nao foi possivel entrar agora.')
+        getUserMessage(result.error, 'Não foi possível entrar agora.')
       )
     }
   }
@@ -120,7 +120,7 @@ export default function LoginPage() {
             </Button>
 
             <Button type="button" variant="ghost" asChild>
-              <a href="/solicitar">Voltar para solicitacoes</a>
+              <a href="/solicitar">Voltar para solicitações</a>
             </Button>
 
             <p className="mt-2 text-center text-xs text-muted-foreground">

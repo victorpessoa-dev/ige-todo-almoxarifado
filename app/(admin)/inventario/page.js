@@ -154,7 +154,7 @@ export default function InventarioPage() {
     }
 
     if (!compraDialog.quantidade || compraDialog.quantidade <= 0) {
-      toast.error('Este produto nao tem quantidade pendente para completar o maximo.')
+      toast.error('Este produto não tem quantidade pendente para completar o máximo.')
       return
     }
 
@@ -168,14 +168,14 @@ export default function InventarioPage() {
         centro_custo_id: compraForm.centro_custo_id,
         solicitante_id: compraForm.solicitante_id,
         produto_id: produto.id,
-        aplicacoes: `Reposicao de estoque baixo. Estoque atual: ${produto.estoque}. Maximo: ${produto.max}.`
+        aplicacoes: `Reposição de estoque baixo. Estoque atual: ${produto.estoque}. Máximo: ${produto.max}.`
       })
 
       setCompraDialog({ open: false, produto: null, quantidade: 0 })
       setCompraForm({ centro_custo_id: '', solicitante_id: '' })
-      toast.success(`Solicitacao ${solicitacao.codigo || ''} criada com sucesso!`)
+      toast.success(`Solicitação ${solicitacao.codigo || ''} criada com sucesso!`)
     } catch (error) {
-      toast.error(getUserMessage(error, 'Nao foi possivel criar a solicitacao de compra.'))
+      toast.error(getUserMessage(error, 'Não foi possível criar a solicitação de compra.'))
     } finally {
       setIsSolicitandoCompra(false)
     }
@@ -224,7 +224,7 @@ export default function InventarioPage() {
 
       reset()
     } catch (error) {
-      toast.error(getUserMessage(error, 'Nao foi possivel salvar o produto.'))
+      toast.error(getUserMessage(error, 'Não foi possível salvar o produto.'))
     }
   }
 
@@ -258,7 +258,7 @@ export default function InventarioPage() {
         toast.success('Entrada registrada com sucesso!')
       } else {
         await saidaProduto(movimentoDialog.produto.id, amount)
-        toast.success('Saida registrada com sucesso!')
+        toast.success('Saída registrada com sucesso!')
       }
 
       setMovimentoDialog({ open: false, produto: null, tipo: null })
@@ -266,7 +266,7 @@ export default function InventarioPage() {
       setBarcodeInput('')
       setScanQuantity(1)
     } catch (error) {
-      toast.error(getUserMessage(error, 'Nao foi possivel registrar a movimentacao.'))
+      toast.error(getUserMessage(error, 'Não foi possível registrar a movimentacao.'))
     }
   }
 
@@ -330,7 +330,7 @@ export default function InventarioPage() {
       clearSelection()
       toast.success('Produtos removidos com sucesso!')
     } catch (error) {
-      setBulkActionError(getUserMessage(error, 'Nao foi possivel excluir os produtos selecionados.'))
+      setBulkActionError(getUserMessage(error, 'Não foi possível excluir os produtos selecionados.'))
     }
   }
 
@@ -338,7 +338,7 @@ export default function InventarioPage() {
     const quantidade = Number(bulkSaidaQuantidade)
 
     if (!quantidade || quantidade <= 0) {
-      setBulkActionError('Informe uma quantidade valida.')
+      setBulkActionError('Informe uma quantidade válida.')
       return
     }
 
@@ -366,7 +366,7 @@ export default function InventarioPage() {
       clearSelection()
       toast.success('Baixa registrada com sucesso!')
     } catch (error) {
-      setBulkActionError(getUserMessage(error, 'Nao foi possivel concluir a baixa dos produtos.'))
+      setBulkActionError(getUserMessage(error, 'Não foi possível concluir a baixa dos produtos.'))
     }
   }
 
@@ -506,7 +506,7 @@ export default function InventarioPage() {
                   setDeleteDialog({ open: false, produto: null })
                   toast.success('Produto removido com sucesso!')
                 } catch (error) {
-                  toast.error(getUserMessage(error, 'Nao foi possivel excluir o produto.'))
+                  toast.error(getUserMessage(error, 'Não foi possível excluir o produto.'))
                 }
               }}
             >
@@ -571,11 +571,11 @@ export default function InventarioPage() {
       >
         <DialogContent className="w-[95vw] max-w-[420px] p-4 sm:p-6">
           <DialogHeader>
-            <DialogTitle>Codigo ja existente</DialogTitle>
+            <DialogTitle>Código já existente</DialogTitle>
           </DialogHeader>
 
           <p className="text-sm text-muted-foreground">
-            O codigo <strong>{duplicateDialog.cod}</strong> ja esta cadastrado.
+            O código <strong>{duplicateDialog.cod}</strong> já está cadastrado.
           </p>
 
           <div className="mt-4 flex justify-end">
@@ -623,7 +623,7 @@ export default function InventarioPage() {
 
           <div className="space-y-4">
             <p className="text-sm text-muted-foreground">
-              A quantidade informada sera aplicada em todos os {selectedProducts.length} produto(s) selecionados.
+              A quantidade informada será aplicada em todos os {selectedProducts.length} produto(s) selecionados.
             </p>
 
             <div>
@@ -702,7 +702,7 @@ export default function InventarioPage() {
             <div className="rounded-lg border bg-muted/20 p-3 text-sm">
               <p className="font-medium">{compraDialog.produto?.nome}</p>
               <p className="text-muted-foreground">
-                Codigo: {compraDialog.produto?.cod || '-'} | Estoque: {compraDialog.produto?.estoque || 0} | Max: {compraDialog.produto?.max || 0}
+                Código: {compraDialog.produto?.cod || '-'} | Estoque: {compraDialog.produto?.estoque || 0} | Max: {compraDialog.produto?.max || 0}
               </p>
               <p className="mt-2 font-semibold">
                 Quantidade a solicitar: {compraDialog.quantidade}
@@ -799,7 +799,7 @@ export default function InventarioPage() {
                 onClick={handleSolicitarCompra}
                 disabled={isSolicitandoCompra}
               >
-                {isSolicitandoCompra ? 'Solicitando...' : 'Criar solicitacao'}
+                {isSolicitandoCompra ? 'Solicitando...' : 'Criar solicitação'}
               </Button>
             </div>
           </div>
@@ -815,7 +815,7 @@ export default function InventarioPage() {
         <DialogContent className="w-[95vw] max-w-[420px] p-4 sm:p-6">
           <DialogHeader>
             <DialogTitle>
-              {movimentoDialog.tipo === 'entrada' ? 'Entrada' : 'Saida'}
+              {movimentoDialog.tipo === 'entrada' ? 'Entrada' : 'Saída'}
             </DialogTitle>
           </DialogHeader>
 

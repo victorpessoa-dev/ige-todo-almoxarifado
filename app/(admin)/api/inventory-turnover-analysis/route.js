@@ -18,15 +18,15 @@ function buildLocalTurnoverAnalysis(products) {
 
   const summaryParts = [
     `Foram avaliados ${products.length} produto(s).`,
-    `No periodo, houve ${totalOut} saida(s) e ${totalIn} entrada(s).`
+    `No período, houve ${totalOut} saída(s) e ${totalIn} entrada(s).`
   ]
 
   if (lowStockItems.length > 0) {
-    summaryParts.push(`${lowStockItems.length} produto(s) estao no minimo ou abaixo dele.`)
+    summaryParts.push(`${lowStockItems.length} produto(s) estão no mínimo ou abaixo dele.`)
   }
 
   if (stoppedItems.length > 0) {
-    summaryParts.push(`${stoppedItems.length} produto(s) merecem atencao por baixa ou nenhuma saida recente.`)
+    summaryParts.push(`${stoppedItems.length} produto(s) merecem atenção por baixa ou nenhuma saída recente.`)
   }
 
   return {
@@ -42,30 +42,30 @@ function buildLocalTurnoverAnalysis(products) {
 
       let minSuggestion = currentMin
       let maxSuggestion = currentMax
-      let recommendation = 'Manter os parametros atuais e acompanhar o proximo periodo.'
-      let reason = 'O giro recente nao indica necessidade clara de ajuste.'
+      let recommendation = 'Manter os parâmetros atuais e acompanhar o próximo período.'
+      let reason = 'O giro recente não indica necessidade clara de ajuste.'
 
       if (saida30 > 0 || avgMonthlyOut > 0) {
         minSuggestion = Math.max(1, Math.ceil(avgMonthlyOut * 0.5))
         maxSuggestion = Math.max(minSuggestion + 1, Math.ceil(avgMonthlyOut * 1.5))
-        recommendation = 'Ajustar minimo e maximo com base na media mensal de saida.'
-        reason = `Media mensal aproximada de saida: ${avgMonthlyOut}.`
+        recommendation = 'Ajustar mínimo e máximo com base na média mensal de saída.'
+        reason = `Média mensal aproximada de saída: ${avgMonthlyOut}.`
       }
 
       if (currentStock <= currentMin) {
         maxSuggestion = Math.max(maxSuggestion, currentMax, currentStock + Math.ceil(avgMonthlyOut || 1))
         recommendation = 'Priorizar reposicao deste produto.'
-        reason = `Estoque atual (${currentStock}) esta no minimo ou abaixo do minimo (${currentMin}).`
+        reason = `Estoque atual (${currentStock}) está no mínimo ou abaixo do mínimo (${currentMin}).`
       }
 
       if ((daysWithoutSales == null || daysWithoutSales >= 60) && saida30 === 0) {
         minSuggestion = 0
         maxSuggestion = Math.max(1, Math.min(currentMax || 1, currentStock || 1))
-        recommendation = 'Evitar compra ate voltar a ter saida.'
+        recommendation = 'Evitar compra até voltar a ter saída.'
         reason =
           daysWithoutSales == null
-            ? 'Nao ha registro de saida para este produto.'
-            : `Produto esta ha ${daysWithoutSales} dias sem saida.`
+            ? 'Não há registro de saída para este produto.'
+            : `Produto está há ${daysWithoutSales} dias sem saída.`
       }
 
       return {
@@ -92,17 +92,17 @@ export async function POST(req) {
       : []
 
     if (products.length === 0) {
-      return createUserError('Sem dados para analise.')
+      return createUserError('Sem dados para análise.')
     }
 
     const prompt = `
       Analise o giro de estoque.
 
       Considere:
-      - saidas e entradas no periodo selecionado
-      - estoque atual vs minimo/maximo
-      - media mensal de saida
-      - dias sem saida
+      - saídas e entradas no período selecionado
+      - estoque atual vs mínimo/máximo
+      - média mensal de saída
+      - dias sem saída
 
       Retorne somente JSON valido:
       {
@@ -130,7 +130,7 @@ export async function POST(req) {
     })
 
     return Response.json({
-      summary: data?.summary || 'Analise concluida.',
+      summary: data?.summary || 'Análise concluída.',
       source: 'ai',
       recommendations: Array.isArray(data?.recommendations)
         ? data.recommendations
@@ -143,6 +143,6 @@ export async function POST(req) {
       return Response.json(buildLocalTurnoverAnalysis(products))
     }
 
-    return createUserError('Nao foi possivel analisar o giro agora.', 500)
+    return createUserError('Não foi possível analisar o giro agora.', 500)
   }
 }

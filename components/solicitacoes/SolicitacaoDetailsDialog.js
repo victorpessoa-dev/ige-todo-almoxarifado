@@ -251,10 +251,10 @@ export function SolicitacaoDetailsDialog({
 
     try {
       await onUpdate(solicitacao.id, buildPayload(form))
-      toast.success('Solicitacao atualizada com sucesso!')
+      toast.success('Solicitação atualizada com sucesso!')
       setIsEditing(false)
     } catch (error) {
-      toast.error(getUserMessage(error, 'Nao foi possivel atualizar a solicitacao.'))
+      toast.error(getUserMessage(error, 'Não foi possível atualizar a solicitação.'))
     } finally {
       setIsSubmitting(false)
     }
@@ -268,7 +268,7 @@ export function SolicitacaoDetailsDialog({
       toast.success(message)
       onOpenChange(false)
     } catch (error) {
-      toast.error(getUserMessage(error, 'Nao foi possivel atualizar a solicitacao.'))
+      toast.error(getUserMessage(error, 'Não foi possível atualizar a solicitação.'))
     }
   }
 
@@ -277,11 +277,11 @@ export function SolicitacaoDetailsDialog({
 
     try {
       await onDelete(solicitacao.id)
-      toast.success('Solicitacao excluida com sucesso!')
+      toast.success('Solicitação excluída com sucesso!')
       setDeleteConfirmOpen(false)
       onOpenChange(false)
     } catch (error) {
-      toast.error(getUserMessage(error, 'Nao foi possivel excluir a solicitacao.'))
+      toast.error(getUserMessage(error, 'Não foi possível excluir a solicitação.'))
     }
   }
 
@@ -331,7 +331,7 @@ export function SolicitacaoDetailsDialog({
           <TabsList className="grid h-auto w-full grid-cols-3 gap-1">
             <TabsTrigger value="resumo" className="px-2 text-xs sm:text-sm">Resumo</TabsTrigger>
             <TabsTrigger value="andamento" className="px-2 text-xs sm:text-sm">Andamento</TabsTrigger>
-            <TabsTrigger value="acoes" className="px-2 text-xs sm:text-sm">Acoes</TabsTrigger>
+            <TabsTrigger value="acoes" className="px-2 text-xs sm:text-sm">Ações</TabsTrigger>
           </TabsList>
 
           <TabsContent value="resumo" className="space-y-4">
@@ -350,7 +350,7 @@ export function SolicitacaoDetailsDialog({
 
             {isEditing ? (
               <div className="grid gap-4">
-                <Field label="Descricao do item">
+                <Field label="Descrição do item">
                   <Textarea
                     value={form.descricao}
                     onChange={(event) => updateField('descricao', event.target.value)}
@@ -428,7 +428,7 @@ export function SolicitacaoDetailsDialog({
                 </div>
 
                 <div className="grid gap-4 sm:grid-cols-2">
-                  <Field label="Aplicacoes especificas">
+                  <Field label="Aplicações específicas">
                     <Textarea
                       value={form.aplicacoes || ''}
                       onChange={(event) => updateField('aplicacoes', event.target.value)}
@@ -436,7 +436,7 @@ export function SolicitacaoDetailsDialog({
                     />
                   </Field>
 
-                  <Field label="Link de referencia">
+                  <Field label="Link de referência">
                     <Input
                       value={form.link_referencia || ''}
                       onChange={(event) => updateField('link_referencia', event.target.value)}
@@ -448,22 +448,22 @@ export function SolicitacaoDetailsDialog({
             ) : (
               <>
                 <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                  <InfoItem label="Codigo" value={solicitacao?.codigo} />
+                  <InfoItem label="Código" value={solicitacao?.codigo} />
                   <InfoItem label="Solicitante" value={solicitacao?.solicitante} />
                   <InfoItem label="Centro de custo" value={solicitacao?.centro_custo} />
                   <InfoItem label="Quantidade" value={solicitacao?.quantidade} />
-                  <InfoItem label="Data solicitacao" value={formatDate(solicitacao?.data_solicitacao)} />
-                  <InfoItem label="Previsao desejada" value={formatDate(solicitacao?.previsao_desejada)} />
-                  <InfoItem label="Previsao entrega" value={formatDate(solicitacao?.previsao_entrega)} />
+                  <InfoItem label="Data da solicitação" value={formatDate(solicitacao?.data_solicitacao)} />
+                  <InfoItem label="Previsão desejada" value={formatDate(solicitacao?.previsao_desejada)} />
+                  <InfoItem label="Previsão de entrega" value={formatDate(solicitacao?.previsao_entrega)} />
                   <InfoItem label="Atualizado em" value={formatDate(solicitacao?.updated_at)} />
                 </div>
 
-                <InfoItem label="Descricao do item" value={solicitacao?.descricao} />
+                <InfoItem label="Descrição do item" value={solicitacao?.descricao} />
 
                 <div className="grid gap-3 sm:grid-cols-2">
-                  <InfoItem label="Aplicacoes especificas" value={solicitacao?.aplicacoes} />
+                  <InfoItem label="Aplicações específicas" value={solicitacao?.aplicacoes} />
                   <InfoItem
-                    label="Link de referencia"
+                    label="Link de referência"
                     value={
                       solicitacao?.link_referencia ? (
                         <a
@@ -504,7 +504,7 @@ export function SolicitacaoDetailsDialog({
                     </Select>
                   </Field>
 
-                  <Field label="Status cotacao">
+                  <Field label="Status da cotação">
                     <Select
                       value={form.status_cotacao}
                       onValueChange={(value) => updateField('status_cotacao', value)}
@@ -560,7 +560,7 @@ export function SolicitacaoDetailsDialog({
                 </div>
 
                 <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                  <Field label="Valor unitario">
+                  <Field label="Valor unitário">
                     <Input
                       inputMode="decimal"
                       value={form.valor_unitario || ''}
@@ -576,10 +576,10 @@ export function SolicitacaoDetailsDialog({
                       onBlur={(event) => updateField('valor_total', formatDecimalInput(event.target.value))}
                     />
                   </Field>
-                  <Field label="Previsao desejada">
+                  <Field label="Previsão desejada">
                     <Input type="date" value={form.previsao_desejada || ''} onChange={(event) => updateField('previsao_desejada', event.target.value)} />
                   </Field>
-                  <Field label="Previsao entrega">
+                  <Field label="Previsão de entrega">
                     <Input type="date" value={form.previsao_entrega || ''} onChange={(event) => updateField('previsao_entrega', event.target.value)} />
                   </Field>
                   <Field label="Produto vinculado">
@@ -606,7 +606,7 @@ export function SolicitacaoDetailsDialog({
               <>
                 <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                   <StatusItem
-                    label="Cotacao"
+                    label="Cotação"
                     value={solicitacao?.status_cotacao}
                     options={SOLICITACAO_STATUS_COTACAO_OPTIONS}
                   />
@@ -623,7 +623,7 @@ export function SolicitacaoDetailsDialog({
                 </div>
 
                 <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                  <InfoItem label="Valor unitario" value={formatCurrency(solicitacao?.valor_unitario)} />
+                  <InfoItem label="Valor unitário" value={formatCurrency(solicitacao?.valor_unitario)} />
                   <InfoItem label="Valor total" value={formatCurrency(solicitacao?.valor_total)} />
                 </div>
               </>
@@ -651,7 +651,7 @@ export function SolicitacaoDetailsDialog({
                 onClick={() =>
                   quickUpdate(
                     { status_geral: 'entregue', status_transporte: 'entregue' },
-                    'Solicitacao marcada como entregue!'
+                    'Solicitação marcada como entregue!'
                   )
                 }
               >
@@ -664,7 +664,7 @@ export function SolicitacaoDetailsDialog({
                 onClick={() =>
                   quickUpdate(
                     { status_geral: 'concluida', status_transporte: 'entregue_conferido' },
-                    'Solicitacao concluida!'
+                    'Solicitação concluída!'
                   )
                 }
               >
@@ -683,7 +683,7 @@ export function SolicitacaoDetailsDialog({
               <Button
                 type="button"
                 variant="destructive"
-                onClick={() => quickUpdate({ status_geral: 'cancelada' }, 'Solicitacao cancelada!')}
+                onClick={() => quickUpdate({ status_geral: 'cancelada' }, 'Solicitação cancelada!')}
               >
                 Cancelar
               </Button>
@@ -693,7 +693,7 @@ export function SolicitacaoDetailsDialog({
                 variant="destructive"
                 onClick={() => setDeleteConfirmOpen(true)}
               >
-                Excluir solicitacao
+                Excluir solicitação
               </Button>
             </div>
           </TabsContent>
@@ -704,9 +704,9 @@ export function SolicitacaoDetailsDialog({
       <AlertDialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Excluir solicitacao?</AlertDialogTitle>
+            <AlertDialogTitle>Excluir solicitação?</AlertDialogTitle>
             <AlertDialogDescription>
-              Esta acao remove o pedido permanentemente e nao pode ser desfeita.
+              Esta ação remove o pedido permanentemente e não pode ser desfeita.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

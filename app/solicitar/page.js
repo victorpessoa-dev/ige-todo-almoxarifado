@@ -71,7 +71,7 @@ function StatusGrid({ solicitacao }) {
   return (
     <div className="grid gap-2 sm:grid-cols-3">
       <DetailStatus
-        label="Cotacao"
+        label="Cotação"
         value={solicitacao.status_cotacao}
         options={SOLICITACAO_STATUS_COTACAO_OPTIONS}
       />
@@ -102,7 +102,7 @@ function SolicitacaoPublicTable({ solicitacoes, onOpen }) {
   if (solicitacoes.length === 0) {
     return (
       <div className="rounded-xl border border-dashed p-8 text-center text-sm text-muted-foreground">
-        Nenhuma solicitacao cadastrada ainda.
+        Nenhuma solicitação cadastrada ainda.
       </div>
     )
   }
@@ -143,7 +143,7 @@ function SolicitacaoPublicTable({ solicitacoes, onOpen }) {
               </div>
 
               <p className="mt-3 text-xs text-muted-foreground">
-                Previsao: {formatDate(getPrevisaoDate(solicitacao))}
+                Previsão: {formatDate(getPrevisaoDate(solicitacao))}
               </p>
             </button>
           )
@@ -159,8 +159,8 @@ function SolicitacaoPublicTable({ solicitacoes, onOpen }) {
               <TableHead className="h-12 px-4">Solicitante</TableHead>
               <TableHead className="h-12 px-4">Centro</TableHead>
               <TableHead className="h-12 px-4">Prioridade</TableHead>
-              <TableHead className="h-12 px-4">Situacao</TableHead>
-              <TableHead className="h-12 px-4">Previsao</TableHead>
+              <TableHead className="h-12 px-4">Situação</TableHead>
+              <TableHead className="h-12 px-4">Previsão</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -239,12 +239,12 @@ function SolicitacaoPublicDetailsDialog({ solicitacao, open, onOpenChange }) {
             <InfoItem label="Solicitante" value={solicitacao.solicitante} />
             <InfoItem label="Centro de custo" value={solicitacao.centro_custo} />
             <InfoItem label="Quantidade" value={solicitacao.quantidade} />
-            <InfoItem label="Previsao desejada" value={formatDate(solicitacao.previsao_desejada)} />
-            <InfoItem label="Previsao de entrega" value={formatDate(solicitacao.previsao_entrega)} />
+            <InfoItem label="Previsão desejada" value={formatDate(solicitacao.previsao_desejada)} />
+            <InfoItem label="Previsão de entrega" value={formatDate(solicitacao.previsao_entrega)} />
             <InfoItem label="Atualizado em" value={formatDate(solicitacao.updated_at)} />
           </div>
 
-          <InfoItem label="Descricao do item" value={solicitacao.descricao} />
+          <InfoItem label="Descrição do item" value={solicitacao.descricao} />
         </div>
       </DialogContent>
     </Dialog>
@@ -304,7 +304,7 @@ export default function SolicitarPage() {
       const data = await listPublicSolicitacoesStatus()
       setSolicitacoesPublicas(data)
     } catch (error) {
-      toast.error(getUserMessage(error, 'Nao foi possivel carregar os andamentos.'))
+      toast.error(getUserMessage(error, 'Não foi possível carregar os andamentos.'))
     } finally {
       setIsLoadingSolicitacoes(false)
     }
@@ -327,7 +327,7 @@ export default function SolicitarPage() {
           setSolicitacoesPublicas(solicitacoesData)
         }
       } catch (error) {
-        toast.error(getUserMessage(error, 'Nao foi possivel carregar os cadastros.'))
+        toast.error(getUserMessage(error, 'Não foi possível carregar os cadastros.'))
       } finally {
         if (!cancelled) {
           setIsLoadingLists(false)
@@ -357,9 +357,9 @@ export default function SolicitarPage() {
       setForm(defaultSolicitacaoForm)
       setPedidoDialogOpen(false)
       await loadPublicSolicitacoes()
-      toast.success('Solicitacao enviada com sucesso!')
+      toast.success('Solicitação enviada com sucesso!')
     } catch (error) {
-      toast.error(getUserMessage(error, 'Nao foi possivel enviar a solicitacao.'))
+      toast.error(getUserMessage(error, 'Não foi possível enviar a solicitação.'))
     } finally {
       setIsSubmitting(false)
     }
@@ -396,13 +396,13 @@ export default function SolicitarPage() {
       )
 
       if (results.length === 0) {
-        throw new Error('Nenhuma solicitacao encontrada.')
+        throw new Error('Nenhuma solicitação encontrada.')
       }
 
       setStatusResult(null)
     } catch (error) {
       setStatusResult(null)
-      toast.error(getUserMessage(error, 'Nao foi possivel consultar a solicitacao.'))
+      toast.error(getUserMessage(error, 'Não foi possível consultar a solicitação.'))
     } finally {
       setIsSearching(false)
     }
@@ -423,10 +423,10 @@ export default function SolicitarPage() {
             />
             <div>
               <h1 className="text-2xl font-bold sm:text-3xl">
-                Solicitacao de Compra
+                Solicitação de Compra
               </h1>
               <p className="mt-1 text-sm text-muted-foreground">
-                Envie pedidos e acompanhe o andamento pelo codigo da solicitacao.
+                Envie pedidos e acompanhe o andamento pelo código da solicitação.
               </p>
             </div>
           </div>
@@ -451,13 +451,13 @@ export default function SolicitarPage() {
             <CardContent className="flex flex-col gap-3 p-4 text-emerald-900 sm:flex-row sm:items-center">
               <CheckCircle2 className="h-5 w-5 shrink-0" />
               <div className="text-sm">
-                <p>Sua solicitacao foi registrada.</p>
+                <p>Sua solicitação foi registrada.</p>
                 {createdSolicitacao?.codigo ? (
                   <p className="font-semibold">
-                    Codigo para acompanhamento: {createdSolicitacao.codigo}
+                    Código para acompanhamento: {createdSolicitacao.codigo}
                   </p>
                 ) : (
-                  <p>O acompanhamento sera feito pelo setor administrativo.</p>
+                  <p>O acompanhamento será feito pelo setor administrativo.</p>
                 )}
               </div>
               <Button
@@ -485,7 +485,7 @@ export default function SolicitarPage() {
               <Input
                 value={codigoBusca}
                 onChange={(event) => setCodigoBusca(event.target.value)}
-                placeholder="Busque por codigo, produto ou solicitante"
+                placeholder="Busque por código, produto ou solicitante"
               />
               <Button type="submit" disabled={isSearching} className="w-full sm:w-auto">
                 Buscar
@@ -517,8 +517,8 @@ export default function SolicitarPage() {
                   <span>Solicitante: {statusResult.solicitante || '-'}</span>
                   <span>Centro: {statusResult.centro_custo || '-'}</span>
                   <span>Quantidade: {statusResult.quantidade || '-'}</span>
-                  <span>Previsao desejada: {formatDate(statusResult.previsao_desejada)}</span>
-                  <span>Previsao de entrega: {formatDate(statusResult.previsao_entrega)}</span>
+                  <span>Previsão desejada: {formatDate(statusResult.previsao_desejada)}</span>
+                  <span>Previsão de entrega: {formatDate(statusResult.previsao_entrega)}</span>
                   <span>Atualizado em: {formatDate(statusResult.updated_at)}</span>
                 </div>
               </div>
@@ -563,14 +563,14 @@ export default function SolicitarPage() {
               <LoadingState />
             ) : solicitantes.length === 0 || centrosCusto.length === 0 ? (
               <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
-                Ainda nao ha solicitantes ou centros de custo ativos cadastrados. Entre em contato com o administrativo.
+                Ainda não há solicitantes ou centros de custo ativos cadastrados. Entre em contato com o administrativo.
               </div>
             ) : (
               <SolicitacaoForm
                 form={form}
                 setForm={setForm}
                 onSubmit={handleSubmit}
-                submitLabel="Enviar solicitacao"
+                submitLabel="Enviar solicitação"
                 isSubmitting={isSubmitting}
                 mode="public"
                 showSections

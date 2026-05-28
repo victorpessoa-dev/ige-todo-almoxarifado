@@ -1,6 +1,6 @@
 # IGE - Tarefas, Lembretes e Almoxarifado
 
-Sistema interno em Next.js para organizar tarefas, lembretes, calendario, inventario, contagem de estoque por imagem e analise de giro de produtos.
+Sistema interno em Next.js para organizar tarefas, lembretes, calendario, inventario, contagem de estoque por imagem e análise de giro de produtos.
 
 ## Tecnologias
 
@@ -21,7 +21,7 @@ npm install
 npm run dev
 ```
 
-Para gerar build de producao:
+Para gerar build de produção:
 
 ```bash
 npm run build
@@ -30,7 +30,7 @@ npm run start
 
 ## Variaveis de ambiente
 
-Crie um arquivo `.env.local` com as credenciais usadas pela aplicacao:
+Crie um arquivo `.env.local` com as credenciais usadas pela aplicação:
 
 ```env
 NEXT_PUBLIC_SUPABASE_URL=
@@ -42,12 +42,12 @@ GEMINI_API_KEY_2=
 MISTRAL_API_KEY=
 ```
 
-Observacoes:
+Observações:
 
 - `NEXT_PUBLIC_SUPABASE_URL` e `NEXT_PUBLIC_SUPABASE_ANON_KEY` conectam o frontend ao Supabase.
-- As chaves de Gemini e Mistral sao usadas apenas no servidor, pelas rotas de analise com IA.
-- `GEMINI_API_KEYS` aceita varias chaves separadas por virgula. Tambem e possivel usar `GEMINI_API_KEY_1` e `GEMINI_API_KEY_2`.
-- Se a IA externa falhar na analise de giro, a rota tenta retornar uma analise local baseada nas movimentacoes.
+- As chaves de Gemini e Mistral são usadas apenas no servidor, pelas rotas de analise com IA.
+- `GEMINI_API_KEYS` aceita várias chaves separadas por virgula. Também é possível usar `GEMINI_API_KEY_1` e `GEMINI_API_KEY_2`.
+- Se a IA externa falhar na análise de giro, a rota tenta retornar uma análise local baseada nas movimentacoes.
 
 ## Estrutura do projeto
 
@@ -63,42 +63,42 @@ app/
     tarefas/page.js               CRUD de tarefas
     lembretes/page.js             CRUD de lembretes
     calendario/page.js            Calendario de tarefas e lembretes
-    inventario/page.js            Gestao de produtos e estoque
+    inventario/page.js            Gestão de produtos e estoque
     solicitacoes/page.js          Controle interno de compras
     contagem/page.js              Contagem de estoque por fotos
-    analise-giro/page.js          Indicadores e analise de giro
+    analise-giro/page.js          Indicadores e análise de giro
     api/
       analyze/route.js            IA para contagem por imagens
       inventory-scan-assist/route.js
                                       IA para auxiliar leitura de produto por imagem
       inventory-turnover-analysis/route.js
-                                      IA e fallback local para analise de giro
+                                      IA e fallback local para análise de giro
 
 components/
-  sidebar.js                      Menu lateral da area admin
+  sidebar.js                      Menu lateral da área admin
   events/                         Formulario compartilhado de tarefas/lembretes
-  inventory/                      Componentes do modulo de inventario
-  solicitacoes/                   Componentes do modulo de compras
+  inventory/                      Componentes do módulo de inventario
+  solicitacoes/                   Componentes do módulo de compras
   contagem/                       Camera, galeria e lista de produtos contados
   slides/                         Slides do painel
   ui/                             Componentes de interface
 
 contexts/
-  auth-context.js                 Login, logout e sessao Supabase
+  auth-context.js                 Login, logout e sessão Supabase
   data-context.js                 Estado global, CRUD e realtime dos dados
 
 lib/
   supabaseClient.js               Cliente Supabase
-  excel.js                        Geracao/download de Excel
+  excel.js                        Geração/download de Excel
   user-messages.js                Mensagens amigaveis de erro
-  server/ai-providers.js          Integracao com Gemini e Mistral
+  server/ai-providers.js          Integração com Gemini e Mistral
 
 constants/
-  task-config.js                  Status, prioridades e ordenacao
+  task-config.js                  Status, prioridades e ordenação
   solicitacoes-config.js          Status e prioridades de compras
 
 database/
-  solicitacoes_compra.sql         SQL das tabelas de compras, trigger de codigo e RLS
+  solicitacoes_compra.sql         SQL das tabelas de compras, trigger de código e RLS
 
 public/
   ige-supergesso.png              Logo usada no login e sidebar
@@ -108,17 +108,17 @@ public/
 
 ### `/`
 
-Redireciona para `/solicitar`, que e a entrada principal publica do sistema.
+Redireciona para `/solicitar`, que é a entrada principal pública do sistema.
 
 ### `/login`
 
-Tela de login do sistema. Usa Supabase Auth com email e senha. Quando o usuario ja esta autenticado, redireciona para `/painel`.
+Tela de login do sistema. Usa Supabase Auth com email e senha. Quando o usuário já está autenticado, redireciona para `/painel`.
 
 ### `/solicitar`
 
-Pagina principal publica para criacao e acompanhamento de solicitacoes de compra sem login.
+Página principal pública para criacao e acompanhamento de solicitações de compra sem login.
 
-A primeira tela mostra uma lista limitada dos produtos solicitados que ja foram aceitos pelo administrativo e seus status de andamento. O formulario de criacao fica em um dialog aberto pelo botao `Fazer pedido`. Tambem ha um botao `Acesso admin` para entrar na area interna.
+A primeira tela mostra uma lista limitada dos produtos solicitados que já foram aceitos pelo administrativo e seus status de andamento. O formulario de criacao fica em um dialog aberto pelo botão `Fazer pedido`. Também há um botão `Acesso admin` para entrar na area interna.
 
 Campos principais:
 
@@ -128,14 +128,14 @@ Campos principais:
 - previsao desejada;
 - centro de custo selecionado em lista;
 - aplicacoes especificas;
-- link de referencia ou imagem;
+- link de referência ou imagem;
 - solicitante selecionado em lista.
 
-A pagina carrega apenas solicitantes e centros de custo ativos. Ao enviar, a solicitacao e criada por RPC segura e retorna um codigo numerico como `000001` para acompanhamento. Tambem existe uma consulta publica por codigo e uma lista publica limitada que mostram apenas dados de andamento.
+A página carrega apenas solicitantes e centros de custo ativos. Ao enviar, a solicitacao é criada por RPC segura e retorna um código numérico como `000001` para acompanhamento. Também existe uma consulta pública por código e uma lista pública limitada que mostram apenas dados de andamento.
 
-A seguranca depende da RLS e das funcoes SQL: usuarios anonimos podem ler apenas os cadastros ativos de `solicitantes_compra` e `centros_custo`, podem criar solicitacoes e podem consultar andamento por codigo via RPC, sem permissao de leitura direta, atualizacao ou exclusao das solicitacoes.
+A segurança depende da RLS e das funções SQL: usuários anônimos podem ler apenas os cadastros ativos de `solicitantes_compra` e `centros_custo`, podem criar solicitações e podem consultar andamento por código via RPC, sem permissão de leitura direta, atualização ou exclusão das solicitações.
 
-A situacao exibida segue a regra operacional usada na planilha: cotacao nao iniciada, cotando, pedido em analise, aguardando pagamento, preparando pedido, disponivel para retirada, sem data de entrega, no prazo, atrasada, para chegar hoje ou entregue e conferido.
+A situação exibida segue a regra operacional usada na planilha: cotação não iniciada, cotando, pedido em análise, aguardando pagamento, preparando pedido, disponível para retirada, sem data de entrega, no prazo, atrasada, para chegar hoje ou entregue e conferido.
 
 ### `/painel`
 
@@ -145,7 +145,7 @@ Painel visual com slides automaticos:
 - lembretes pendentes;
 - calendario;
 - produtos com estoque baixo;
-- solicitacoes de compra urgentes ou atrasadas;
+- solicitações de compra urgentes ou atrasadas;
 - relogio local com indicador de aberto/fechado.
 
 Tambem possui modo tela cheia e navegacao por setas do teclado.
@@ -182,7 +182,7 @@ Segue uma organizacao parecida com tarefas, separando lembretes pendentes e conc
 
 ### `/calendario`
 
-Calendario mensal com FullCalendar. Mostra tarefas e lembretes ainda nao concluidos que possuem data.
+Calendário mensal com FullCalendar. Mostra tarefas e lembretes ainda não concluídos que possuem data.
 
 Funcionalidades:
 
@@ -203,25 +203,25 @@ Funcionalidades:
 - selecionar varios produtos;
 - excluir produtos em lote;
 - dar baixa em lote;
-- registrar entrada e saida de estoque;
-- impedir saida maior que o estoque disponivel;
-- buscar produto por codigo ou codigo de barras;
-- usar scanner/campo de codigo para baixa rapida;
+- registrar entrada e saída de estoque;
+- impedir saída maior que o estoque disponível;
+- buscar produto por código ou código de barras;
+- usar scanner/campo de código para baixa rápida;
 - imprimir etiquetas;
 - exportar CSV;
 - exportar XLSX;
 - importar produtos de arquivo `.csv` ou `.xlsx`;
-- somar estoque ao importar produto com codigo ja existente;
-- gerar lista de compra para produtos abaixo do minimo.
+- somar estoque ao importar produto com código já existente;
+- gerar lista de compra para produtos abaixo do mínimo.
 
 Campos do produto:
 
 - codigo;
 - nome;
-- codigo de barras;
+- código de barras;
 - estoque;
-- minimo;
-- maximo.
+- mínimo;
+- máximo.
 
 ### `/solicitacoes`
 
@@ -230,18 +230,18 @@ Area administrativa autenticada para controle interno das compras.
 Funcionalidades:
 
 - listar solicitacoes em uma tabela;
-- pesquisar por codigo, item, solicitante ou centro de custo;
+- pesquisar por código, item, solicitante ou centro de custo;
 - filtrar por status geral e prioridade;
 - visualizar indicadores de total, abertas, urgentes, atrasadas e valor em aberto;
 - editar dados da solicitacao;
-- atualizar status geral, cotacao, pedido e transporte;
-- informar valor unitario, valor total, previsao de entrega, pedido e nota fiscal;
-- abrir link de referencia ou imagem anexado pelo solicitante;
+- atualizar status geral, cotação, pedido e transporte;
+- informar valor unitário, valor total, previsão de entrega, pedido e nota fiscal;
+- abrir link de referência ou imagem anexado pelo solicitante;
 - cadastrar, editar, ativar/inativar e excluir solicitantes;
 - cadastrar, editar, ativar/inativar e excluir centros de custo;
 - vincular a solicitacao a um produto do inventario;
 - executar acoes rapidas como gerar pedido, marcar entregue, concluir e cancelar;
-- transformar solicitacao vinculada em entrada de estoque.
+- transformar solicitação vinculada em entrada de estoque.
 
 O modulo segue o mesmo padrao do restante do sistema, usando componentes em `components/solicitacoes`, servico em `lib/solicitacoes-service.js` e realtime pelo `DataProvider`.
 
@@ -253,7 +253,7 @@ Funcionalidades:
 
 - abrir camera;
 - adicionar imagens do dispositivo;
-- limitar a ate 3 imagens por analise;
+- limitar a até 3 imagens por analise;
 - enviar imagens para `/api/analyze`;
 - receber produtos e quantidades identificados por IA;
 - consolidar produtos repetidos;
@@ -268,21 +268,21 @@ Pagina de acompanhamento de giro de estoque.
 
 Funcionalidades:
 
-- escolher periodo de analise: 2 semanas, 1 mes, 2 meses, 3 meses, 6 meses, 1 ano ou 2 anos;
+- escolher período de análise: 2 semanas, 1 mes, 2 meses, 3 meses, 6 meses, 1 ano ou 2 anos;
 - ver resumo de produtos avaliados;
 - classificar produtos com giro alto, medio ou baixo;
 - visualizar grafico geral de entradas e saidas;
 - buscar produto por nome ou codigo;
 - paginar lista de produtos;
-- selecionar ate 5 produtos para analise por IA;
-- ver historico individual de entrada, saida, media mensal e dias sem saida;
-- receber sugestoes de minimo, maximo e recomendacoes.
+- selecionar até 5 produtos para análise por IA;
+- ver histórico individual de entrada, saída, média mensal e dias sem saída;
+- receber sugestoes de mínimo, máximo e recomendações.
 
 ## APIs internas
 
 ### `POST /api/analyze`
 
-Recebe ate 3 imagens em base64 e retorna uma lista consolidada de produtos identificados.
+Recebe até 3 imagens em base64 e retorna uma lista consolidada de produtos identificados.
 
 Formato esperado:
 
@@ -304,7 +304,7 @@ Resposta:
 
 ### `POST /api/inventory-scan-assist`
 
-Recebe uma imagem e uma lista de produtos do catalogo. Tenta identificar codigo, nome e produto correspondente.
+Recebe uma imagem e uma lista de produtos do catálogo. Tenta identificar código, nome e produto correspondente.
 
 Resposta:
 
@@ -321,7 +321,7 @@ Resposta:
 
 ### `POST /api/inventory-turnover-analysis`
 
-Recebe dados de giro de ate 5 produtos e retorna resumo e recomendacoes. Caso a IA falhe, gera uma resposta local com base nos dados enviados.
+Recebe dados de giro de ate 5 produtos e retorna resumo e recomendações. Caso a IA falhe, gera uma resposta local com base nos dados enviados.
 
 ## Database
 
@@ -380,7 +380,7 @@ Usa os mesmos valores de `status` e `prioridade` de tarefas.
 
 ### Tabela `produtos`
 
-Usada no inventario, contagem, painel e analise de giro.
+Usada no inventario, contagem, painel e análise de giro.
 
 Campos usados pela aplicacao:
 
@@ -394,11 +394,11 @@ Campos usados pela aplicacao:
 - `max`
 - `created_at`
 
-Regras importantes no codigo:
+Regras importantes no código:
 
 - `cod` e `nome` sao obrigatorios no cadastro;
 - `cod_barra` normalmente recebe o mesmo valor de `cod`;
-- o inventario verifica codigo duplicado antes de criar ou editar;
+- o inventario verifica código duplicado antes de criar ou editar;
 - entradas e saidas atualizam o campo `estoque`;
 - produtos com `estoque <= min` aparecem como estoque baixo.
 
@@ -423,13 +423,13 @@ Valores esperados de `tipo`:
 
 Relacionamento:
 
-- `movimentacoes_estoque.produto_id` referencia `produtos.id`.
+- `movimentacoes_estoque.produto_id` referência `produtos.id`.
 
-A aplicacao consulta movimentacoes com join em `produtos` para exibir nome e codigo do produto relacionado.
+A aplicação consulta movimentações com join em `produtos` para exibir nome e código do produto relacionado.
 
 ### Tabela `solicitacoes_compra`
 
-Usada no formulario publico `/solicitar`, na area admin `/solicitacoes` e no slide de compras do painel.
+Usada no formulário público `/solicitar`, na área admin `/solicitacoes` e no slide de compras do painel.
 
 Campos usados pela aplicacao:
 
@@ -462,9 +462,9 @@ Campos usados pela aplicacao:
 
 Relacionamentos:
 
-- `solicitante_id` referencia `solicitantes_compra.id`;
-- `centro_custo_id` referencia `centros_custo.id`;
-- `produto_id` referencia `produtos.id`.
+- `solicitante_id` referência `solicitantes_compra.id`;
+- `centro_custo_id` referência `centros_custo.id`;
+- `produto_id` referência `produtos.id`.
 
 Mesmo usando IDs, os campos de texto `solicitante` e `centro_custo` continuam salvos na solicitacao para manter historico e facilitar busca.
 
@@ -530,21 +530,21 @@ database/solicitacoes_compra.sql
 
 Politicas criadas:
 
-- `anon` e `authenticated` podem fazer apenas `INSERT` publico;
+- `anon` e `authenticated` podem fazer apenas `INSERT` público;
 - somente `authenticated` pode fazer `SELECT`, `UPDATE` e `DELETE`;
-- usuarios anonimos nao conseguem fazer `SELECT` direto em solicitacoes cadastradas.
+- usuários anônimos nao conseguem fazer `SELECT` direto em solicitações cadastradas.
 
 O arquivo tambem cria:
 
 - trigger para gerar codigos numericos como `000001`;
-- funcao `criar_solicitacao_compra_publica` para criar solicitacao publica e retornar o codigo;
-- funcao `buscar_solicitacao_compra_publica` para consultar andamento por codigo com retorno limitado;
+- função `criar_solicitacao_compra_publica` para criar solicitacao publica e retornar o código;
+- função `buscar_solicitacao_compra_publica` para consultar andamento por código com retorno limitado;
 - funcao `listar_solicitacoes_compra_publica` para listar os ultimos produtos aceitos com dados limitados de status;
-- migracao de valores antigos de status para os novos status de cotacao, pedido e entrega.
+- migração de valores antigos de status para os novos status de cotacao, pedido e entrega.
 
 ### Tabela `solicitantes_compra`
 
-Cadastro administrado em `/solicitacoes`, usado como lista no formulario publico.
+Cadastro administrado em `/solicitacoes`, usado como lista no formulário público.
 
 Campos principais:
 
@@ -559,7 +559,7 @@ Usuarios anonimos podem ler somente registros com `ativo = true`. Usuarios auten
 
 ### Tabela `centros_custo`
 
-Cadastro administrado em `/solicitacoes`, usado como lista no formulario publico.
+Cadastro administrado em `/solicitacoes`, usado como lista no formulário público.
 
 Campos principais:
 
@@ -584,10 +584,10 @@ O `DataProvider` carrega os dados iniciais e assina eventos realtime do Supabase
 - `solicitantes_compra`
 - `centros_custo`
 
-Quando ha insert, update ou delete, o estado da aplicacao e atualizado automaticamente. O app tambem recarrega dados quando a aba volta a ficar visivel ou quando a conexao volta ao modo online.
+Quando há insert, update ou delete, o estado da aplicação é atualizado automaticamente. O app também recarrega dados quando a aba volta a ficar visível ou quando a conexão volta ao modo online.
 
-## Observacoes de desenvolvimento
+## Observações de desenvolvimento
 
 - As rotas dentro de `app/(admin)/api` continuam publicadas como `/api/...`, porque `(admin)` e um route group do Next.js.
 - O projeto possui `package-lock.json` e `pnpm-lock.yaml`; escolha um gerenciador de pacotes para evitar divergencia de lockfile.
-- Alguns textos do codigo estao sem acentuacao ou com caracteres quebrados. O README segue texto sem acentos para manter consistencia com o padrao atual dos arquivos.
+- Alguns textos do código estao sem acentuacao ou com caracteres quebrados. O README segue texto sem acentos para manter consistencia com o padrao atual dos arquivos.

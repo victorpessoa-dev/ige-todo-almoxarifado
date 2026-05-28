@@ -166,7 +166,7 @@ export default function CalendarPage() {
 
       setDialogOpen(false)
     } catch (error) {
-      toast.error(getUserMessage(error, 'Nao foi possivel salvar o evento.'))
+      toast.error(getUserMessage(error, 'Não foi possível salvar o evento.'))
     }
   }
 
@@ -184,7 +184,7 @@ export default function CalendarPage() {
 
       setDialogOpen(false)
     } catch (error) {
-      toast.error(getUserMessage(error, 'Nao foi possivel excluir o evento.'))
+      toast.error(getUserMessage(error, 'Não foi possível excluir o evento.'))
     }
   }
 

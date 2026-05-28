@@ -149,7 +149,7 @@ export default function SolicitacoesPage() {
       await entradaProduto(
         solicitacao.produto_id,
         Number(solicitacao.quantidade || 1),
-        `Entrada da solicitacao ${solicitacao.codigo || solicitacao.id}`
+        `Entrada da solicitação ${solicitacao.codigo || solicitacao.id}`
       )
       await updateSolicitacao(solicitacao.id, {
         status_geral: 'concluida',
@@ -158,7 +158,7 @@ export default function SolicitacoesPage() {
       toast.success('Entrada de estoque gerada com sucesso!')
       setDetailsOpen(false)
     } catch (error) {
-      toast.error(getUserMessage(error, 'Nao foi possivel gerar a entrada.'))
+      toast.error(getUserMessage(error, 'Não foi possível gerar a entrada.'))
     }
   }
 
@@ -174,11 +174,11 @@ export default function SolicitacoesPage() {
       })
       toast.success(
         visivelPublico
-          ? 'Solicitacao visivel no publico.'
-          : 'Solicitacao oculta do publico.'
+          ? 'Solicitação visível no público.'
+          : 'Solicitação oculta do público.'
       )
     } catch (error) {
-      toast.error(getUserMessage(error, 'Nao foi possivel alterar a visibilidade publica.'))
+      toast.error(getUserMessage(error, 'Não foi possível alterar a visibilidade pública.'))
     }
   }
 
@@ -196,10 +196,10 @@ export default function SolicitacoesPage() {
 
     try {
       await addSolicitacao(newPedidoForm)
-      toast.success('Solicitacao criada com sucesso!')
+      toast.success('Solicitação criada com sucesso!')
       handleNewPedidoOpenChange(false)
     } catch (error) {
-      toast.error(getUserMessage(error, 'Nao foi possivel criar a solicitacao.'))
+      toast.error(getUserMessage(error, 'Não foi possível criar a solicitação.'))
     } finally {
       setIsSubmittingNewPedido(false)
     }
@@ -215,7 +215,7 @@ export default function SolicitacoesPage() {
         <div className="space-y-1">
           <h1 className="flex items-center gap-3 text-xl font-bold sm:text-2xl md:text-3xl">
             <ShoppingCart className="h-7 w-7 text-primary" />
-            Solicitacoes de Compra
+            Solicitações de Compra
           </h1>
         </div>
 
@@ -238,7 +238,7 @@ export default function SolicitacoesPage() {
           </Button>
           <Button asChild className="w-full" variant="outline">
             <a href="/solicitar" target="_blank" rel="noreferrer">
-              Abrir formulario publico
+              Abrir formulário público
             </a>
           </Button>
         </div>
@@ -259,7 +259,7 @@ export default function SolicitacoesPage() {
           <CardContent className="flex flex-col items-center justify-center py-12 text-center">
             <ShoppingCart className="mb-4 h-12 w-12 text-primary/50" />
             <p className="text-muted-foreground">
-              Nenhuma solicitacao de compra cadastrada.
+              Nenhuma solicitação de compra cadastrada.
             </p>
           </CardContent>
         </Card>
@@ -293,7 +293,7 @@ export default function SolicitacoesPage() {
             form={newPedidoForm}
             setForm={setNewPedidoForm}
             onSubmit={handleNewPedidoSubmit}
-            submitLabel="Criar solicitacao"
+            submitLabel="Criar solicitação"
             isSubmitting={isSubmittingNewPedido}
             mode="admin"
             showSections

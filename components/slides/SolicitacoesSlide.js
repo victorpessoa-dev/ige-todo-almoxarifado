@@ -31,7 +31,7 @@ function isAtrasada(solicitacao) {
 }
 
 function formatDate(value) {
-  return formatDateBR(value, 'Sem previsao')
+  return formatDateBR(value, 'Sem previsão')
 }
 
 export function SolicitacoesSlide({ solicitacoes, active, onEnd }) {
@@ -73,14 +73,14 @@ export function SolicitacoesSlide({ solicitacoes, active, onEnd }) {
         <div className="mb-4 flex items-center justify-center gap-2 text-center sm:mb-6 sm:gap-3">
           <ShoppingCart className="h-8 w-8 sm:h-10 sm:w-10 text-primary" />
           <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-foreground">
-            Solicitacoes de Compra
+            Solicitações de Compra
             </h2>
         </div>
 
 
       {importantes.length === 0 ? (
         <div className="flex flex-1 items-center justify-center rounded-xl border border-dashed bg-muted/30 text-muted-foreground">
-          Nenhuma solicitacao em aberto.
+          Nenhuma solicitação em aberto.
         </div>
       ) : (
         <div className="min-h-0 flex-1 overflow-hidden rounded-xl border bg-card shadow-sm">
@@ -91,7 +91,7 @@ export function SolicitacoesSlide({ solicitacoes, active, onEnd }) {
                 <TableHead className="h-12 px-4 text-base">Produto</TableHead>
                 <TableHead className="h-12 px-4 text-base">Solicitante</TableHead>
                 <TableHead className="h-12 px-4 text-base">Status</TableHead>
-                <TableHead className="h-12 px-4 text-base">Previsao</TableHead>
+                <TableHead className="h-12 px-4 text-base">Previsão</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>

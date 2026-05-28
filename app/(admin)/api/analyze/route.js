@@ -89,7 +89,7 @@ export async function POST(req) {
     console.error('Erro analyze:', error)
 
     return createUserError(
-      'Nao foi possivel analisar as imagens agora.',
+      'Não foi possível analisar as imagens agora.',
       500
     )
   }

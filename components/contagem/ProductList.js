@@ -25,7 +25,7 @@ export function ProductList({
           <p className="text-center text-muted-foreground">
             Nenhum produto escaneado ainda.
             <br />
-            Use a camera para comecar a contar!
+            Use a câmera para começar a contar!
           </p>
         </CardContent>
       </Card>
@@ -90,7 +90,7 @@ export function ProductList({
                 >
                   {product.estoqueIgual
                     ? 'Estoque fisico confere com o sistema.'
-                    : 'Divergencia encontrada. A contagem fisica sera considerada.'}
+                    : 'Divergência encontrada. A contagem física será considerada.'}
                 </p>
               )}
             </div>

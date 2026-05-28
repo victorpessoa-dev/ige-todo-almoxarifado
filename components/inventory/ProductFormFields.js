@@ -24,7 +24,7 @@ export default function ProductFormFields({
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
       <div>
-        <Label>Codigo</Label>
+        <Label>Código</Label>
         <Input {...register('cod', { required: true })} />
       </div>
 
@@ -34,7 +34,7 @@ export default function ProductFormFields({
       </div>
 
       <div>
-        <Label>Codigo de Barras</Label>
+        <Label>Código de Barras</Label>
         <Input {...register('cod_barra')} readOnly />
       </div>
 

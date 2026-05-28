@@ -71,7 +71,7 @@ function AtivoField({ checked, onChange }) {
       <div>
         <p className="text-sm font-medium">Cadastro ativo</p>
         <p className="text-xs text-muted-foreground">
-          Itens ativos aparecem nas listas publicas.
+          Itens ativos aparecem nas listas públicas.
         </p>
       </div>
       <Switch checked={checked} onCheckedChange={onChange} />
@@ -203,7 +203,7 @@ export function SolicitacaoCadastrosDialog({
       }
       closeFormDialog()
     } catch (error) {
-      toast.error(getUserMessage(error, 'Nao foi possivel salvar o solicitante.'))
+      toast.error(getUserMessage(error, 'Não foi possível salvar o solicitante.'))
     }
   }
 
@@ -220,7 +220,7 @@ export function SolicitacaoCadastrosDialog({
       }
       closeFormDialog()
     } catch (error) {
-      toast.error(getUserMessage(error, 'Nao foi possivel salvar o centro de custo.'))
+      toast.error(getUserMessage(error, 'Não foi possível salvar o centro de custo.'))
     }
   }
 
@@ -242,8 +242,8 @@ export function SolicitacaoCadastrosDialog({
         getUserMessage(
           error,
           type === 'solicitante'
-            ? 'Nao foi possivel excluir o solicitante.'
-            : 'Nao foi possivel excluir o centro de custo.'
+            ? 'Não foi possível excluir o solicitante.'
+            : 'Não foi possível excluir o centro de custo.'
         )
       )
     }
@@ -263,9 +263,9 @@ export function SolicitacaoCadastrosDialog({
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="h-[100dvh] max-h-[100dvh] w-full max-w-none overflow-y-auto rounded-none p-4 sm:h-auto sm:max-h-[calc(100vh-2rem)] sm:w-[95vw] sm:max-w-5xl sm:rounded-lg sm:p-6">
           <DialogHeader>
-            <DialogTitle>Cadastros de solicitacao</DialogTitle>
+            <DialogTitle>Cadastros de solicitação</DialogTitle>
             <DialogDescription>
-              Gerencie os solicitantes e centros de custo usados no formulario publico.
+              Gerencie os solicitantes e centros de custo usados no formulário público.
             </DialogDescription>
           </DialogHeader>
 
@@ -345,7 +345,7 @@ export function SolicitacaoCadastrosDialog({
                         <TableHead>Nome</TableHead>
                         <TableHead>Centro de custo</TableHead>
                         <TableHead>Status</TableHead>
-                        <TableHead className="w-24 text-right">Acoes</TableHead>
+                        <TableHead className="w-24 text-right">Ações</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -449,10 +449,10 @@ export function SolicitacaoCadastrosDialog({
                   <Table className="min-w-[640px]">
                     <TableHeader>
                       <TableRow className="hover:bg-transparent">
-                        <TableHead>Codigo</TableHead>
+                        <TableHead>Código</TableHead>
                         <TableHead>Nome</TableHead>
                         <TableHead>Status</TableHead>
-                        <TableHead className="w-24 text-right">Acoes</TableHead>
+                        <TableHead className="w-24 text-right">Ações</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -510,7 +510,7 @@ export function SolicitacaoCadastrosDialog({
             <DialogDescription>
               {isSolicitanteMode
                 ? 'Informe o nome e o centro de custo padrao do solicitante.'
-                : 'Informe o nome, codigo e status do centro de custo.'}
+                : 'Informe o nome, código e status do centro de custo.'}
             </DialogDescription>
           </DialogHeader>
 
@@ -549,7 +549,7 @@ export function SolicitacaoCadastrosDialog({
                   Cancelar
                 </Button>
                 <Button type="submit">
-                  {editingSolicitante ? 'Salvar alteracoes' : 'Cadastrar'}
+                  {editingSolicitante ? 'Salvar alterações' : 'Cadastrar'}
                 </Button>
               </DialogFooter>
             </form>
@@ -562,7 +562,7 @@ export function SolicitacaoCadastrosDialog({
                   required
                 />
               </Field>
-              <Field label="Codigo">
+              <Field label="Código">
                 <Input
                   value={centroCustoForm.codigo}
                   onChange={(event) => setCentroCustoForm((prev) => ({ ...prev, codigo: event.target.value }))}
@@ -577,7 +577,7 @@ export function SolicitacaoCadastrosDialog({
                   Cancelar
                 </Button>
                 <Button type="submit">
-                  {editingCentroCusto ? 'Salvar alteracoes' : 'Cadastrar'}
+                  {editingCentroCusto ? 'Salvar alterações' : 'Cadastrar'}
                 </Button>
               </DialogFooter>
             </form>
@@ -597,7 +597,7 @@ export function SolicitacaoCadastrosDialog({
               Excluir {deleteTarget?.item?.nome || 'cadastro'}?
             </AlertDialogTitle>
             <AlertDialogDescription>
-              Esta acao remove o cadastro selecionado e nao pode ser desfeita.
+              Esta ação remove o cadastro selecionado e não pode ser desfeita.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

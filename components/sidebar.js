@@ -26,7 +26,7 @@ const menuItems = [
   { href: '/inventario', label: 'Inventario', icon: Package },
   { href: '/solicitacoes', label: 'Solicitacoes', icon: ShoppingCart },
   { href: '/contagem', label: 'Contagem', icon: Camera },
-  { href: '/analise-giro', label: 'Analise de Giro', icon: ChartColumn }
+  { href: '/analise-giro', label: 'Análise de Giro', icon: ChartColumn }
 ]
 
 export function Sidebar({ onNavigate }) {

@@ -6,7 +6,7 @@ export const SOLICITACAO_PRIORIDADE_OPTIONS = [
   },
   {
     value: 'media',
-    label: 'Media',
+    label: 'Média',
     className: 'border-amber-200 bg-amber-50 text-amber-700'
   },
   {
@@ -24,30 +24,30 @@ export const SOLICITACAO_PRIORIDADE_OPTIONS = [
 export const SOLICITACAO_STATUS_GERAL_OPTIONS = [
   { value: 'nova', label: 'Nova', className: 'border-sky-200 bg-sky-50 text-sky-700' },
   { value: 'aceita', label: 'Aceita', className: 'border-yellow-200 bg-yellow-50 text-yellow-700' },
-  { value: 'em_cotacao', label: 'Em cotacao', className: 'border-violet-200 bg-violet-50 text-violet-700' },
-  { value: 'aprovacao', label: 'Em aprovacao', className: 'border-amber-200 bg-amber-50 text-amber-700' },
+  { value: 'em_cotacao', label: 'Em cotação', className: 'border-violet-200 bg-violet-50 text-violet-700' },
+  { value: 'aprovacao', label: 'Em aprovação', className: 'border-amber-200 bg-amber-50 text-amber-700' },
   { value: 'preparando_pedido', label: 'Preparando pedido', className: 'border-blue-200 bg-blue-50 text-blue-700' },
   { value: 'em_transporte', label: 'Em transporte', className: 'border-indigo-200 bg-indigo-50 text-indigo-700' },
   { value: 'entregue', label: 'Entregue', className: 'border-emerald-200 bg-emerald-50 text-emerald-700' },
-  { value: 'concluida', label: 'Concluida', className: 'border-green-200 bg-green-50 text-green-700' },
+  { value: 'concluida', label: 'Concluída', className: 'border-green-200 bg-green-50 text-green-700' },
   { value: 'cancelada', label: 'Cancelada', className: 'border-slate-200 bg-slate-50 text-slate-700' }
 ]
 
 export const SOLICITACAO_STATUS_COTACAO_OPTIONS = [
-  { value: 'nao_iniciado', label: 'Nao iniciado' },
+  { value: 'nao_iniciado', label: 'Não iniciado' },
   { value: 'cotando', label: 'Cotando' },
-  { value: 'cotacao_em_analise', label: 'Cotacao em analise' },
-  { value: 'cotacao_finalizada', label: 'Cotacao finalizada' },
-  { value: 'cotacao_aprovada', label: 'Cotacao aprovada' },
+  { value: 'cotacao_em_analise', label: 'Cotação em análise' },
+  { value: 'cotacao_finalizada', label: 'Cotação finalizada' },
+  { value: 'cotacao_aprovada', label: 'Cotação aprovada' },
   { value: 'adiada', label: 'Adiada' },
   { value: 'cancelada', label: 'Cancelada' },
   { value: 'outra', label: 'Outra' }
 ]
 
 export const SOLICITACAO_STATUS_PEDIDO_OPTIONS = [
-  { value: 'nao_digitado', label: 'Nao digitado' },
+  { value: 'nao_digitado', label: 'Não digitado' },
   { value: 'pedido_digitado', label: 'Pedido digitado' },
-  { value: 'pedido_em_analise', label: 'Pedido em analise' },
+  { value: 'pedido_em_analise', label: 'Pedido em análise' },
   { value: 'pedido_encerrado', label: 'Pedido encerrado' },
   { value: 'pedido_aprovado', label: 'Pedido aprovado' },
   { value: 'pedido_adiado', label: 'Pedido adiado' },
@@ -57,8 +57,8 @@ export const SOLICITACAO_STATUS_PEDIDO_OPTIONS = [
 ]
 
 export const SOLICITACAO_STATUS_TRANSPORTE_OPTIONS = [
-  { value: 'producao_separacao', label: 'Producao / separacao' },
-  { value: 'disponivel_retirada', label: 'Disponivel para retirada' },
+  { value: 'producao_separacao', label: 'Produção / separação' },
+  { value: 'disponivel_retirada', label: 'Disponível para retirada' },
   { value: 'transporte', label: 'Transporte' },
   { value: 'entregue', label: 'Entregue' },
   { value: 'entrega_atrasada', label: 'Entrega atrasada' },
@@ -98,14 +98,14 @@ export function getSolicitacaoSituacao(solicitacao = {}) {
 
   if (cotacao === 'cotando') {
     return {
-      label: 'COTACAO',
+      label: 'COTAÇÃO',
       className: 'border-violet-200 bg-violet-50 text-violet-800'
     }
   }
 
   if (cotacao === 'nao_iniciado') {
     return {
-      label: 'COTACAO NAO INICIADA!',
+      label: 'COTAÇÃO NÃO INICIADA!',
       className: 'border-sky-200 bg-sky-50 text-sky-800'
     }
   }
@@ -140,7 +140,7 @@ export function getSolicitacaoSituacao(solicitacao = {}) {
 
   if (entrega === 'disponivel_retirada') {
     return {
-      label: 'DISPONIVEL PARA RETIRADA',
+      label: 'DISPONÍVEL PARA RETIRADA',
       className: 'border-emerald-200 bg-emerald-50 text-emerald-800'
     }
   }

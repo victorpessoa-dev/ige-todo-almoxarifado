@@ -38,7 +38,7 @@ export function AuthProvider({ children }) {
         if (error) {
           console.error('Erro ao obter sessao:', error)
           if (!cancelled && isMounted.current) {
-            setAuthError('Nao foi possivel validar seu acesso agora.')
+            setAuthError('Não foi possível validar seu acesso agora.')
           }
           return
         }
@@ -49,7 +49,7 @@ export function AuthProvider({ children }) {
       } catch (error) {
         console.error('Erro inesperado ao inicializar sessao:', error)
         if (!cancelled && isMounted.current) {
-          setAuthError('Nao foi possivel validar seu acesso agora.')
+          setAuthError('Não foi possível validar seu acesso agora.')
         }
       } finally {
         if (!cancelled && isMounted.current) {
@@ -99,7 +99,7 @@ export function AuthProvider({ children }) {
 
         const errorMessage = getUserMessage(
           error,
-          'Nao foi possivel entrar agora. Tente novamente.'
+          'Não foi possível entrar agora. Tente novamente.'
         )
 
         setAuthError(errorMessage)
@@ -112,13 +112,13 @@ export function AuthProvider({ children }) {
 
       return {
         success: false,
-        error: 'Nao foi possivel entrar agora. Tente novamente.'
+        error: 'Não foi possível entrar agora. Tente novamente.'
       }
     } catch (error) {
       console.error('Erro inesperado no login:', error)
       const errorMessage = getUserMessage(
         error,
-        'Nao foi possivel entrar agora. Tente novamente.'
+        'Não foi possível entrar agora. Tente novamente.'
       )
       setAuthError(errorMessage)
       return { success: false, error: errorMessage }
@@ -132,7 +132,7 @@ export function AuthProvider({ children }) {
       if (error) {
         console.error('Erro ao fazer logout:', error)
         setUser(null)
-        return { success: false, error: 'Nao foi possivel sair agora.' }
+        return { success: false, error: 'Não foi possível sair agora.' }
       }
 
       setUser(null)
@@ -142,7 +142,7 @@ export function AuthProvider({ children }) {
       console.error('Erro inesperado no logout:', error)
       setUser(null)
       setAuthError(null)
-      return { success: false, error: 'Nao foi possivel sair agora.' }
+      return { success: false, error: 'Não foi possível sair agora.' }
     }
   }, [])
 
@@ -157,7 +157,7 @@ export function AuthProvider({ children }) {
         console.error('Erro ao atualizar sessao:', error)
         return {
           success: false,
-          error: 'Nao foi possivel atualizar seu acesso agora.'
+          error: 'Não foi possível atualizar seu acesso agora.'
         }
       }
 
@@ -166,12 +166,12 @@ export function AuthProvider({ children }) {
         return { success: true, user: session.user }
       }
 
-      return { success: false, error: 'Sua sessao nao esta mais disponivel.' }
+      return { success: false, error: 'Sua sessão não está mais disponível.' }
     } catch (error) {
       console.error('Erro inesperado ao atualizar sessao:', error)
       return {
         success: false,
-        error: 'Nao foi possivel atualizar seu acesso agora.'
+        error: 'Não foi possível atualizar seu acesso agora.'
       }
     }
   }, [])

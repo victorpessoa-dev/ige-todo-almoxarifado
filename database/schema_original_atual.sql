@@ -212,7 +212,7 @@ declare
   nova_solicitacao public.solicitacoes_compra%rowtype;
 begin
   if nullif(trim(p_descricao), '') is null then
-    raise exception 'Descricao do item e obrigatoria.';
+    raise exception 'Descrição do item é obrigatória.';
   end if;
 
   if p_quantidade is null or p_quantidade <= 0 then

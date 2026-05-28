@@ -23,7 +23,7 @@ export function SolicitacaoFilters({ filters, setFilters }) {
       <Input
         value={filters.search}
         onChange={(event) => updateFilter('search', event.target.value)}
-        placeholder="Buscar por codigo numerico, item, solicitante ou centro de custo"
+        placeholder="Buscar por código numérico, item, solicitante ou centro de custo"
       />
 
       <Select

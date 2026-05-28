@@ -297,7 +297,7 @@ export function DataProvider({ children }) {
     } catch (err) {
       console.error('Erro ao carregar dados:', err)
       if (isMounted.current) {
-        setError('Nao foi possivel carregar os dados agora.')
+        setError('Não foi possível carregar os dados agora.')
       }
       throw err
     } finally {
@@ -727,7 +727,7 @@ export function DataProvider({ children }) {
   }
 
   async function deleteSolicitacao(id) {
-    if (!id) throw new Error('ID Ã© obrigatÃ³rio')
+    if (!id) throw new Error('ID é obrigatório')
 
     const previousSolicitacoes = solicitacoesCompra
     setSolicitacoesCompra((prev) => removeSorted(prev, id, sortByCreatedAtDesc))

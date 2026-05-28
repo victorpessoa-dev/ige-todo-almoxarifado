@@ -21,7 +21,7 @@ export default function HomePage() {
             Sistema de Compras
           </h1>
           <p className="text-sm text-muted-foreground">
-            Acesse o formulario publico de solicitacoes ou entre na area administrativa.
+            Acesse o formulário público de solicitacoes ou entre na área administrativa.
           </p>
         </div>
 

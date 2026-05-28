@@ -117,7 +117,7 @@ export default function TarefasPage() {
       }
       handleOpenChange(false)
     } catch (error) {
-      toast.error(getUserMessage(error, 'Nao foi possivel salvar a tarefa.'))
+      toast.error(getUserMessage(error, 'Não foi possível salvar a tarefa.'))
     }
   }
 
@@ -126,7 +126,7 @@ export default function TarefasPage() {
       await deleteTarefa(id)
       toast.success('Tarefa removida com sucesso!')
     } catch (error) {
-      toast.error(getUserMessage(error, 'Nao foi possivel remover a tarefa.'))
+      toast.error(getUserMessage(error, 'Não foi possível remover a tarefa.'))
     }
   }
 
@@ -139,7 +139,7 @@ export default function TarefasPage() {
         toast.success('Status atualizado!')
       }
     } catch (error) {
-      toast.error(getUserMessage(error, 'Nao foi possivel atualizar o status.'))
+      toast.error(getUserMessage(error, 'Não foi possível atualizar o status.'))
     }
   }
 
@@ -148,7 +148,7 @@ export default function TarefasPage() {
       await updateTarefa(id, { status: 'concluido' })
       toast.success('Tarefa concluida!')
     } catch (error) {
-      toast.error(getUserMessage(error, 'Nao foi possivel concluir a tarefa.'))
+      toast.error(getUserMessage(error, 'Não foi possível concluir a tarefa.'))
     }
   }
 
@@ -352,7 +352,7 @@ export default function TarefasPage() {
             <Card>
               <CardContent className="flex flex-col items-center justify-center py-8">
                 <p className="text-muted-foreground">Nenhuma tarefa pendente</p>
-                <p className="text-sm text-muted-foreground">Clique em &quot;Nova Tarefa&quot; para comecar</p>
+                <p className="text-sm text-muted-foreground">Clique em &quot;Nova Tarefa&quot; para começar</p>
               </CardContent>
             </Card>
           ) : (

@@ -27,11 +27,11 @@ const MAX_IMAGES = 3
 function getFriendlyAnalyzeError(error) {
   const message = getUserMessage(
     error,
-    'Nao foi possivel analisar as imagens agora. Tente novamente.'
+    'Não foi possível analisar as imagens agora. Tente novamente.'
   )
 
   if (!message) {
-    return 'Nao foi possivel analisar as imagens agora. Tente novamente.'
+    return 'Não foi possível analisar as imagens agora. Tente novamente.'
   }
 
   if (
@@ -39,7 +39,7 @@ function getFriendlyAnalyzeError(error) {
     message.includes('NetworkError') ||
     message.includes('Load failed')
   ) {
-    return 'Falha de conexao ao analisar as imagens. Tente novamente.'
+    return 'Falha de conexão ao analisar as imagens. Tente novamente.'
   }
 
   return message
@@ -330,7 +330,7 @@ export default function ContagemPage() {
           </label>
 
           <div className="rounded-xl border bg-background px-3 py-2 text-sm text-muted-foreground">
-            Ate {MAX_IMAGES} fotos
+            Até {MAX_IMAGES} fotos
           </div>
         </div>
       </div>
@@ -404,7 +404,7 @@ export default function ContagemPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Limpar produtos contados?</AlertDialogTitle>
             <AlertDialogDescription>
-              Esta acao remove todos os produtos da contagem atual.
+              Esta ação remove todos os produtos da contagem atual.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

@@ -129,7 +129,7 @@ export default function ImportExportProdutos() {
 
   const exportLowStockPurchaseList = () => {
     if (lowStockPurchaseItems.length === 0) {
-      toast.info('Nenhum produto abaixo do estoque minimo para comprar.')
+      toast.info('Nenhum produto abaixo do estoque mínimo para comprar.')
       return
     }
 
@@ -179,8 +179,8 @@ export default function ImportExportProdutos() {
       setImportItems(imported)
       setPreviewOpen(true)
     } catch (error) {
-      console.error('Erro ao ler arquivo de importacao:', error)
-      toast.error('Nao foi possivel ler o arquivo informado.')
+      console.error('Erro ao ler arquivo de importação:', error)
+      toast.error('Não foi possível ler o arquivo informado.')
       resetImportState()
     }
   }
@@ -194,7 +194,7 @@ export default function ImportExportProdutos() {
       const nextCode = String(item.code || '').trim()
 
       if (!nextCode) {
-        return 'Informe um codigo para todos os produtos que serao criados.'
+        return 'Informe um código para todos os produtos que serão criados.'
       }
 
       const existingWithCode = produtos.find(
@@ -202,11 +202,11 @@ export default function ImportExportProdutos() {
       )
 
       if (existingWithCode) {
-        return `O codigo ${nextCode} ja existe no produto ${existingWithCode.nome}.`
+        return `O código ${nextCode} já existe no produto ${existingWithCode.nome}.`
       }
 
       if (usedCodes.has(nextCode)) {
-        return `O codigo ${nextCode} foi repetido mais de uma vez na importacao.`
+        return `O código ${nextCode} foi repetido mais de uma vez na importação.`
       }
 
       usedCodes.add(nextCode)
@@ -231,7 +231,7 @@ export default function ImportExportProdutos() {
       } = await supabase.auth.getUser()
 
       if (userError || !user) {
-        throw new Error('Sua sessao expirou. Entre novamente para continuar.')
+        throw new Error('Sua sessão expirou. Entre novamente para continuar.')
       }
 
       for (const item of itemsWithDuplicates) {
@@ -264,8 +264,8 @@ export default function ImportExportProdutos() {
       toast.success('Importacao concluida com sucesso!')
       resetImportState()
     } catch (error) {
-      console.error('Erro ao confirmar importacao:', error)
-      toast.error(getUserMessage(error, 'Nao foi possivel concluir a importacao.'))
+      console.error('Erro ao confirmar importação:', error)
+      toast.error(getUserMessage(error, 'Não foi possível concluir a importação.'))
     } finally {
       setIsImporting(false)
     }
@@ -318,13 +318,13 @@ export default function ImportExportProdutos() {
       >
         <DialogContent className="grid max-h-[calc(100vh-2rem)] w-[95vw] grid-rows-[auto_minmax(0,1fr)] overflow-hidden p-4 sm:max-w-5xl sm:p-6">
           <DialogHeader>
-            <DialogTitle>Confirmar importacao</DialogTitle>
+            <DialogTitle>Confirmar importação</DialogTitle>
           </DialogHeader>
 
           <div className="flex min-h-0 flex-col gap-4">
             <p className="text-sm text-muted-foreground">
-              Revise os produtos lidos antes de salvar no banco. Quando houver codigo duplicado,
-              voce pode somar ao produto existente ou criar um novo com outro codigo.
+              Revise os produtos lidos antes de salvar no banco. Quando houver código duplicado,
+              você pode somar ao produto existente ou criar um novo com outro código.
             </p>
 
             <div className="grid gap-3 sm:grid-cols-3">
@@ -337,7 +337,7 @@ export default function ImportExportProdutos() {
 
               <div className="rounded-xl border border-emerald-300 bg-emerald-50 px-4 py-3">
                 <p className="text-xs uppercase tracking-wide text-emerald-700">
-                  Serao criados
+                  Serão criados
                 </p>
                 <p className="text-2xl font-bold text-emerald-900">
                   {importSummary.create}
@@ -346,7 +346,7 @@ export default function ImportExportProdutos() {
 
               <div className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3">
                 <p className="text-xs uppercase tracking-wide text-amber-700">
-                  Serao somados
+                  Serão somados
                 </p>
                 <p className="text-2xl font-bold text-amber-900">
                   {importSummary.sum}
@@ -372,7 +372,7 @@ export default function ImportExportProdutos() {
                         </p>
                         {item.duplicateProduct ? (
                           <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-900">
-                            Codigo ja existe
+                            Código já existe
                           </span>
                         ) : (
                           <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-900">
@@ -382,15 +382,15 @@ export default function ImportExportProdutos() {
                       </div>
 
                       <div className="grid gap-1 text-sm text-muted-foreground sm:grid-cols-3">
-                        <p>Codigo lido: {item.originalCode}</p>
+                        <p>Código lido: {item.originalCode}</p>
                         <p>Estoque: {item.estoque}</p>
                         <p>Min: {item.min} | Max: {item.max}</p>
                       </div>
 
                       {item.duplicateProduct && (
                         <div className="rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-900">
-                          Ja existe no banco: <strong>{item.duplicateProduct.nome}</strong>
-                          {' '}com codigo <strong>{item.duplicateProduct.cod}</strong> e estoque atual{' '}
+                          Já existe no banco: <strong>{item.duplicateProduct.nome}</strong>
+                          {' '}com código <strong>{item.duplicateProduct.cod}</strong> e estoque atual{' '}
                           <strong>{item.duplicateProduct.estoque}</strong>.
                         </div>
                       )}
@@ -439,7 +439,7 @@ export default function ImportExportProdutos() {
                           {item.action === 'create' && (
                             <div>
                               <label className="mb-1 block text-sm font-medium">
-                                Novo codigo
+                                Novo código
                               </label>
                               <Input
                                 value={item.code}
@@ -448,14 +448,14 @@ export default function ImportExportProdutos() {
                                     code: event.target.value
                                   })
                                 }
-                                placeholder="Informe outro codigo"
+                                placeholder="Informe outro código"
                               />
                             </div>
                           )}
                         </>
                       ) : (
                         <div className="rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-2 text-sm text-emerald-900">
-                          Produto novo. Sera criado no banco com o codigo {item.code}.
+                          Produto novo. Será criado no banco com o código {item.code}.
                         </div>
                       )}
                     </div>
@@ -481,7 +481,7 @@ export default function ImportExportProdutos() {
               >
                 {isImporting
                   ? 'Importando...'
-                  : `Confirmar importacao (${importSummary.create} criar, ${importSummary.sum} somar)`}
+                  : `Confirmar importação (${importSummary.create} criar, ${importSummary.sum} somar)`}
               </Button>
             </div>
           </div>

@@ -20,7 +20,7 @@ export async function POST(req) {
     const produtos = Array.isArray(body?.produtos) ? body.produtos.slice(0, 300) : []
 
     if (!image || typeof image !== 'string' || !image.startsWith('data:image/')) {
-      return createUserError('Envie uma imagem valida.')
+      return createUserError('Envie uma imagem válida.')
     }
 
     const [meta, base64] = image.split(',')
@@ -33,22 +33,22 @@ export async function POST(req) {
           .map((code) => String(code).trim())
           .filter(Boolean)
 
-        return `codigos: ${[...new Set(codes)].join(', ')} | nome: ${p.nome || ''}`
+        return `códigos: ${[...new Set(codes)].join(', ')} | nome: ${p.nome || ''}`
       })
       .join('\n')
 
     const prompt = `
       Analise a imagem do scanner de estoque e tente identificar o codigo ou o nome do produto.
-      A imagem pode conter uma etiqueta pequena, entao leia numeros pequenos com cuidado.
+      A imagem pode conter uma etiqueta pequena, então leia números pequenos com cuidado.
 
       Prioridade:
-      1 - Codigo numerico visivel na etiqueta ou codigo de barras
+      1 - Código numérico visível na etiqueta ou código de barras
       2 - Nome do produto
 
       Regras:
-      - Nao invente codigo.
+      - Não invente código.
       - Se houver duvida, deixe o campo vazio e reduza a confianca.
-      - Use o catalogo apenas para confirmar nomes/codigos proximos.
+      - Use o catálogo apenas para confirmar nomes/códigos próximos.
       - Retorne somente JSON valido.
 
       Responda:
@@ -109,7 +109,7 @@ export async function POST(req) {
     console.error('Erro scanner:', error)
 
     return createUserError(
-      'Nao foi possivel analisar a imagem agora.',
+      'Não foi possível analisar a imagem agora.',
       500
     )
   }

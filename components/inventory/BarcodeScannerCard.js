@@ -11,7 +11,7 @@ import { Slider } from '@/components/ui/slider'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Barcode, Camera, CameraOff, History, Sparkles, Volume2, ZoomIn } from 'lucide-react'
 
-const CAMERA_HELP = 'No celular, permita o acesso a camera para escanear.'
+const CAMERA_HELP = 'No celular, permita o acesso a câmera para escanear.'
 const MAX_HISTORY_ITEMS = 8
 const DEFAULT_CAMERA_ZOOM = 2
 const SCANNER_FRAME_WIDTH = 1280
@@ -256,7 +256,7 @@ export default function BarcodeScannerCard({
         advanced: [{ zoom: nextZoom }]
       })
     } catch (error) {
-      console.warn('Nao foi possivel ajustar o zoom da camera:', error)
+      console.warn('Não foi possível ajustar o zoom da câmera:', error)
     }
   }
 
@@ -312,7 +312,7 @@ export default function BarcodeScannerCard({
         await track.applyConstraints({ advanced })
       }
     } catch (error) {
-      console.warn('Nao foi possivel otimizar foco da camera:', error)
+      console.warn('Não foi possível otimizar foco da câmera:', error)
     }
   }
 
@@ -373,7 +373,7 @@ export default function BarcodeScannerCard({
         key: historyKey,
         code,
         produto,
-        nome: produto?.nome || 'Codigo nao encontrado',
+        nome: produto?.nome || 'Código não encontrado',
         modo: currentMode,
         quantidade: nextQuantity,
         lastScannedAt: timestamp,
@@ -391,7 +391,7 @@ export default function BarcodeScannerCard({
 
   const handleScanResult = (result, error) => {
     if (error && error?.name !== 'NotFoundException') {
-      console.error('Erro durante leitura do codigo:', error)
+      console.error('Erro durante leitura do código:', error)
     }
 
     if (!result) return
@@ -448,7 +448,7 @@ export default function BarcodeScannerCard({
   const startCamera = async () => {
     if (isStartingCamera) return
     if (!isMobileDevice) {
-      setCameraError('A camera do scanner esta disponivel somente no celular.')
+      setCameraError('A câmera do scanner está disponível somente no celular.')
       return
     }
 
@@ -460,7 +460,7 @@ export default function BarcodeScannerCard({
       await new Promise((r) => setTimeout(r, 150))
 
       if (!videoRef.current) {
-        throw new Error('Nao foi possivel preparar a camera agora.')
+        throw new Error('Não foi possível preparar a câmera agora.')
       }
 
       const constraints = {
@@ -487,7 +487,7 @@ export default function BarcodeScannerCard({
       }, 300)
     } catch (err) {
       console.error('Erro ao iniciar camera:', err)
-      setCameraError('Nao foi possivel abrir a camera. Tente novamente.')
+      setCameraError('Não foi possível abrir a câmera. Tente novamente.')
       stopCamera()
     } finally {
       setIsStartingCamera(false)
@@ -513,7 +513,7 @@ export default function BarcodeScannerCard({
       const sourceHeight = video.videoHeight
 
       if (!sourceWidth || !sourceHeight) {
-        setCameraError('A camera ainda esta preparando a imagem. Tente novamente.')
+        setCameraError('A câmera ainda está preparando a imagem. Tente novamente.')
         return
       }
 
@@ -530,7 +530,7 @@ export default function BarcodeScannerCard({
 
       const ctx = canvas.getContext('2d')
       if (!ctx) {
-        setCameraError('Nao foi possivel preparar a ajuda por imagem.')
+        setCameraError('Não foi possível preparar a ajuda por imagem.')
         return
       }
 
@@ -566,7 +566,7 @@ export default function BarcodeScannerCard({
       const data = await response.json()
 
       if (!response.ok) {
-        setCameraError(data?.error || 'Nao foi possivel usar a ajuda por imagem agora.')
+        setCameraError(data?.error || 'Não foi possível usar a ajuda por imagem agora.')
         return
       }
 
@@ -580,10 +580,10 @@ export default function BarcodeScannerCard({
         setProductSearch(data.suggestion.productName)
       }
 
-      setCameraError('A ajuda por imagem nao conseguiu localizar o produto com seguranca.')
+      setCameraError('A ajuda por imagem não conseguiu localizar o produto com segurança.')
     } catch (error) {
       console.error('Erro na ajuda por imagem do scanner:', error)
-      setCameraError('Nao foi possivel usar a ajuda por imagem agora.')
+      setCameraError('Não foi possível usar a ajuda por imagem agora.')
     } finally {
       setIsAiHelping(false)
     }
@@ -595,7 +595,7 @@ export default function BarcodeScannerCard({
         <CardTitle className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-2">
             <Barcode className="h-5 w-5" />
-            Leitor de Codigo
+            Leitor de Código
           </div>
 
           <Button
@@ -658,11 +658,11 @@ export default function BarcodeScannerCard({
 
         <p className="mb-3 text-xs text-muted-foreground">{CAMERA_HELP}</p>
         <p className="mb-3 text-xs text-muted-foreground">
-          Se a etiqueta estiver pequena demais para a camera, busque pelo nome do produto.
+          Se a etiqueta estiver pequena demais para a câmera, busque pelo nome do produto.
         </p>
         {!isMobileDevice && (
           <p className="mb-3 text-xs text-amber-600">
-            A camera fica habilitada apenas no celular. No computador, use a digitacao manual.
+            A câmera fica habilitada apenas no celular. No computador, use a digitação manual.
           </p>
         )}
         {scanMode === 'continuous' && (
@@ -699,11 +699,11 @@ export default function BarcodeScannerCard({
                   </div>
 
                   <p className="absolute top-3 w-full text-center text-xs text-white">
-                    {modo === 'entrada' ? 'Modo entrada' : 'Modo saida'}
+                    {modo === 'entrada' ? 'Modo entrada' : 'Modo saída'}
                   </p>
 
                   <p className="absolute bottom-3 w-full text-center text-xs text-white">
-                    Use a camera traseira e aproxime ate o codigo ficar nitido
+                    Use a câmera traseira e aproxime até o código ficar nítido
                   </p>
                 </>
               )}
@@ -731,12 +731,12 @@ export default function BarcodeScannerCard({
                     setZoomValue(value[0])
                   }}
                   onValueCommit={(value) => applyCameraZoom(value[0])}
-                  aria-label="Zoom da camera"
+                  aria-label="Zoom da câmera"
                 />
 
                 {!isZoomSupported && (
                   <p className="mt-2 text-xs text-muted-foreground">
-                    Este aparelho nao liberou zoom manual para o navegador.
+                    Este aparelho não liberou zoom manual para o navegador.
                   </p>
                 )}
               </div>
@@ -757,7 +757,7 @@ export default function BarcodeScannerCard({
               {isAiHelping ? 'Analisando imagem...' : 'Ajuda por IA'}
             </Button>
             <p className="mt-2 text-xs text-muted-foreground">
-              Use quando a camera nao conseguir ler uma etiqueta pequena. A IA tenta achar o codigo ou o nome do produto na imagem atual.
+              Use quando a câmera não conseguir ler uma etiqueta pequena. A IA tenta achar o código ou o nome do produto na imagem atual.
             </p>
           </div>
         )}
@@ -848,7 +848,7 @@ export default function BarcodeScannerCard({
             </p>
             {scanMode === 'continuous' && (
               <p className="mt-2 text-xs text-muted-foreground">
-                Produto identificado no scan continuo. A camera segue aberta e a quantidade vai sendo somada.
+                Produto identificado no scan contínuo. A câmera segue aberta e a quantidade vai sendo somada.
               </p>
             )}
 
@@ -922,7 +922,7 @@ export default function BarcodeScannerCard({
 
             {scanHistory.length === 0 ? (
               <p className="text-sm text-muted-foreground">
-                As leituras do scan continuo vao aparecer aqui com quantidade acumulada.
+                As leituras do scan contínuo vao aparecer aqui com quantidade acumulada.
               </p>
             ) : (
               <div className="space-y-2">
@@ -934,7 +934,7 @@ export default function BarcodeScannerCard({
                     <div className="min-w-0">
                       <p className="truncate font-medium">{item.nome}</p>
                       <p className="text-xs text-muted-foreground">
-                        Codigo: {item.code} - {item.modo === 'entrada' ? 'Entrada' : 'Saida'} - Qtde:{' '}
+                        Código: {item.code} - {item.modo === 'entrada' ? 'Entrada' : 'Saída'} - Qtde:{' '}
                         {item.quantidade}
                       </p>
                     </div>

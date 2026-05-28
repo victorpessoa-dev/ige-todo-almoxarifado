@@ -192,13 +192,13 @@ export default function ProductTable({
                   className="h-4 w-4 cursor-pointer accent-primary"
                 />
               </TableHead>
-              <SortHeader label="Codigo" columnKey="cod" />
+              <SortHeader label="Código" columnKey="cod" />
               <SortHeader label="Nome" columnKey="nome" />
               <SortHeader label="Estoque" columnKey="estoque" />
               <SortHeader label="Min" columnKey="min" />
               <SortHeader label="Max" columnKey="max" />
               <TableHead>Status</TableHead>
-              <TableHead className="w-14 text-right">Acoes</TableHead>
+              <TableHead className="w-14 text-right">Ações</TableHead>
             </TableRow>
           </TableHeader>
 

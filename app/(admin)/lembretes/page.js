@@ -80,7 +80,7 @@ export default function LembretesPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    if (!form.titulo.trim()) return toast.error('O titulo é obrigatório!')
+    if (!form.titulo.trim()) return toast.error('O título é obrigatório!')
 
     try {
       if (editingLembrete) {
@@ -92,7 +92,7 @@ export default function LembretesPage() {
       }
       handleOpenChange(false)
     } catch (error) {
-      toast.error(getUserMessage(error, 'Nao foi possivel salvar o lembrete.'))
+      toast.error(getUserMessage(error, 'Não foi possível salvar o lembrete.'))
     }
   }
 
@@ -101,7 +101,7 @@ export default function LembretesPage() {
       await deleteLembrete(id)
       toast.success('Lembrete removido com sucesso!')
     } catch (error) {
-      toast.error(getUserMessage(error, 'Nao foi possivel remover o lembrete.'))
+      toast.error(getUserMessage(error, 'Não foi possível remover o lembrete.'))
     }
   }
 
@@ -110,7 +110,7 @@ export default function LembretesPage() {
       await updateLembrete(id, { status })
       toast.success('Status atualizado!')
     } catch (error) {
-      toast.error(getUserMessage(error, 'Nao foi possivel atualizar o status.'))
+      toast.error(getUserMessage(error, 'Não foi possível atualizar o status.'))
     }
   }
 
@@ -119,7 +119,7 @@ export default function LembretesPage() {
       await updateLembrete(id, { status: 'concluido' })
       toast.success('Lembrete concluído!')
     } catch (error) {
-      toast.error(getUserMessage(error, 'Nao foi possivel concluir o lembrete.'))
+      toast.error(getUserMessage(error, 'Não foi possível concluir o lembrete.'))
     }
   }
 
