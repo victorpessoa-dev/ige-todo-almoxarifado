@@ -7,7 +7,8 @@ export default function SortableTableHead({
   columnKey,
   sortConfig,
   onSort,
-  className
+  className,
+  children
 }) {
   const isActive = sortConfig.key === columnKey
 
@@ -29,6 +30,7 @@ export default function SortableTableHead({
           <ArrowUpDown className="h-3.5 w-3.5" />
         )}
       </button>
+      {children}
     </TableHead>
   )
 }

@@ -21,6 +21,13 @@ import {
   TableRow
 } from '@/components/ui/table'
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from '@/components/ui/select'
+import {
   CheckCheck,
   MoreHorizontal,
   Pencil,
@@ -31,13 +38,36 @@ import {
   TrendingUp
 } from 'lucide-react'
 import TablePagination from '@/components/ui/table-pagination'
+import {
+  ColumnResizeHandle,
+  useResizableColumns
+} from '@/components/ui/resizable-table-columns'
 import SortableTableHead from '@/components/ui/sortable-table-head'
 
 const DEFAULT_PAGE_SIZE = 25
+const ALL_STATUS_VALUE = 'todos'
+const STATUS_ORDER = {
+  baixo: 0,
+  normal: 1,
+  cheio: 2
+}
+
+const PRODUCT_TABLE_COLUMNS = [
+  { key: 'select', width: 48, minWidth: 44 },
+  { key: 'cod', width: 110, minWidth: 80 },
+  { key: 'nome', width: 360, minWidth: 180 },
+  { key: 'categoria', width: 180, minWidth: 120 },
+  { key: 'estoque', width: 90, minWidth: 72 },
+  { key: 'min', width: 70, minWidth: 60 },
+  { key: 'max', width: 70, minWidth: 60 },
+  { key: 'status', width: 110, minWidth: 90 },
+  { key: 'acoes', width: 62, minWidth: 56 }
+]
 
 function getStatus(produto) {
   if (produto.estoque <= produto.min) {
     return {
+      value: 'baixo',
       label: 'Baixo',
       className: 'border-red-200 bg-red-50 text-red-700'
     }
@@ -45,12 +75,14 @@ function getStatus(produto) {
 
   if (produto.estoque >= produto.max) {
     return {
+      value: 'cheio',
       label: 'Cheio',
       className: 'border-amber-200 bg-amber-50 text-amber-700'
     }
   }
 
   return {
+    value: 'normal',
     label: 'Normal',
     className: 'border-emerald-200 bg-emerald-50 text-emerald-700'
   }
@@ -77,6 +109,12 @@ export default function ProductTable({
     key: null,
     direction: 'asc'
   })
+  const [statusFilter, setStatusFilter] = useState(ALL_STATUS_VALUE)
+  const {
+    getColumnStyle,
+    startResize,
+    tableWidth
+  } = useResizableColumns(PRODUCT_TABLE_COLUMNS)
 
   const handleSort = (key) => {
     setSortConfig((prev) => {
@@ -91,24 +129,45 @@ export default function ProductTable({
     })
   }
 
-  const sortedProdutos = useMemo(() => {
-    if (!sortConfig.key) return produtos
+  const filteredProdutos = useMemo(() => {
+    if (statusFilter === ALL_STATUS_VALUE) return produtos
 
-    return [...produtos].sort((a, b) => {
+    return produtos.filter((produto) => getStatus(produto).value === statusFilter)
+  }, [produtos, statusFilter])
+
+  const sortedProdutos = useMemo(() => {
+    if (!sortConfig.key) return filteredProdutos
+
+    return [...filteredProdutos].sort((a, b) => {
+      if (sortConfig.key === 'status') {
+        const aOrder = STATUS_ORDER[getStatus(a).value]
+        const bOrder = STATUS_ORDER[getStatus(b).value]
+
+        return sortConfig.direction === 'asc'
+          ? aOrder - bOrder
+          : bOrder - aOrder
+      }
+
       const aValue = a[sortConfig.key]
       const bValue = b[sortConfig.key]
 
-      if (typeof aValue === 'string') {
+      if (typeof aValue === 'string' || typeof bValue === 'string') {
+        const aText = String(aValue || '')
+        const bText = String(bValue || '')
+
         return sortConfig.direction === 'asc'
-          ? aValue.localeCompare(bValue)
-          : bValue.localeCompare(aValue)
+          ? aText.localeCompare(bText, 'pt-BR')
+          : bText.localeCompare(aText, 'pt-BR')
       }
 
+      const aNumber = Number(aValue || 0)
+      const bNumber = Number(bValue || 0)
+
       return sortConfig.direction === 'asc'
-        ? aValue - bValue
-        : bValue - aValue
+        ? aNumber - bNumber
+        : bNumber - aNumber
     })
-  }, [produtos, sortConfig])
+  }, [filteredProdutos, sortConfig])
 
   const totalPages = Math.max(1, Math.ceil(sortedProdutos.length / pageSize))
   const safeCurrentPage = Math.min(currentPage, totalPages)
@@ -206,9 +265,26 @@ export default function ProductTable({
           </div>
 
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+            <Select
+              value={statusFilter}
+              onValueChange={(value) => {
+                setStatusFilter(value)
+                setCurrentPage(1)
+              }}
+            >
+              <SelectTrigger className="w-full sm:w-[150px]" size="sm" aria-label="Filtrar por status">
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={ALL_STATUS_VALUE}>Todos status</SelectItem>
+                <SelectItem value="baixo">Baixo</SelectItem>
+                <SelectItem value="normal">Normal</SelectItem>
+                <SelectItem value="cheio">Cheio</SelectItem>
+              </SelectContent>
+            </Select>
             {headerActions}
             <Badge variant="outline" className="w-fit rounded-full px-3 py-1 text-xs">
-              {produtos.length} itens
+              {sortedProdutos.length} itens
             </Badge>
           </div>
         </div>
@@ -304,10 +380,15 @@ export default function ProductTable({
         </div>
 
         <div className="inventory-table-scroll hidden w-full overflow-x-auto md:block">
-          <Table className="min-w-[760px]">
+          <Table className="table-fixed" style={{ minWidth: `${tableWidth}px` }}>
+            <colgroup>
+              {PRODUCT_TABLE_COLUMNS.map((column) => (
+                <col key={column.key} style={getColumnStyle(column.key)} />
+              ))}
+            </colgroup>
           <TableHeader>
             <TableRow className="hover:bg-transparent">
-              <TableHead className="w-12">
+              <TableHead className="relative pr-4">
                 <input
                   type="checkbox"
                   checked={allSelected}
@@ -317,44 +398,75 @@ export default function ProductTable({
                   aria-label="Selecionar produtos desta página"
                   className="h-4 w-4 cursor-pointer accent-primary"
                 />
+                <ColumnResizeHandle columnKey="select" onResizeStart={startResize} />
               </TableHead>
               <SortableTableHead
                 label="Código"
                 columnKey="cod"
                 sortConfig={sortConfig}
                 onSort={handleSort}
-                className="whitespace-nowrap"
-              />
+                className="relative pr-4 whitespace-nowrap"
+              >
+                <ColumnResizeHandle columnKey="cod" onResizeStart={startResize} />
+              </SortableTableHead>
               <SortableTableHead
                 label="Nome"
                 columnKey="nome"
                 sortConfig={sortConfig}
                 onSort={handleSort}
-                className="whitespace-nowrap"
-              />
+                className="relative pr-4 whitespace-nowrap"
+              >
+                <ColumnResizeHandle columnKey="nome" onResizeStart={startResize} />
+              </SortableTableHead>
+              <SortableTableHead
+                label="Categoria"
+                columnKey="categoria"
+                sortConfig={sortConfig}
+                onSort={handleSort}
+                className="relative pr-4 whitespace-nowrap"
+              >
+                <ColumnResizeHandle columnKey="categoria" onResizeStart={startResize} />
+              </SortableTableHead>
               <SortableTableHead
                 label="Estoque"
                 columnKey="estoque"
                 sortConfig={sortConfig}
                 onSort={handleSort}
-                className="whitespace-nowrap"
-              />
+                className="relative pr-4 whitespace-nowrap"
+              >
+                <ColumnResizeHandle columnKey="estoque" onResizeStart={startResize} />
+              </SortableTableHead>
               <SortableTableHead
                 label="Min"
                 columnKey="min"
                 sortConfig={sortConfig}
                 onSort={handleSort}
-                className="whitespace-nowrap"
-              />
+                className="relative pr-4 whitespace-nowrap"
+              >
+                <ColumnResizeHandle columnKey="min" onResizeStart={startResize} />
+              </SortableTableHead>
               <SortableTableHead
                 label="Max"
                 columnKey="max"
                 sortConfig={sortConfig}
                 onSort={handleSort}
-                className="whitespace-nowrap"
-              />
-              <TableHead>Status</TableHead>
-              <TableHead className="w-14 text-right">Ações</TableHead>
+                className="relative pr-4 whitespace-nowrap"
+              >
+                <ColumnResizeHandle columnKey="max" onResizeStart={startResize} />
+              </SortableTableHead>
+              <SortableTableHead
+                label="Status"
+                columnKey="status"
+                sortConfig={sortConfig}
+                onSort={handleSort}
+                className="relative pr-4 whitespace-nowrap"
+              >
+                <ColumnResizeHandle columnKey="status" onResizeStart={startResize} />
+              </SortableTableHead>
+              <TableHead className="relative text-right">
+                Ações
+                <ColumnResizeHandle columnKey="acoes" onResizeStart={startResize} />
+              </TableHead>
             </TableRow>
           </TableHeader>
 
@@ -389,12 +501,18 @@ export default function ProductTable({
                     {produto.cod}
                   </TableCell>
 
-                  <TableCell className="max-w-[320px]">
+                  <TableCell>
                     <div className="min-w-0">
                       <p className="truncate font-medium text-foreground">
                         {produto.nome}
                       </p>
                     </div>
+                  </TableCell>
+
+                  <TableCell>
+                    <p className="truncate text-muted-foreground" title={produto.categoria || '-'}>
+                      {produto.categoria || '-'}
+                    </p>
                   </TableCell>
 
                   <TableCell>

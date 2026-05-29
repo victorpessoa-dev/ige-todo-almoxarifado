@@ -1,7 +1,6 @@
 'use client'
 
 import { useMemo, useState } from 'react'
-import { Button } from '@/components/ui/button'
 import {
   Table,
   TableBody,
@@ -10,8 +9,12 @@ import {
   TableHeader,
   TableRow
 } from '@/components/ui/table'
-import { ExternalLink, Eye } from 'lucide-react'
+import { Eye } from 'lucide-react'
 import TablePagination from '@/components/ui/table-pagination'
+import {
+  ColumnResizeHandle,
+  useResizableColumns
+} from '@/components/ui/resizable-table-columns'
 import SortableTableHead from '@/components/ui/sortable-table-head'
 import { SolicitacaoStatusBadge } from './SolicitacaoStatusBadge'
 import {
@@ -23,6 +26,18 @@ import {
 import { formatDateBR, getLocalDateTime } from '@/lib/date-utils'
 
 const DEFAULT_PAGE_SIZE = 25
+
+const SOLICITACAO_TABLE_COLUMNS = [
+  { key: 'codigo', width: 110, minWidth: 80 },
+  { key: 'descricao', width: 380, minWidth: 180 },
+  { key: 'solicitante', width: 140, minWidth: 100 },
+  { key: 'centro_custo', width: 130, minWidth: 90 },
+  { key: 'prioridade', width: 120, minWidth: 100 },
+  { key: 'situacao', width: 120, minWidth: 100 },
+  { key: 'valor_total', width: 110, minWidth: 90 },
+  { key: 'previsao_entrega', width: 120, minWidth: 100 },
+  { key: 'visivel_publico', width: 60, minWidth: 56 }
+]
 
 function formatCurrency(value) {
   const number = Number(value || 0)
@@ -100,6 +115,11 @@ export function SolicitacaoTable({
     key: 'created_at',
     direction: 'desc'
   })
+  const {
+    getColumnStyle,
+    startResize,
+    tableWidth
+  } = useResizableColumns(SOLICITACAO_TABLE_COLUMNS)
 
   const handleTogglePublic = async (solicitacao, checked) => {
     if (!onTogglePublic) return
@@ -250,7 +270,12 @@ export function SolicitacaoTable({
 
       <div className="hidden overflow-hidden rounded-2xl border bg-card shadow-sm md:block">
         <div className="inventory-table-scroll w-full overflow-x-auto px-2">
-          <Table className="min-w-[1040px]">
+          <Table className="table-fixed" style={{ minWidth: `${tableWidth}px` }}>
+            <colgroup>
+              {SOLICITACAO_TABLE_COLUMNS.map((column) => (
+                <col key={column.key} style={getColumnStyle(column.key)} />
+              ))}
+            </colgroup>
             <TableHeader>
               <TableRow className="hover:bg-transparent">
                 <SortableTableHead
@@ -258,47 +283,71 @@ export function SolicitacaoTable({
                   columnKey="codigo"
                   sortConfig={sortConfig}
                   onSort={handleSort}
-                />
+                  className="relative pr-4"
+                >
+                  <ColumnResizeHandle columnKey="codigo" onResizeStart={startResize} />
+                </SortableTableHead>
                 <SortableTableHead
                   label="Item"
                   columnKey="descricao"
                   sortConfig={sortConfig}
                   onSort={handleSort}
-                />
+                  className="relative pr-4"
+                >
+                  <ColumnResizeHandle columnKey="descricao" onResizeStart={startResize} />
+                </SortableTableHead>
                 <SortableTableHead
                   label="Solicitante"
                   columnKey="solicitante"
                   sortConfig={sortConfig}
                   onSort={handleSort}
-                />
+                  className="relative pr-4"
+                >
+                  <ColumnResizeHandle columnKey="solicitante" onResizeStart={startResize} />
+                </SortableTableHead>
                 <SortableTableHead
                   label="Centro"
                   columnKey="centro_custo"
                   sortConfig={sortConfig}
                   onSort={handleSort}
-                />
+                  className="relative pr-4"
+                >
+                  <ColumnResizeHandle columnKey="centro_custo" onResizeStart={startResize} />
+                </SortableTableHead>
                 <SortableTableHead
                   label="Prioridade"
                   columnKey="prioridade"
                   sortConfig={sortConfig}
                   onSort={handleSort}
-                />
-                <TableHead>Situação</TableHead>
-                <TableHead>Ref.</TableHead>
+                  className="relative pr-4"
+                >
+                  <ColumnResizeHandle columnKey="prioridade" onResizeStart={startResize} />
+                </SortableTableHead>
+                <TableHead className="relative pr-4">
+                  Situação
+                  <ColumnResizeHandle columnKey="situacao" onResizeStart={startResize} />
+                </TableHead>
                 <SortableTableHead
                   label="Valor"
                   columnKey="valor_total"
                   sortConfig={sortConfig}
                   onSort={handleSort}
-                />
+                  className="relative pr-4"
+                >
+                  <ColumnResizeHandle columnKey="valor_total" onResizeStart={startResize} />
+                </SortableTableHead>
                 <SortableTableHead
                   label="Previsão"
                   columnKey="previsao_entrega"
                   sortConfig={sortConfig}
                   onSort={handleSort}
-                />
-                <TableHead className="w-16 text-center">
+                  className="relative pr-4"
+                >
+                  <ColumnResizeHandle columnKey="previsao_entrega" onResizeStart={startResize} />
+                </SortableTableHead>
+                <TableHead className="relative text-center">
                   <Eye className="mx-auto h-4 w-4 text-muted-foreground" />
+                  <ColumnResizeHandle columnKey="visivel_publico" onResizeStart={startResize} />
                 </TableHead>
               </TableRow>
             </TableHeader>
@@ -306,7 +355,7 @@ export function SolicitacaoTable({
             <TableBody>
               {sortedSolicitacoes.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={10} className="py-10 text-center text-muted-foreground">
+                  <TableCell colSpan={9} className="py-10 text-center text-muted-foreground">
                     Nenhuma solicitação encontrada.
                   </TableCell>
                 </TableRow>
@@ -326,7 +375,7 @@ export function SolicitacaoTable({
                           <span>{solicitacao.codigo || '-'}</span>
                         </span>
                       </TableCell>
-                      <TableCell className="max-w-[320px]">
+                      <TableCell>
                         <p className="truncate font-medium">{solicitacao.descricao}</p>
                       </TableCell>
                       <TableCell>{solicitacao.solicitante || '-'}</TableCell>
@@ -346,28 +395,6 @@ export function SolicitacaoTable({
                           <span className={`rounded-md border px-2 py-1 text-xs font-semibold ${situacao.className}`}>
                             {situacao.label}
                           </span>
-                        ) : (
-                          '-'
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        {solicitacao.link_referencia ? (
-                          <Button
-                            asChild
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8"
-                            onClick={(event) => event.stopPropagation()}
-                          >
-                            <a
-                              href={solicitacao.link_referencia}
-                              target="_blank"
-                              rel="noreferrer"
-                              aria-label="Abrir referência"
-                            >
-                              <ExternalLink className="h-4 w-4" />
-                            </a>
-                          </Button>
                         ) : (
                           '-'
                         )}
