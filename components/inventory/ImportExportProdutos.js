@@ -15,7 +15,6 @@ import {
   DialogHeader,
   DialogTitle
 } from '@/components/ui/dialog'
-import { BookOpen, Download, Eye } from 'lucide-react'
 
 export const catalogThemeClasses = {
   classico: {
@@ -473,21 +472,8 @@ export default function ImportExportProdutos() {
   const { produtos, loadData } = useData()
   const fileInputRef = useRef(null)
   const [previewOpen, setPreviewOpen] = useState(false)
-  const [catalogOpen, setCatalogOpen] = useState(false)
   const [isImporting, setIsImporting] = useState(false)
   const [importItems, setImportItems] = useState([])
-  const [catalogOptions, setCatalogOptions] = useState({
-    title: 'Catalogo de Produtos IGE',
-    subtitle: 'Lista atualizada de materiais do almoxarifado.',
-    footer: 'IGE Supergesso - Catalogo gerado pelo sistema de inventario.',
-    layout: 'cards',
-    theme: 'classico',
-    showStock: true,
-    showLimits: true,
-    showBarcode: true,
-    showPurchaseSuggestion: true,
-    onlyLowStock: false
-  })
 
   const itemsWithDuplicates = useMemo(() => {
     return importItems.map((item) => {
@@ -537,43 +523,7 @@ export default function ImportExportProdutos() {
       .sort((a, b) => a.produto.localeCompare(b.produto))
   }, [produtos])
 
-  const exportToCSV = () => {
-    const headers = [
-      'cod',
-      'nome',
-      'categoria',
-      'aplicacao',
-      'medidas',
-      'marcas',
-      'estoque',
-      'max',
-      'min',
-      'img_url'
-    ]
-    const rows = produtos.map((produto) => [
-      produto.cod,
-      produto.nome,
-      produto.categoria,
-      produto.aplicacao,
-      produto.medidas,
-      produto.marcas,
-      produto.estoque,
-      produto.max,
-      produto.min,
-      produto.img_url
-    ])
 
-    const csv = [headers, ...rows].map((row) => row.join(';')).join('\n')
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
-    const url = URL.createObjectURL(blob)
-    const link = document.createElement('a')
-
-    link.href = url
-    link.download = 'produtos.csv'
-    link.click()
-
-    URL.revokeObjectURL(url)
-  }
 
   const exportToXLSX = () => {
     const data = produtos.map((produto) => ({
@@ -611,44 +561,6 @@ export default function ImportExportProdutos() {
     XLSX.utils.book_append_sheet(wb, ws, 'Lista de compra')
     XLSX.writeFile(wb, 'produtos-para-comprar.xlsx')
     toast.success('Lista de compra baixada com sucesso!')
-  }
-
-  const updateCatalogOption = (field, value) => {
-    setCatalogOptions((prev) => ({
-      ...prev,
-      [field]: value
-    }))
-  }
-
-  const downloadCatalog = () => {
-    const pdfBytes = makeCatalogPdf(produtos, catalogOptions)
-    const blob = new Blob([pdfBytes], { type: 'application/pdf' })
-    const url = URL.createObjectURL(blob)
-    const link = document.createElement('a')
-    const timestamp = new Date().toISOString().slice(0, 10)
-
-    link.href = url
-    link.download = `catalogo-produtos-${timestamp}.pdf`
-    link.click()
-
-    URL.revokeObjectURL(url)
-    setCatalogOpen(false)
-    toast.success('Catalogo em PDF baixado com sucesso!')
-  }
-
-  const openCatalogOnline = () => {
-    const html = makeCatalogHtml(produtos, catalogOptions)
-    const blob = new Blob([html], { type: 'text/html;charset=utf-8;' })
-    const url = URL.createObjectURL(blob)
-    const opened = window.open(url, '_blank', 'noopener,noreferrer')
-
-    if (!opened) {
-      toast.error('Permita pop-ups para visualizar o catalogo online.')
-      URL.revokeObjectURL(url)
-      return
-    }
-
-    setTimeout(() => URL.revokeObjectURL(url), 60_000)
   }
 
   const updateImportItem = (id, updates) => {
@@ -785,22 +697,13 @@ export default function ImportExportProdutos() {
   return (
     <>
       <div className="flex w-full items-center justify-center sm:w-auto">
-        <div className="grid w-full grid-cols-1 gap-2 sm:w-auto sm:grid-cols-2 lg:grid-cols-5">
-          <Button onClick={exportToCSV} className="w-full sm:w-auto">
-            Exp. CSV
-          </Button>
-
+        <div className="grid w-full grid-cols-1 gap-2 sm:w-auto sm:grid-cols-2 lg:grid-cols-3">
           <Button onClick={exportToXLSX} className="w-full sm:w-auto">
             Exp. XLSX
           </Button>
 
           <Button onClick={exportLowStockPurchaseList} className="w-full sm:w-auto">
             Lista de Compra
-          </Button>
-
-          <Button onClick={() => setCatalogOpen(true)} className="w-full sm:w-auto">
-            <BookOpen className="mr-2 h-4 w-4" />
-            Catalogo
           </Button>
 
           <Button
@@ -819,113 +722,6 @@ export default function ImportExportProdutos() {
           />
         </div>
       </div>
-
-      <Dialog open={catalogOpen} onOpenChange={setCatalogOpen}>
-        <DialogContent className="max-h-[calc(100vh-2rem)] w-[95vw] overflow-y-auto p-4 sm:max-w-3xl sm:p-6">
-          <DialogHeader>
-            <DialogTitle>Baixar catalogo personalizado</DialogTitle>
-          </DialogHeader>
-
-          <div className="grid gap-5">
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="grid gap-2">
-                <label className="text-sm font-medium">Titulo</label>
-                <Input
-                  value={catalogOptions.title}
-                  onChange={(event) => updateCatalogOption('title', event.target.value)}
-                />
-              </div>
-
-              <div className="grid gap-2">
-                <label className="text-sm font-medium">Tema</label>
-                <select
-                  value={catalogOptions.theme}
-                  onChange={(event) => updateCatalogOption('theme', event.target.value)}
-                  className="h-10 rounded-md border bg-background px-3 text-sm"
-                >
-                  {Object.entries(catalogThemeClasses).map(([value, theme]) => (
-                    <option key={value} value={value}>
-                      {theme.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            <div className="grid gap-2">
-              <label className="text-sm font-medium">Subtitulo</label>
-              <Input
-                value={catalogOptions.subtitle}
-                onChange={(event) => updateCatalogOption('subtitle', event.target.value)}
-              />
-            </div>
-
-            <div className="grid gap-2">
-              <label className="text-sm font-medium">Rodape</label>
-              <Input
-                value={catalogOptions.footer}
-                onChange={(event) => updateCatalogOption('footer', event.target.value)}
-              />
-            </div>
-
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="grid gap-2">
-                <label className="text-sm font-medium">Formato</label>
-                <div className="grid grid-cols-2 gap-2">
-                  <Button
-                    type="button"
-                    variant={catalogOptions.layout === 'cards' ? 'default' : 'outline'}
-                    onClick={() => updateCatalogOption('layout', 'cards')}
-                  >
-                    Cards
-                  </Button>
-                  <Button
-                    type="button"
-                    variant={catalogOptions.layout === 'tabela' ? 'default' : 'outline'}
-                    onClick={() => updateCatalogOption('layout', 'tabela')}
-                  >
-                    Tabela
-                  </Button>
-                </div>
-              </div>
-
-              <div className="grid gap-2 rounded-lg border p-3">
-                {[
-                  ['onlyLowStock', 'Somente estoque baixo']
-                ].map(([field, label]) => (
-                  <label key={field} className="flex items-center gap-2 text-sm">
-                    <input
-                      type="checkbox"
-                      checked={catalogOptions[field]}
-                      onChange={(event) => updateCatalogOption(field, event.target.checked)}
-                      className="h-4 w-4 accent-primary"
-                    />
-                    {label}
-                  </label>
-                ))}
-              </div>
-            </div>
-
-            <div className="rounded-lg border bg-muted/30 p-3 text-sm text-muted-foreground">
-              O catalogo online abre uma tabela com imagem tecnica carregada pelo link. O PDF baixa as mesmas informacoes em formato paginado.
-            </div>
-
-            <div className="flex flex-col justify-end gap-2 sm:flex-row">
-              <Button variant="outline" onClick={() => setCatalogOpen(false)}>
-                Cancelar
-              </Button>
-              <Button variant="outline" onClick={openCatalogOnline}>
-                <Eye className="mr-2 h-4 w-4" />
-                Ver online
-              </Button>
-              <Button onClick={downloadCatalog}>
-                <Download className="mr-2 h-4 w-4" />
-                Baixar PDF
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
 
       <Dialog
         open={previewOpen}

@@ -21,9 +21,6 @@ import {
   TableRow
 } from '@/components/ui/table'
 import {
-  ArrowDown,
-  ArrowUp,
-  ArrowUpDown,
   CheckCheck,
   MoreHorizontal,
   Pencil,
@@ -33,6 +30,10 @@ import {
   TrendingDown,
   TrendingUp
 } from 'lucide-react'
+import TablePagination from '@/components/ui/table-pagination'
+import SortableTableHead from '@/components/ui/sortable-table-head'
+
+const DEFAULT_PAGE_SIZE = 25
 
 function getStatus(produto) {
   if (produto.estoque <= produto.min) {
@@ -67,8 +68,11 @@ export default function ProductTable({
   onClearSelection,
   onBulkDelete,
   onBulkSaida,
-  onSolicitarCompra
+  onSolicitarCompra,
+  headerActions
 }) {
+  const [currentPage, setCurrentPage] = useState(1)
+  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE)
   const [sortConfig, setSortConfig] = useState({
     key: null,
     direction: 'asc'
@@ -106,41 +110,94 @@ export default function ProductTable({
     })
   }, [produtos, sortConfig])
 
+  const totalPages = Math.max(1, Math.ceil(sortedProdutos.length / pageSize))
+  const safeCurrentPage = Math.min(currentPage, totalPages)
+  const paginatedProdutos = useMemo(() => {
+    const start = (safeCurrentPage - 1) * pageSize
+
+    return sortedProdutos.slice(start, start + pageSize)
+  }, [pageSize, safeCurrentPage, sortedProdutos])
+
   const allSelected =
-    sortedProdutos.length > 0 &&
-    sortedProdutos.every((produto) => selectedIds.includes(produto.id))
+    paginatedProdutos.length > 0 &&
+    paginatedProdutos.every((produto) => selectedIds.includes(produto.id))
 
   const hasSelection = selectedIds.length > 0
 
-  const SortHeader = ({ label, columnKey }) => {
-    const isActive = sortConfig.key === columnKey
-
-    return (
-      <TableHead className="whitespace-nowrap">
-        <button
-          type="button"
-          onClick={() => handleSort(columnKey)}
-          className="flex items-center gap-1.5 text-muted-foreground transition hover:text-foreground"
+  const renderActionMenu = (produto, canSolicitarCompra) => (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button
+          size="icon"
+          variant="ghost"
+          className="h-8 w-8"
+          onClick={(event) => event.stopPropagation()}
         >
-          <span>{label}</span>
-          {isActive ? (
-            sortConfig.direction === 'asc' ? (
-              <ArrowUp className="h-3.5 w-3.5" />
-            ) : (
-              <ArrowDown className="h-3.5 w-3.5" />
-            )
-          ) : (
-            <ArrowUpDown className="h-3.5 w-3.5" />
-          )}
-        </button>
-      </TableHead>
-    )
-  }
+          <MoreHorizontal className="h-4 w-4" />
+        </Button>
+      </DropdownMenuTrigger>
+
+      <DropdownMenuContent
+        align="end"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <DropdownMenuLabel>{produto.nome}</DropdownMenuLabel>
+        <DropdownMenuSeparator />
+
+        <DropdownMenuItem
+          onClick={() => openMovimentoDialog(produto, 'entrada', 1)}
+        >
+          <TrendingUp className="h-4 w-4" />
+          Entrada
+        </DropdownMenuItem>
+
+        <DropdownMenuItem
+          onClick={() => openMovimentoDialog(produto, 'saida', 1)}
+          disabled={produto.estoque === 0}
+        >
+          <TrendingDown className="h-4 w-4" />
+          Saida
+        </DropdownMenuItem>
+
+        <DropdownMenuItem
+          onClick={() => setPrintDialog({ open: true, produto })}
+        >
+          <Printer className="h-4 w-4" />
+          Imprimir etiqueta
+        </DropdownMenuItem>
+
+        <DropdownMenuSeparator />
+
+        <DropdownMenuItem
+          onClick={() => onSolicitarCompra?.(produto)}
+          disabled={!canSolicitarCompra}
+        >
+          <ShoppingCart className="h-4 w-4" />
+          Solicitar Compra
+        </DropdownMenuItem>
+
+        <DropdownMenuSeparator />
+
+        <DropdownMenuItem onClick={() => handleEdit(produto)}>
+          <Pencil className="h-4 w-4" />
+          Editar
+        </DropdownMenuItem>
+
+        <DropdownMenuItem
+          variant="destructive"
+          onClick={() => deleteProduto(produto)}
+        >
+          <Trash2 className="h-4 w-4" />
+          Excluir
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  )
 
   return (
-    <Card className="rounded-none border-0 bg-transparent shadow-none px-6">
+    <Card className="rounded-none border-0 bg-transparent shadow-none">
       <CardHeader className="gap-4 border-b px-4 py-4 sm:px-6">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <div className="space-y-1">
             <CardTitle>Produtos</CardTitle>
             <p className="text-sm text-muted-foreground">
@@ -148,9 +205,12 @@ export default function ProductTable({
             </p>
           </div>
 
-          <Badge variant="outline" className="w-fit rounded-full px-3 py-1 text-xs">
-            {produtos.length} itens
-          </Badge>
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+            {headerActions}
+            <Badge variant="outline" className="w-fit rounded-full px-3 py-1 text-xs">
+              {produtos.length} itens
+            </Badge>
+          </div>
         </div>
 
         {hasSelection && (
@@ -160,18 +220,18 @@ export default function ProductTable({
               {selectedIds.length} selecionado(s)
             </div>
 
-            <div className="flex flex-wrap gap-2">
-              <Button size="sm" variant="outline" onClick={onBulkSaida}>
+            <div className="grid gap-2 sm:flex sm:flex-wrap">
+              <Button size="sm" variant="outline" className="w-full sm:w-auto" onClick={onBulkSaida}>
                 <TrendingDown className="mr-2 h-4 w-4" />
                 Dar baixa
               </Button>
 
-              <Button size="sm" variant="destructive" onClick={onBulkDelete}>
+              <Button size="sm" variant="destructive" className="w-full sm:w-auto" onClick={onBulkDelete}>
                 <Trash2 className="mr-2 h-4 w-4" />
                 Excluir
               </Button>
 
-              <Button size="sm" variant="ghost" onClick={onClearSelection}>
+              <Button size="sm" variant="ghost" className="w-full sm:w-auto" onClick={onClearSelection}>
                 Limpar
               </Button>
             </div>
@@ -179,31 +239,127 @@ export default function ProductTable({
         )}
       </CardHeader>
 
-      <CardContent className="px-2 py-0">
-        <Table>
+      <CardContent className="px-3 py-3 md:px-2 md:py-0">
+        <div className="grid gap-3 md:hidden">
+          {paginatedProdutos.map((produto) => {
+            const status = getStatus(produto)
+            const isSelected = selectedIds.includes(produto.id)
+            const quantidadeCompra = Number(produto.max || 0) - Number(produto.estoque || 0)
+            const canSolicitarCompra =
+              Number(produto.estoque || 0) <= Number(produto.min || 0) &&
+              quantidadeCompra > 0
+
+            return (
+              <div
+                key={produto.id}
+                role="button"
+                tabIndex={0}
+                data-state={isSelected ? 'selected' : undefined}
+                className="rounded-xl border bg-card p-3 text-left shadow-sm transition hover:border-primary/40 data-[state=selected]:border-primary data-[state=selected]:bg-primary/5"
+                onClick={() => onToggleSelect?.(produto.id)}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault()
+                    onToggleSelect?.(produto.id)
+                  }
+                }}
+              >
+                <div className="flex items-start gap-3">
+                  <input
+                    type="checkbox"
+                    checked={isSelected}
+                    onChange={() => onToggleSelect?.(produto.id)}
+                    onClick={(event) => event.stopPropagation()}
+                    aria-label={`Selecionar ${produto.nome}`}
+                    className="mt-1 h-4 w-4 shrink-0 cursor-pointer accent-primary"
+                  />
+
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <p className="break-words font-semibold">{produto.nome}</p>
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          Cod: {produto.cod || '-'}
+                        </p>
+                      </div>
+                      {renderActionMenu(produto, canSolicitarCompra)}
+                    </div>
+
+                    <div className="mt-3 grid grid-cols-3 gap-2 text-xs text-muted-foreground">
+                      <span>Estoque: <strong className="text-foreground">{produto.estoque}</strong></span>
+                      <span>Min: {produto.min}</span>
+                      <span>Max: {produto.max}</span>
+                    </div>
+
+                    <div className="mt-3">
+                      <Badge variant="outline" className={status.className}>
+                        {status.label}
+                      </Badge>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+
+        <div className="inventory-table-scroll hidden w-full overflow-x-auto md:block">
+          <Table className="min-w-[760px]">
           <TableHeader>
             <TableRow className="hover:bg-transparent">
               <TableHead className="w-12">
                 <input
                   type="checkbox"
                   checked={allSelected}
-                  onChange={(event) => onToggleSelectAll?.(event.target.checked)}
-                  aria-label="Selecionar todos os produtos"
+                  onChange={(event) =>
+                    onToggleSelectAll?.(event.target.checked, paginatedProdutos)
+                  }
+                  aria-label="Selecionar produtos desta página"
                   className="h-4 w-4 cursor-pointer accent-primary"
                 />
               </TableHead>
-              <SortHeader label="Código" columnKey="cod" />
-              <SortHeader label="Nome" columnKey="nome" />
-              <SortHeader label="Estoque" columnKey="estoque" />
-              <SortHeader label="Min" columnKey="min" />
-              <SortHeader label="Max" columnKey="max" />
+              <SortableTableHead
+                label="Código"
+                columnKey="cod"
+                sortConfig={sortConfig}
+                onSort={handleSort}
+                className="whitespace-nowrap"
+              />
+              <SortableTableHead
+                label="Nome"
+                columnKey="nome"
+                sortConfig={sortConfig}
+                onSort={handleSort}
+                className="whitespace-nowrap"
+              />
+              <SortableTableHead
+                label="Estoque"
+                columnKey="estoque"
+                sortConfig={sortConfig}
+                onSort={handleSort}
+                className="whitespace-nowrap"
+              />
+              <SortableTableHead
+                label="Min"
+                columnKey="min"
+                sortConfig={sortConfig}
+                onSort={handleSort}
+                className="whitespace-nowrap"
+              />
+              <SortableTableHead
+                label="Max"
+                columnKey="max"
+                sortConfig={sortConfig}
+                onSort={handleSort}
+                className="whitespace-nowrap"
+              />
               <TableHead>Status</TableHead>
               <TableHead className="w-14 text-right">Ações</TableHead>
             </TableRow>
           </TableHeader>
 
           <TableBody>
-            {sortedProdutos.map((produto) => {
+            {paginatedProdutos.map((produto) => {
               const status = getStatus(produto)
               const isSelected = selectedIds.includes(produto.id)
               const quantidadeCompra = Number(produto.max || 0) - Number(produto.estoque || 0)
@@ -255,80 +411,27 @@ export default function ProductTable({
                   </TableCell>
 
                   <TableCell className="text-right">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          className="h-8 w-8"
-                          onClick={(event) => event.stopPropagation()}
-                        >
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-
-                      <DropdownMenuContent
-                        align="end"
-                        onClick={(event) => event.stopPropagation()}
-                      >
-                        <DropdownMenuLabel>{produto.nome}</DropdownMenuLabel>
-                        <DropdownMenuSeparator />
-
-                        <DropdownMenuItem
-                          onClick={() => openMovimentoDialog(produto, 'entrada', 1)}
-                        >
-                          <TrendingUp className="h-4 w-4" />
-                          Entrada
-                        </DropdownMenuItem>
-
-                        <DropdownMenuItem
-                          onClick={() => openMovimentoDialog(produto, 'saida', 1)}
-                          disabled={produto.estoque === 0}
-                        >
-                          <TrendingDown className="h-4 w-4" />
-                          Saida
-                        </DropdownMenuItem>
-
-                        <DropdownMenuItem
-                          onClick={() => setPrintDialog({ open: true, produto })}
-                        >
-                          <Printer className="h-4 w-4" />
-                          Imprimir etiqueta
-                        </DropdownMenuItem>
-
-                        <DropdownMenuSeparator />
-
-                        <DropdownMenuItem
-                          onClick={() => onSolicitarCompra?.(produto)}
-                          disabled={!canSolicitarCompra}
-                        >
-                          <ShoppingCart className="h-4 w-4" />
-                          Solicitar Compra
-                        </DropdownMenuItem>
-
-                        <DropdownMenuSeparator />
-
-                        <DropdownMenuItem onClick={() => handleEdit(produto)}>
-                          <Pencil className="h-4 w-4" />
-                          Editar
-                        </DropdownMenuItem>
-
-                        <DropdownMenuItem
-                          variant="destructive"
-                          onClick={() => deleteProduto(produto)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                          Excluir
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                    {renderActionMenu(produto, canSolicitarCompra)}
                   </TableCell>
                 </TableRow>
               )
             })}
           </TableBody>
         </Table>
+        </div>
       </CardContent>
+      <TablePagination
+        page={safeCurrentPage}
+        totalPages={totalPages}
+        totalItems={sortedProdutos.length}
+        pageSize={pageSize}
+        itemLabel="itens"
+        onPageChange={setCurrentPage}
+        onPageSizeChange={(value) => {
+          setPageSize(value)
+          setCurrentPage(1)
+        }}
+      />
     </Card>
   )
 }

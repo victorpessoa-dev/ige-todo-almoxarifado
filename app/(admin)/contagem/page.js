@@ -288,7 +288,7 @@ export default function ContagemPage() {
 
   return (
     <div className="mx-auto flex w-full max-w-7xl flex-col gap-4 pb-4 sm:gap-6 sm:pb-6">
-      <div className="flex flex-col gap-3 rounded-2xl border bg-card/70 p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between sm:p-5">
+      <div className="flex flex-col gap-3 rounded-2xl border bg-card/70 p-4 shadow-sm lg:flex-row lg:items-center lg:justify-between sm:p-5">
         <div className="space-y-1">
           <h1 className="flex items-center gap-3 text-xl font-bold sm:text-2xl md:text-3xl">
             <Camera className="h-7 w-7 text-primary" />
@@ -370,10 +370,10 @@ export default function ContagemPage() {
       />
 
       {pendingImages.length > 0 && !isAnalyzing && (
-        <div className="flex gap-2">
+        <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto]">
           <Button
             onClick={analyzeAllImages}
-            className="flex-1 bg-secondary hover:bg-secondary/90"
+            className="w-full bg-secondary hover:bg-secondary/90"
             size="lg"
           >
             <Sparkles className="mr-2 h-5 w-5" />
@@ -384,7 +384,7 @@ export default function ContagemPage() {
             onClick={clearImages}
             variant="outline"
             size="lg"
-            className="border-destructive/30 text-destructive hover:bg-destructive/10"
+            className="w-full border-destructive/30 text-destructive hover:bg-destructive/10 sm:w-auto"
           >
             <Trash2 className="h-5 w-5" />
           </Button>

@@ -189,7 +189,7 @@ export default function CalendarPage() {
   }
 
   return (
-    <div className="flex h-full min-h-0 flex-col gap-4">
+    <div className="flex min-h-full flex-col gap-4 pb-4 sm:pb-6">
       <div className="rounded-2xl border bg-card/70 p-4 shadow-sm sm:p-5">
         <div className="space-y-1">
           <h1 className="flex items-center gap-3 text-xl font-bold sm:text-2xl md:text-3xl">
@@ -199,8 +199,8 @@ export default function CalendarPage() {
         </div>
       </div>
 
-      <div className="min-h-0 flex-1 overflow-hidden rounded-2xl border bg-card p-3 shadow-sm sm:p-4">
-        <div className="h-full min-h-[640px] rounded-xl border bg-background p-2 sm:p-4">
+      <div className="rounded-2xl border bg-card p-3 shadow-sm sm:p-4">
+        <div className="min-h-[620px] rounded-xl border bg-background p-2 sm:min-h-[700px] sm:p-4">
           <FullCalendar
             plugins={[timeGridPlugin, dayGridPlugin, interactionPlugin]}
             initialView="dayGridMonth"
@@ -216,7 +216,7 @@ export default function CalendarPage() {
             events={events}
             dateClick={handleDateClick}
             eventClick={handleEventClick}
-            height="100%"
+            height="auto"
           />
         </div>
       </div>

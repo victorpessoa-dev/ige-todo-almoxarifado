@@ -39,12 +39,12 @@ export function ProductList({
           Estoque ({products.length} produtos, {totalItems} itens)
         </CardTitle>
 
-        <div className="flex gap-2">
+        <div className="grid w-full grid-cols-2 gap-2 sm:w-auto">
           <Button
             variant="outline"
             size="sm"
             onClick={onClear}
-            className="border-primary/30 hover:bg-primary/10"
+            className="w-full border-primary/30 hover:bg-primary/10"
           >
             Limpar
           </Button>
@@ -52,7 +52,7 @@ export function ProductList({
           <Button
             size="sm"
             onClick={onDownload}
-            className="bg-primary hover:bg-primary/90"
+            className="w-full bg-primary hover:bg-primary/90"
           >
             <Download className="mr-2 h-4 w-4" />
             Baixar Excel
@@ -95,7 +95,7 @@ export function ProductList({
               )}
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="grid grid-cols-[auto_minmax(0,1fr)_auto_auto] items-center gap-2 sm:flex">
               <Button
                 variant="outline"
                 size="icon"
@@ -116,7 +116,7 @@ export function ProductList({
                 onChange={(event) =>
                   onUpdateQuantity(index, parseInt(event.target.value, 10) || 0)
                 }
-                className="h-8 w-16 border-primary/30 text-center"
+                className="h-8 w-full min-w-0 border-primary/30 text-center sm:w-16"
                 min={0}
               />
 

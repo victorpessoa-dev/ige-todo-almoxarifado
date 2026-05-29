@@ -10,7 +10,9 @@ import {
   TableHeader,
   TableRow
 } from '@/components/ui/table'
-import { ArrowDown, ArrowUp, ArrowUpDown, ExternalLink, Eye } from 'lucide-react'
+import { ExternalLink, Eye } from 'lucide-react'
+import TablePagination from '@/components/ui/table-pagination'
+import SortableTableHead from '@/components/ui/sortable-table-head'
 import { SolicitacaoStatusBadge } from './SolicitacaoStatusBadge'
 import {
   SOLICITACAO_STATUS_GERAL_OPTIONS,
@@ -19,6 +21,8 @@ import {
   getSolicitacaoSituacao
 } from '@/constants/solicitacoes-config'
 import { formatDateBR, getLocalDateTime } from '@/lib/date-utils'
+
+const DEFAULT_PAGE_SIZE = 25
 
 function formatCurrency(value) {
   const number = Number(value || 0)
@@ -90,6 +94,8 @@ export function SolicitacaoTable({
   onTogglePublic
 }) {
   const [updatingPublicIds, setUpdatingPublicIds] = useState([])
+  const [currentPage, setCurrentPage] = useState(1)
+  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE)
   const [sortConfig, setSortConfig] = useState({
     key: 'created_at',
     direction: 'desc'
@@ -156,28 +162,13 @@ export function SolicitacaoTable({
     })
   }, [solicitacoes, sortConfig])
 
-  const SortHeader = ({ label, columnKey }) => {
-    const isActive = sortConfig.key === columnKey
+  const totalPages = Math.max(1, Math.ceil(sortedSolicitacoes.length / pageSize))
+  const safeCurrentPage = Math.min(currentPage, totalPages)
+  const paginatedSolicitacoes = useMemo(() => {
+    const start = (safeCurrentPage - 1) * pageSize
 
-    return (
-      <TableHead>
-        <button
-          type="button"
-          onClick={() => handleSort(columnKey)}
-          className="flex items-center gap-1.5 text-muted-foreground transition hover:text-foreground"
-        >
-          {label}
-          {isActive ? (
-            sortConfig.direction === 'asc'
-              ? <ArrowUp className="h-3.5 w-3.5" />
-              : <ArrowDown className="h-3.5 w-3.5" />
-          ) : (
-            <ArrowUpDown className="h-3.5 w-3.5" />
-          )}
-        </button>
-      </TableHead>
-    )
-  }
+    return sortedSolicitacoes.slice(start, start + pageSize)
+  }, [pageSize, safeCurrentPage, sortedSolicitacoes])
 
   return (
     <>
@@ -187,7 +178,7 @@ export function SolicitacaoTable({
             Nenhuma solicitação encontrada.
           </div>
         ) : (
-          sortedSolicitacoes.map((solicitacao) => {
+          paginatedSolicitacoes.map((solicitacao) => {
             const situacao = getSolicitacaoSituacao(solicitacao)
 
             return (
@@ -242,21 +233,70 @@ export function SolicitacaoTable({
           })
         )}
       </div>
+      <div className="md:hidden">
+        <TablePagination
+          page={safeCurrentPage}
+          totalPages={totalPages}
+          totalItems={sortedSolicitacoes.length}
+          pageSize={pageSize}
+          itemLabel="solicitações"
+          onPageChange={setCurrentPage}
+          onPageSizeChange={(value) => {
+            setPageSize(value)
+            setCurrentPage(1)
+          }}
+        />
+      </div>
 
       <div className="hidden overflow-hidden rounded-2xl border bg-card shadow-sm md:block">
-        <div className="inventory-table-scroll overflow-x-auto">
-          <Table className="min-w-[1040px] [&_td:first-child]:pl-4 [&_td:last-child]:pr-4 [&_td]:px-3 [&_td]:py-2.5 [&_th:first-child]:pl-4 [&_th:last-child]:pr-4 [&_th]:px-3 [&_th]:py-2">
+        <div className="inventory-table-scroll w-full overflow-x-auto px-2">
+          <Table className="min-w-[1040px]">
             <TableHeader>
               <TableRow className="hover:bg-transparent">
-                <SortHeader label="Código" columnKey="codigo" />
-                <SortHeader label="Item" columnKey="descricao" />
-                <SortHeader label="Solicitante" columnKey="solicitante" />
-                <SortHeader label="Centro" columnKey="centro_custo" />
-                <SortHeader label="Prioridade" columnKey="prioridade" />
+                <SortableTableHead
+                  label="Código"
+                  columnKey="codigo"
+                  sortConfig={sortConfig}
+                  onSort={handleSort}
+                />
+                <SortableTableHead
+                  label="Item"
+                  columnKey="descricao"
+                  sortConfig={sortConfig}
+                  onSort={handleSort}
+                />
+                <SortableTableHead
+                  label="Solicitante"
+                  columnKey="solicitante"
+                  sortConfig={sortConfig}
+                  onSort={handleSort}
+                />
+                <SortableTableHead
+                  label="Centro"
+                  columnKey="centro_custo"
+                  sortConfig={sortConfig}
+                  onSort={handleSort}
+                />
+                <SortableTableHead
+                  label="Prioridade"
+                  columnKey="prioridade"
+                  sortConfig={sortConfig}
+                  onSort={handleSort}
+                />
                 <TableHead>Situação</TableHead>
                 <TableHead>Ref.</TableHead>
-                <SortHeader label="Valor" columnKey="valor_total" />
-                <SortHeader label="Previsão" columnKey="previsao_entrega" />
+                <SortableTableHead
+                  label="Valor"
+                  columnKey="valor_total"
+                  sortConfig={sortConfig}
+                  onSort={handleSort}
+                />
+                <SortableTableHead
+                  label="Previsão"
+                  columnKey="previsao_entrega"
+                  sortConfig={sortConfig}
+                  onSort={handleSort}
+                />
                 <TableHead className="w-16 text-center">
                   <Eye className="mx-auto h-4 w-4 text-muted-foreground" />
                 </TableHead>
@@ -271,7 +311,7 @@ export function SolicitacaoTable({
                   </TableCell>
                 </TableRow>
               ) : (
-                sortedSolicitacoes.map((solicitacao) => {
+                paginatedSolicitacoes.map((solicitacao) => {
                   const situacao = getSolicitacaoSituacao(solicitacao)
 
                   return (
@@ -350,6 +390,18 @@ export function SolicitacaoTable({
             </TableBody>
           </Table>
         </div>
+        <TablePagination
+          page={safeCurrentPage}
+          totalPages={totalPages}
+          totalItems={sortedSolicitacoes.length}
+          pageSize={pageSize}
+          itemLabel="solicitações"
+          onPageChange={setCurrentPage}
+          onPageSizeChange={(value) => {
+            setPageSize(value)
+            setCurrentPage(1)
+          }}
+        />
       </div>
     </>
   )

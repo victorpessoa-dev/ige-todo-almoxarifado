@@ -128,7 +128,7 @@
 
   html,
   body {
-    @apply min-h-screen;
+    @apply min-h-screen w-full overflow-x-hidden;
   }
 
   html {
@@ -206,6 +206,85 @@
 
   .inventory-table-scroll {
     -webkit-overflow-scrolling: touch;
+  }
+
+  .inventory-table-scroll table {
+    table-layout: fixed;
+  }
+
+  .fc .fc-toolbar {
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+
+  .fc {
+    --fc-page-bg-color: var(--card);
+    --fc-neutral-bg-color: var(--muted);
+    --fc-neutral-text-color: var(--muted-foreground);
+    --fc-border-color: var(--border);
+    --fc-today-bg-color: color-mix(in srgb, var(--primary) 12%, transparent);
+    --fc-event-bg-color: var(--primary);
+    --fc-event-border-color: var(--primary);
+    --fc-event-text-color: var(--primary-foreground);
+    color: var(--foreground);
+  }
+
+  .fc .fc-scrollgrid,
+  .fc .fc-daygrid,
+  .fc .fc-timegrid,
+  .fc .fc-view-harness,
+  .fc .fc-daygrid-day,
+  .fc .fc-timegrid-slot,
+  .fc .fc-list {
+    background: var(--card);
+  }
+
+  .fc .fc-col-header-cell,
+  .fc .fc-scrollgrid-section-sticky > * {
+    background: var(--muted);
+  }
+
+  .fc .fc-daygrid-day-number,
+  .fc .fc-col-header-cell-cushion {
+    color: var(--foreground);
+  }
+
+  .fc .fc-day-other {
+    background: color-mix(in srgb, var(--muted) 60%, var(--card));
+  }
+
+  .fc .fc-day-other .fc-daygrid-day-number {
+    color: var(--muted-foreground);
+  }
+
+  .fc .fc-button-primary {
+    border-color: var(--primary);
+    background: var(--primary);
+    color: var(--primary-foreground);
+  }
+
+  .fc .fc-button-primary:hover,
+  .fc .fc-button-primary:focus {
+    border-color: color-mix(in srgb, var(--primary) 84%, black);
+    background: color-mix(in srgb, var(--primary) 84%, black);
+  }
+
+  .fc .fc-toolbar-title {
+    font-size: clamp(1rem, 4vw, 1.5rem);
+    white-space: normal;
+    text-align: center;
+  }
+
+  @media (max-width: 640px) {
+    .fc .fc-toolbar {
+      align-items: stretch;
+      flex-direction: column;
+    }
+
+    .fc .fc-toolbar-chunk {
+      display: flex;
+      justify-content: center;
+    }
   }
 }
 

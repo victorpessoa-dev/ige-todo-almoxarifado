@@ -246,7 +246,7 @@ export default function TarefasPage() {
               </div>
             </div>
 
-            <div className="flex items-center gap-4 w-full sm:w-auto justify-end">
+            <div className="grid w-full grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-2 sm:w-auto">
               {!isConcluido && (
                 <Select
                   value={tarefa.status}
@@ -297,7 +297,7 @@ export default function TarefasPage() {
         <Calendar className="h-4 w-4" />
         <span className="font-medium capitalize">{dateLabel}</span>
       </div>
-      <div className={`flex flex-col gap-3 pl-6 border-l-2 ${isConcluido ? 'border-muted/50' : 'border-muted'} ${!isConcluido ? 'outline-' : ''}`}>
+      <div className={`flex flex-col gap-3 border-l-2 pl-3 sm:pl-6 ${isConcluido ? 'border-muted/50' : 'border-muted'} ${!isConcluido ? 'outline-' : ''}`}>
         {items.map((tarefa) => (
           <TarefaCard key={tarefa.id} tarefa={tarefa} isConcluido={isConcluido} />
         ))}
@@ -307,7 +307,7 @@ export default function TarefasPage() {
 
   return (
     <div className="mx-auto flex w-full max-w-7xl flex-col gap-4 pb-4 sm:gap-6 sm:pb-6">
-      <div className="flex flex-col gap-3 rounded-2xl border bg-card/70 p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between sm:p-5">
+      <div className="flex flex-col gap-3 rounded-2xl border bg-card/70 p-4 shadow-sm lg:flex-row lg:items-center lg:justify-between sm:p-5">
         <div className="space-y-1">
           <h1 className="flex items-center gap-3 text-xl font-bold sm:text-2xl md:text-3xl">
             <ListTodo className="h-7 w-7 text-primary" />

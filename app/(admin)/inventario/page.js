@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { supabase } from '@/lib/supabaseClient'
 import { useData } from '@/contexts/data-context'
 import { Button } from '@/components/ui/button'
@@ -31,6 +31,20 @@ import MovementFormFields from '@/components/inventory/MovementFormFields'
 import PrintDialogContent from '@/components/inventory/PrintDialogContent'
 import PrintEtiqueta from '@/components/inventory/PrintEtiqueta'
 import { getUserMessage } from '@/lib/user-messages'
+
+function normalizeCategory(value) {
+  return String(value || '')
+    .trim()
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+}
+
+function getInventoryCategory(produto) {
+  const categoria = String(produto?.categoria || '').trim()
+
+  return categoria || 'Sem categoria'
+}
 
 export default function InventarioPage() {
   const {
@@ -88,7 +102,31 @@ export default function InventarioPage() {
   const [barcodeInput, setBarcodeInput] = useState('')
   const [barcodeProduct, setBarcodeProduct] = useState(null)
   const [scanQuantity, setScanQuantity] = useState(1)
+  const [selectedCategory, setSelectedCategory] = useState('todas')
   const { register, handleSubmit, reset, setValue, watch } = useForm()
+
+  const categoryOptions = useMemo(() => {
+    const categories = new Map()
+
+    produtos.forEach((produto) => {
+      const categoria = getInventoryCategory(produto)
+      const key = normalizeCategory(categoria)
+
+      if (key && !categories.has(key)) {
+        categories.set(key, categoria)
+      }
+    })
+
+    return Array.from(categories.values()).sort((a, b) => a.localeCompare(b, 'pt-BR'))
+  }, [produtos])
+
+  const filteredProducts = useMemo(() => {
+    if (selectedCategory === 'todas') return produtos
+
+    return produtos.filter(
+      (produto) => normalizeCategory(getInventoryCategory(produto)) === selectedCategory
+    )
+  }, [produtos, selectedCategory])
 
   const selectedProducts = produtos.filter((produto) =>
     selectedProductIds.includes(produto.id)
@@ -316,8 +354,16 @@ export default function InventarioPage() {
     )
   }
 
-  const toggleSelectAllProducts = (checked) => {
-    setSelectedProductIds(checked ? produtos.map((produto) => produto.id) : [])
+  const toggleSelectAllProducts = (checked, visibleProducts = filteredProducts) => {
+    const visibleIds = visibleProducts.map((produto) => produto.id)
+
+    setSelectedProductIds((prev) => {
+      if (!checked) {
+        return prev.filter((id) => !visibleIds.includes(id))
+      }
+
+      return Array.from(new Set([...prev, ...visibleIds]))
+    })
   }
 
   const clearSelection = () => {
@@ -381,7 +427,7 @@ export default function InventarioPage() {
         <PrintEtiqueta produto={printDialog.produto} copies={printCopies} />
       </div>
 
-      <div className="flex flex-col gap-3 rounded-2xl border bg-card/70 p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between sm:p-5">
+      <div className="flex flex-col gap-3 rounded-2xl border bg-card/70 p-4 shadow-sm lg:flex-row lg:items-center lg:justify-between sm:p-5">
         <div className="space-y-1">
           <h1 className="flex items-center gap-3 text-xl font-bold sm:text-2xl md:text-3xl">
             <Package className="h-7 w-7 text-primary" />
@@ -451,33 +497,50 @@ export default function InventarioPage() {
         />
 
         <div className="overflow-hidden rounded-2xl border bg-card shadow-sm">
-          <div className="inventory-table-scroll w-full overflow-x-auto">
-            <div className="min-w-[760px]">
-              <ProductTable
-                produtos={produtos}
-                openMovimentoDialog={openMovimentoDialog}
-                setPrintDialog={setPrintDialog}
-                handleEdit={handleEdit}
-                selectedIds={selectedProductIds}
-                onToggleSelect={toggleProductSelection}
-                onToggleSelectAll={toggleSelectAllProducts}
-                onClearSelection={clearSelection}
-                onBulkDelete={() => {
-                  setBulkActionError('')
-                  setBulkDeleteDialogOpen(true)
+          <ProductTable
+            produtos={filteredProducts}
+            openMovimentoDialog={openMovimentoDialog}
+            setPrintDialog={setPrintDialog}
+            handleEdit={handleEdit}
+            selectedIds={selectedProductIds}
+            onToggleSelect={toggleProductSelection}
+            onToggleSelectAll={toggleSelectAllProducts}
+            onClearSelection={clearSelection}
+            onBulkDelete={() => {
+              setBulkActionError('')
+              setBulkDeleteDialogOpen(true)
+            }}
+            onBulkSaida={() => {
+              setBulkActionError('')
+              setBulkSaidaQuantidade(1)
+              setBulkSaidaDialogOpen(true)
+            }}
+            onSolicitarCompra={openCompraDialog}
+            headerActions={
+              <Select
+                value={selectedCategory}
+                onValueChange={(value) => {
+                  setSelectedCategory(value)
+                  clearSelection()
                 }}
-                onBulkSaida={() => {
-                  setBulkActionError('')
-                  setBulkSaidaQuantidade(1)
-                  setBulkSaidaDialogOpen(true)
-                }}
-                onSolicitarCompra={openCompraDialog}
-                deleteProduto={(produto) =>
-                  setDeleteDialog({ open: true, produto })
-                }
-              />
-            </div>
-          </div>
+              >
+                <SelectTrigger className="w-full sm:w-[240px]">
+                  <SelectValue placeholder="Categoria" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todas">Todas as categorias</SelectItem>
+                  {categoryOptions.map((categoria) => (
+                    <SelectItem key={categoria} value={normalizeCategory(categoria)}>
+                      {categoria}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            }
+            deleteProduto={(produto) =>
+              setDeleteDialog({ open: true, produto })
+            }
+          />
         </div>
       </div>
 

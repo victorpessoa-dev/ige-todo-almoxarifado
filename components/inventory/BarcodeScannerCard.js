@@ -9,10 +9,9 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Slider } from '@/components/ui/slider'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Barcode, Camera, CameraOff, History, Sparkles, Volume2, ZoomIn } from 'lucide-react'
+import { Barcode, Camera, CameraOff, Sparkles, ZoomIn } from 'lucide-react'
 
 const CAMERA_HELP = 'No celular, permita o acesso a câmera para escanear.'
-const MAX_HISTORY_ITEMS = 8
 const DEFAULT_CAMERA_ZOOM = 2
 const SCANNER_FRAME_WIDTH = 1280
 const SCANNER_FRAME_HEIGHT = 720
@@ -120,19 +119,15 @@ export default function BarcodeScannerCard({
   const lastScanRef = useRef(null)
   const scanResetTimeoutRef = useRef(null)
   const audioContextRef = useRef(null)
-  const scanHistoryRef = useRef([])
   const recentScansRef = useRef(new Map())
   const productByCodeRef = useRef(new Map())
-  const scanModeRef = useRef('single')
   const modoRef = useRef('saida')
 
   const [isCameraOpen, setIsCameraOpen] = useState(false)
   const [scanSuccess, setScanSuccess] = useState(false)
   const [modo, setModo] = useState('saida')
-  const [scanMode, setScanMode] = useState('single')
   const [cameraError, setCameraError] = useState('')
   const [isStartingCamera, setIsStartingCamera] = useState(false)
-  const [scanHistory, setScanHistory] = useState([])
   const [isMobileDevice, setIsMobileDevice] = useState(false)
   const [productSearch, setProductSearch] = useState('')
   const [isAiHelping, setIsAiHelping] = useState(false)
@@ -193,16 +188,8 @@ export default function BarcodeScannerCard({
   }, [])
 
   useEffect(() => {
-    scanHistoryRef.current = scanHistory
-  }, [scanHistory])
-
-  useEffect(() => {
     productByCodeRef.current = productByCode
   }, [productByCode])
-
-  useEffect(() => {
-    scanModeRef.current = scanMode
-  }, [scanMode])
 
   useEffect(() => {
     modoRef.current = modo
@@ -361,34 +348,6 @@ export default function BarcodeScannerCard({
     })
   }
 
-  const registerHistoryItem = (produto, code) => {
-    const currentMode = modoRef.current
-    const historyKey = `${currentMode}:${produto?.id || code}`
-    const timestamp = new Date().toISOString()
-    const existingItem = scanHistoryRef.current.find((item) => item.key === historyKey)
-    const nextQuantity = existingItem ? existingItem.quantidade + 1 : 1
-
-    setScanHistory((prev) => {
-      const updatedItem = {
-        key: historyKey,
-        code,
-        produto,
-        nome: produto?.nome || 'Código não encontrado',
-        modo: currentMode,
-        quantidade: nextQuantity,
-        lastScannedAt: timestamp,
-        found: Boolean(produto)
-      }
-
-      return [updatedItem, ...prev.filter((item) => item.key !== historyKey)].slice(
-        0,
-        MAX_HISTORY_ITEMS
-      )
-    })
-
-    return nextQuantity
-  }
-
   const handleScanResult = (result, error) => {
     if (error && error?.name !== 'NotFoundException') {
       console.error('Erro durante leitura do código:', error)
@@ -427,21 +386,15 @@ export default function BarcodeScannerCard({
 
     if (produto) {
       setBarcodeProduct(produto)
-      const nextQuantity = registerHistoryItem(produto, code)
+      setScanQuantity(1)
+      stopCamera()
 
-      if (scanModeRef.current === 'single') {
-        setScanQuantity(1)
-        stopCamera()
-
-        setTimeout(() => {
-          openMovimentoDialog(produto, modoRef.current, 1)
-        }, 150)
-      } else {
-        setScanQuantity(nextQuantity)
-      }
+      setTimeout(() => {
+        openMovimentoDialog(produto, modoRef.current, 1)
+      }, 150)
     } else {
       setBarcodeProduct(null)
-      registerHistoryItem(null, code)
+      stopCamera()
     }
   }
 
@@ -593,7 +546,7 @@ export default function BarcodeScannerCard({
     <Card className="mb-6">
       <CardHeader>
         <CardTitle className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-2">
+          <div className="flex min-w-0 items-center gap-2">
             <Barcode className="h-5 w-5" />
             Leitor de Código
           </div>
@@ -602,6 +555,7 @@ export default function BarcodeScannerCard({
             type="button"
             size="sm"
             variant="outline"
+            className="w-full sm:w-auto"
             onClick={isCameraOpen ? stopCamera : startCamera}
             disabled={isStartingCamera || (!isMobileDevice && !isCameraOpen)}
           >
@@ -621,6 +575,7 @@ export default function BarcodeScannerCard({
             type="button"
             size="sm"
             variant={modo === 'entrada' ? 'default' : 'outline'}
+            className="flex-1 sm:flex-none"
             onClick={() => setModo('entrada')}
           >
             Entrada
@@ -630,29 +585,10 @@ export default function BarcodeScannerCard({
             type="button"
             size="sm"
             variant={modo === 'saida' ? 'destructive' : 'outline'}
+            className="flex-1 sm:flex-none"
             onClick={() => setModo('saida')}
           >
             Saida
-          </Button>
-        </div>
-
-        <div className="mb-3 flex flex-wrap gap-2">
-          <Button
-            type="button"
-            size="sm"
-            variant={scanMode === 'single' ? 'secondary' : 'outline'}
-            onClick={() => setScanMode('single')}
-          >
-            Leitura unica
-          </Button>
-
-          <Button
-            type="button"
-            size="sm"
-            variant={scanMode === 'continuous' ? 'secondary' : 'outline'}
-            onClick={() => setScanMode('continuous')}
-          >
-            Scan continuo
           </Button>
         </div>
 
@@ -665,13 +601,6 @@ export default function BarcodeScannerCard({
             A câmera fica habilitada apenas no celular. No computador, use a digitação manual.
           </p>
         )}
-        {scanMode === 'continuous' && (
-          <p className="mb-3 flex items-center gap-2 text-xs text-muted-foreground">
-            <Volume2 className="h-3.5 w-3.5" />
-            Cada leitura toca um bip e soma no historico em tempo real.
-          </p>
-        )}
-
         {(isCameraOpen || isStartingCamera) && (
           <div className="mb-4 overflow-hidden rounded-xl border bg-black">
             <div className="relative aspect-[4/3] min-h-[280px] w-full sm:min-h-[360px]">
@@ -785,7 +714,7 @@ export default function BarcodeScannerCard({
           <Button
             type="button"
             variant="outline"
-            className="sm:self-end"
+            className="w-full sm:w-auto sm:self-end"
             onClick={() => {
               setBarcodeInput('')
               setBarcodeProduct(null)
@@ -846,11 +775,6 @@ export default function BarcodeScannerCard({
             <p className="text-xs text-muted-foreground">
               Estoque: {barcodeProduct.estoque}
             </p>
-            {scanMode === 'continuous' && (
-              <p className="mt-2 text-xs text-muted-foreground">
-                Produto identificado no scan contínuo. A câmera segue aberta e a quantidade vai sendo somada.
-              </p>
-            )}
 
             <div className="mt-3 flex flex-wrap items-center gap-2">
               <Button
@@ -876,6 +800,7 @@ export default function BarcodeScannerCard({
               <Button
                 type="button"
                 size="sm"
+                className="flex-1 sm:flex-none"
                 onClick={() =>
                   openMovimentoDialog(barcodeProduct, 'entrada', scanQuantity)
                 }
@@ -887,6 +812,7 @@ export default function BarcodeScannerCard({
                 type="button"
                 size="sm"
                 variant="destructive"
+                className="flex-1 sm:flex-none"
                 onClick={() =>
                   openMovimentoDialog(barcodeProduct, 'saida', scanQuantity)
                 }
@@ -897,87 +823,6 @@ export default function BarcodeScannerCard({
           </div>
         )}
 
-        {scanMode === 'continuous' && (
-          <div className="mt-4 rounded-lg border bg-card p-4">
-            <div className="mb-3 flex items-center justify-between gap-3">
-              <div className="flex items-center gap-2">
-                <History className="h-4 w-4" />
-                <p className="font-medium">Historico em tempo real</p>
-              </div>
-
-              <Button
-                type="button"
-                size="sm"
-                variant="ghost"
-                onClick={() => {
-                  setScanHistory([])
-                  setBarcodeProduct(null)
-                  setBarcodeInput('')
-                  setScanQuantity(1)
-                }}
-              >
-                Limpar historico
-              </Button>
-            </div>
-
-            {scanHistory.length === 0 ? (
-              <p className="text-sm text-muted-foreground">
-                As leituras do scan contínuo vao aparecer aqui com quantidade acumulada.
-              </p>
-            ) : (
-              <div className="space-y-2">
-                {scanHistory.map((item) => (
-                  <div
-                    key={item.key}
-                    className="flex flex-col gap-3 rounded-lg border p-3 sm:flex-row sm:items-center sm:justify-between"
-                  >
-                    <div className="min-w-0">
-                      <p className="truncate font-medium">{item.nome}</p>
-                      <p className="text-xs text-muted-foreground">
-                        Código: {item.code} - {item.modo === 'entrada' ? 'Entrada' : 'Saída'} - Qtde:{' '}
-                        {item.quantidade}
-                      </p>
-                    </div>
-
-                    <div className="flex flex-wrap gap-2">
-                      {item.found && (
-                        <>
-                          <Button
-                            type="button"
-                            size="sm"
-                            variant="outline"
-                            onClick={() => {
-                              setBarcodeInput(item.code)
-                              setBarcodeProduct(item.produto)
-                              setScanQuantity(item.quantidade)
-                            }}
-                          >
-                            Selecionar
-                          </Button>
-
-                          <Button
-                            type="button"
-                            size="sm"
-                            variant={item.modo === 'entrada' ? 'default' : 'destructive'}
-                            onClick={() =>
-                              openMovimentoDialog(
-                                item.produto,
-                                item.modo,
-                                item.quantidade
-                              )
-                            }
-                          >
-                            Lancar {item.quantidade}
-                          </Button>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
       </CardContent>
     </Card>
   )

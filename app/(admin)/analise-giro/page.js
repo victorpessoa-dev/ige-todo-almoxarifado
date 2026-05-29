@@ -33,14 +33,7 @@ import {
   DialogHeader,
   DialogTitle
 } from '@/components/ui/dialog'
-import {
-  Pagination,
-  PaginationContent,
-  PaginationItem,
-  PaginationLink,
-  PaginationNext,
-  PaginationPrevious
-} from '@/components/ui/pagination'
+import TablePagination from '@/components/ui/table-pagination'
 
 const PERIOD_OPTIONS = [
   { value: '14', label: '2 semanas', days: 14 },
@@ -53,6 +46,21 @@ const PERIOD_OPTIONS = [
 ]
 
 const MAX_TURNOVER_ANALYSIS_PRODUCTS = 5
+const DEFAULT_PAGE_SIZE = 25
+const ALL_CATEGORIES_VALUE = 'todas'
+
+function normalizeCategory(value) {
+  return String(value || '')
+    .trim()
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+}
+
+function getProductCategory(produto) {
+  const category = String(produto?.categoria || '').trim()
+  return category || 'Sem categoria'
+}
 
 function buildTurnoverStats(produtos, movimentacoes, periodDays) {
   const now = new Date()
@@ -111,6 +119,7 @@ function buildTurnoverStats(produtos, movimentacoes, periodDays) {
         productId: produto.id,
         cod: produto.cod,
         name: produto.nome,
+        category: getProductCategory(produto),
         currentStock: Number(produto.estoque || 0),
         min: Number(produto.min || 0),
         max: Number(produto.max || 0),
@@ -194,16 +203,18 @@ export default function AnaliseGiroPage() {
   const { produtos, movimentacoes } = useData()
   const [turnoverAnalysis, setTurnoverAnalysis] = useState(null)
   const [analysisDialogOpen, setAnalysisDialogOpen] = useState(false)
+  const [productDialogOpen, setProductDialogOpen] = useState(false)
   const [isAnalyzingTurnover, setIsAnalyzingTurnover] = useState(false)
   const [selectedPeriod, setSelectedPeriod] = useState('30')
   const [search, setSearch] = useState('')
+  const [selectedCategory, setSelectedCategory] = useState(ALL_CATEGORIES_VALUE)
   const [currentPage, setCurrentPage] = useState(1)
+  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE)
   const [selectedAnalysisProductIds, setSelectedAnalysisProductIds] = useState([])
 
   const selectedPeriodDays =
     PERIOD_OPTIONS.find((option) => option.value === selectedPeriod)?.days || 30
   const comparisonPeriodDays = Math.min(selectedPeriodDays * 2, 365)
-  const itemsPerPage = 10
 
   const turnoverStats = useMemo(
     () => buildTurnoverStats(produtos, movimentacoes, selectedPeriodDays),
@@ -215,10 +226,7 @@ export default function AnaliseGiroPage() {
   const selectedItem = useMemo(() => {
     if (!turnoverStats.length) return null
 
-    return (
-      turnoverStats.find((item) => item.productId === selectedProductId) ||
-      turnoverStats[0]
-    )
+    return turnoverStats.find((item) => item.productId === selectedProductId) || null
   }, [turnoverStats, selectedProductId])
 
   const selectedAnalysisItems = useMemo(() => {
@@ -233,34 +241,47 @@ export default function AnaliseGiroPage() {
     return turnoverStats.slice(0, MAX_TURNOVER_ANALYSIS_PRODUCTS)
   }, [selectedAnalysisProductIds, turnoverStats])
 
+  const categoryOptions = useMemo(() => {
+    const categories = new Map()
+
+    turnoverStats.forEach((item) => {
+      const normalizedCategory = normalizeCategory(item.category)
+
+      if (!categories.has(normalizedCategory)) {
+        categories.set(normalizedCategory, item.category)
+      }
+    })
+
+    return Array.from(categories.values()).sort((a, b) =>
+      a.localeCompare(b, 'pt-BR')
+    )
+  }, [turnoverStats])
+
   const filteredItems = useMemo(() => {
     const normalizedSearch = search.trim().toLowerCase()
+    const normalizedSelectedCategory = normalizeCategory(selectedCategory)
 
-    if (!normalizedSearch) return turnoverStats
-
-    return turnoverStats.filter(
-      (item) =>
+    return turnoverStats.filter((item) => {
+      const matchesSearch =
+        !normalizedSearch ||
         item.name.toLowerCase().includes(normalizedSearch) ||
         String(item.cod || '').toLowerCase().includes(normalizedSearch)
-    )
-  }, [search, turnoverStats])
 
-  const totalPages = Math.max(1, Math.ceil(filteredItems.length / itemsPerPage))
+      const matchesCategory =
+        selectedCategory === ALL_CATEGORIES_VALUE ||
+        normalizeCategory(item.category) === normalizedSelectedCategory
+
+      return matchesSearch && matchesCategory
+    })
+  }, [search, selectedCategory, turnoverStats])
+
+  const totalPages = Math.max(1, Math.ceil(filteredItems.length / pageSize))
+  const safeCurrentPage = Math.min(currentPage, totalPages)
 
   const paginatedItems = useMemo(() => {
-    const start = (currentPage - 1) * itemsPerPage
-    return filteredItems.slice(start, start + itemsPerPage)
-  }, [currentPage, filteredItems])
-
-  useEffect(() => {
-    setCurrentPage(1)
-  }, [search, selectedPeriod])
-
-  useEffect(() => {
-    if (currentPage > totalPages) {
-      setCurrentPage(totalPages)
-    }
-  }, [currentPage, totalPages])
+    const start = (safeCurrentPage - 1) * pageSize
+    return filteredItems.slice(start, start + pageSize)
+  }, [filteredItems, pageSize, safeCurrentPage])
 
   useEffect(() => {
     setSelectedAnalysisProductIds((prev) =>
@@ -294,22 +315,27 @@ export default function AnaliseGiroPage() {
     })
   }
 
-  const handleAnalyzeTurnover = async () => {
+  const openProductDialog = (productId) => {
+    setSelectedProductId(productId)
+    setProductDialogOpen(true)
+  }
+
+  const handleAnalyzeTurnover = async (productsOverride) => {
     if (turnoverStats.length === 0) {
       toast.error('Ainda não há dados suficientes para analisar o giro.')
       return
     }
 
-    const productsForAnalysis = selectedAnalysisItems.slice(
-      0,
-      MAX_TURNOVER_ANALYSIS_PRODUCTS
-    )
+    const productsForAnalysis = Array.isArray(productsOverride)
+      ? productsOverride
+      : selectedAnalysisItems.slice(0, MAX_TURNOVER_ANALYSIS_PRODUCTS)
 
     if (productsForAnalysis.length === 0) {
       toast.error('Selecione produtos ou mantenha a lista com movimentacoes disponiveis.')
       return
     }
 
+    setProductDialogOpen(false)
     setAnalysisDialogOpen(true)
     setIsAnalyzingTurnover(true)
     setTurnoverAnalysis(null)
@@ -338,7 +364,7 @@ export default function AnaliseGiroPage() {
 
   return (
     <div className="mx-auto flex w-full max-w-7xl flex-col gap-4 pb-4 sm:gap-6 sm:pb-6">
-      <div className="flex flex-col gap-3 rounded-2xl border bg-card/70 p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between sm:p-5">
+      <div className="flex flex-col gap-3 rounded-2xl border bg-card/70 p-4 shadow-sm lg:flex-row lg:items-center lg:justify-between sm:p-5">
         <div className="space-y-1">
           <h1 className="flex items-center gap-3 text-xl font-bold sm:text-2xl md:text-3xl">
             <BarChart3 className="h-7 w-7 text-primary" />
@@ -347,7 +373,13 @@ export default function AnaliseGiroPage() {
         </div>
 
         <div className="flex flex-col gap-2 sm:flex-row">
-          <Select value={selectedPeriod} onValueChange={setSelectedPeriod}>
+          <Select
+            value={selectedPeriod}
+            onValueChange={(value) => {
+              setSelectedPeriod(value)
+              setCurrentPage(1)
+            }}
+          >
             <SelectTrigger className="w-full sm:w-[180px]">
               <SelectValue placeholder="Periodo" />
             </SelectTrigger>
@@ -363,7 +395,7 @@ export default function AnaliseGiroPage() {
           <Button
             variant="outline"
             className="w-full sm:w-auto"
-            onClick={handleAnalyzeTurnover}
+            onClick={() => handleAnalyzeTurnover()}
             disabled={isAnalyzingTurnover || turnoverStats.length === 0}
           >
             <Sparkles className="mr-2 h-4 w-4" />
@@ -439,14 +471,40 @@ export default function AnaliseGiroPage() {
 
           <Card className="overflow-hidden">
             <CardHeader className="pb-2">
-              <CardTitle className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <CardTitle className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                 <span>Produtos</span>
+                <div className="flex w-full flex-col gap-2 sm:flex-row lg:w-auto">
+                  <Select
+                    value={selectedCategory}
+                    onValueChange={(value) => {
+                      setSelectedCategory(value)
+                      setCurrentPage(1)
+                    }}
+                  >
+                    <SelectTrigger className="w-full sm:w-[220px]">
+                      <SelectValue placeholder="Categoria" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value={ALL_CATEGORIES_VALUE}>
+                        Todas as categorias
+                      </SelectItem>
+                      {categoryOptions.map((category) => (
+                        <SelectItem key={category} value={category}>
+                          {category}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 <Input
                   value={search}
-                  onChange={(event) => setSearch(event.target.value)}
+                  onChange={(event) => {
+                    setSearch(event.target.value)
+                    setCurrentPage(1)
+                  }}
                   placeholder="Buscar por nome ou código"
                   className="w-full sm:w-[280px]"
                 />
+                </div>
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
@@ -460,11 +518,11 @@ export default function AnaliseGiroPage() {
                     key={item.productId}
                     role="button"
                     tabIndex={0}
-                    onClick={() => setSelectedProductId(item.productId)}
+                    onClick={() => openProductDialog(item.productId)}
                     onKeyDown={(event) => {
                       if (event.key === 'Enter' || event.key === ' ') {
                         event.preventDefault()
-                        setSelectedProductId(item.productId)
+                        openProductDialog(item.productId)
                       }
                     }}
                     className={`flex w-full flex-col gap-2 rounded-xl border p-3 text-left transition-colors hover:bg-muted/40 ${selectedItem?.productId === item.productId
@@ -487,7 +545,7 @@ export default function AnaliseGiroPage() {
                         <div className="min-w-0">
                           <p className="truncate font-semibold">{item.name}</p>
                           <p className="text-xs text-muted-foreground">
-                            Cod: {item.cod} | Estoque: {item.currentStock} | Min: {item.min} | Max: {item.max}
+                            Cod: {item.cod} | Categoria: {item.category} | Estoque: {item.currentStock} | Min: {item.min} | Max: {item.max}
                           </p>
                         </div>
                       </div>
@@ -511,49 +569,22 @@ export default function AnaliseGiroPage() {
                 ))}
               </div>
 
-              <Pagination>
-                <PaginationContent>
-                  <PaginationItem>
-                    <PaginationPrevious
-                      href="#"
-                      onClick={(event) => {
-                        event.preventDefault()
-                        setCurrentPage((page) => Math.max(1, page - 1))
-                      }}
-                    />
-                  </PaginationItem>
-                  {Array.from({ length: totalPages }).map((_, index) => {
-                    const page = index + 1
-                    return (
-                      <PaginationItem key={page}>
-                        <PaginationLink
-                          href="#"
-                          isActive={page === currentPage}
-                          onClick={(event) => {
-                            event.preventDefault()
-                            setCurrentPage(page)
-                          }}
-                        >
-                          {page}
-                        </PaginationLink>
-                      </PaginationItem>
-                    )
-                  })}
-                  <PaginationItem>
-                    <PaginationNext
-                      href="#"
-                      onClick={(event) => {
-                        event.preventDefault()
-                        setCurrentPage((page) => Math.min(totalPages, page + 1))
-                      }}
-                    />
-                  </PaginationItem>
-                </PaginationContent>
-              </Pagination>
+              <TablePagination
+                page={safeCurrentPage}
+                totalPages={totalPages}
+                totalItems={filteredItems.length}
+                pageSize={pageSize}
+                itemLabel="produtos"
+                onPageChange={setCurrentPage}
+                onPageSizeChange={(value) => {
+                  setPageSize(value)
+                  setCurrentPage(1)
+                }}
+              />
             </CardContent>
           </Card>
 
-          {selectedItem && (
+          {false && selectedItem && (
             <Card className="overflow-hidden">
               <CardHeader className="pb-2">
                 <CardTitle className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
@@ -603,6 +634,70 @@ export default function AnaliseGiroPage() {
           )}
         </div>
       )}
+
+      <Dialog open={productDialogOpen} onOpenChange={setProductDialogOpen}>
+        <DialogContent className="w-[95vw] max-w-5xl p-4 sm:p-6">
+          {selectedItem && (
+            <>
+              <DialogHeader>
+                <DialogTitle className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="min-w-0">
+                    <p className="truncate text-base">{selectedItem.name}</p>
+                    <p className="mt-1 text-xs font-normal text-muted-foreground">
+                      Cod: {selectedItem.cod} | Categoria: {selectedItem.category} | Estoque atual: {selectedItem.currentStock} | Min: {selectedItem.min} | Max: {selectedItem.max}
+                    </p>
+                  </div>
+
+                  <span
+                    className={`w-fit rounded-full px-2 py-1 text-xs font-medium ${selectedItem.turnoverLabel === 'alto'
+                      ? 'bg-emerald-100 text-emerald-900'
+                      : selectedItem.turnoverLabel === 'medio'
+                        ? 'bg-amber-100 text-amber-900'
+                        : 'bg-slate-100 text-slate-900'
+                      }`}
+                  >
+                    Giro {selectedItem.turnoverLabel}
+                  </span>
+                </DialogTitle>
+              </DialogHeader>
+
+              <div className="space-y-4">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full sm:w-auto"
+                  onClick={() => handleAnalyzeTurnover([selectedItem])}
+                  disabled={isAnalyzingTurnover}
+                >
+                  <Sparkles className="mr-2 h-4 w-4" />
+                  Analisar este produto com IA
+                </Button>
+
+                <div>
+                  <p className="mb-2 text-sm font-medium">
+                    Histórico do produto
+                  </p>
+                  <ProductTurnoverChart item={selectedItem} />
+                </div>
+
+                <div className="grid gap-2 rounded-xl border bg-muted/20 p-3 text-sm text-muted-foreground sm:grid-cols-2 lg:grid-cols-3">
+                  <p>Saída {selectedItem.periodDays} dias: {selectedItem.saida30}</p>
+                  <p>Saída {selectedItem.comparisonPeriodDays} dias: {selectedItem.saidaComparacao}</p>
+                  <p>Entrada {selectedItem.periodDays} dias: {selectedItem.entrada30}</p>
+                  <p>Entrada {selectedItem.comparisonPeriodDays} dias: {selectedItem.entradaComparacao}</p>
+                  <p>Média mensal de saída: {selectedItem.avgMonthlyOut}</p>
+                  <p>
+                    Dias sem saída:{' '}
+                    {selectedItem.daysWithoutSales == null
+                      ? 'sem registro'
+                      : selectedItem.daysWithoutSales}
+                  </p>
+                </div>
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
 
       <Dialog
         open={analysisDialogOpen}
