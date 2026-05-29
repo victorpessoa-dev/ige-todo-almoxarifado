@@ -2,10 +2,36 @@
 
 import { useCallback, useMemo, useState } from 'react'
 
-export function useResizableColumns(columns) {
-  const [widths, setWidths] = useState(() =>
-    Object.fromEntries(columns.map((column) => [column.key, column.width]))
-  )
+function getDefaultWidths(columns) {
+  return Object.fromEntries(columns.map((column) => [column.key, column.width]))
+}
+
+function getStoredWidths(storageKey, columns) {
+  const defaultWidths = getDefaultWidths(columns)
+
+  if (!storageKey || typeof window === 'undefined') return defaultWidths
+
+  try {
+    const storedWidths = JSON.parse(window.localStorage.getItem(storageKey) || '{}')
+
+    return Object.fromEntries(
+      columns.map((column) => {
+        const width = Number(storedWidths[column.key])
+        const minWidth = column.minWidth || 56
+
+        return [
+          column.key,
+          Number.isFinite(width) ? Math.max(minWidth, width) : column.width
+        ]
+      })
+    )
+  } catch {
+    return defaultWidths
+  }
+}
+
+export function useResizableColumns(columns, storageKey) {
+  const [widths, setWidths] = useState(() => getStoredWidths(storageKey, columns))
 
   const columnsByKey = useMemo(
     () => Object.fromEntries(columns.map((column) => [column.key, column])),
@@ -33,6 +59,7 @@ export function useResizableColumns(columns) {
       const startX = event.clientX
       const startWidth = widths[key]
       const minWidth = column.minWidth || 56
+      let latestWidths = widths
       const previousCursor = document.body.style.cursor
       const previousUserSelect = document.body.style.userSelect
 
@@ -42,10 +69,14 @@ export function useResizableColumns(columns) {
       const handleMouseMove = (moveEvent) => {
         const nextWidth = Math.max(minWidth, startWidth + moveEvent.clientX - startX)
 
-        setWidths((current) => ({
-          ...current,
-          [key]: nextWidth
-        }))
+        setWidths((current) => {
+          latestWidths = {
+            ...current,
+            [key]: nextWidth
+          }
+
+          return latestWidths
+        })
       }
 
       const handleMouseUp = () => {
@@ -53,12 +84,20 @@ export function useResizableColumns(columns) {
         document.removeEventListener('mouseup', handleMouseUp)
         document.body.style.cursor = previousCursor
         document.body.style.userSelect = previousUserSelect
+
+        if (storageKey) {
+          try {
+            window.localStorage.setItem(storageKey, JSON.stringify(latestWidths))
+          } catch {
+            // Ignore blocked storage; resizing should still work for the current session.
+          }
+        }
       }
 
       document.addEventListener('mousemove', handleMouseMove)
       document.addEventListener('mouseup', handleMouseUp)
     },
-    [columnsByKey, widths]
+    [columnsByKey, storageKey, widths]
   )
 
   return {

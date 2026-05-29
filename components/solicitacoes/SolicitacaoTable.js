@@ -119,7 +119,7 @@ export function SolicitacaoTable({
     getColumnStyle,
     startResize,
     tableWidth
-  } = useResizableColumns(SOLICITACAO_TABLE_COLUMNS)
+  } = useResizableColumns(SOLICITACAO_TABLE_COLUMNS, 'ige-solicitacao-table-column-widths')
 
   const handleTogglePublic = async (solicitacao, checked) => {
     if (!onTogglePublic) return
@@ -270,7 +270,7 @@ export function SolicitacaoTable({
 
       <div className="hidden overflow-hidden rounded-2xl border bg-card shadow-sm md:block">
         <div className="inventory-table-scroll w-full overflow-x-auto px-2">
-          <Table className="table-fixed" style={{ minWidth: `${tableWidth}px` }}>
+          <Table className="table-fixed" style={{ width: `${tableWidth}px`, minWidth: `${tableWidth}px` }}>
             <colgroup>
               {SOLICITACAO_TABLE_COLUMNS.map((column) => (
                 <col key={column.key} style={getColumnStyle(column.key)} />

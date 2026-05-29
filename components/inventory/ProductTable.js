@@ -114,7 +114,7 @@ export default function ProductTable({
     getColumnStyle,
     startResize,
     tableWidth
-  } = useResizableColumns(PRODUCT_TABLE_COLUMNS)
+  } = useResizableColumns(PRODUCT_TABLE_COLUMNS, 'ige-product-table-column-widths')
 
   const handleSort = (key) => {
     setSortConfig((prev) => {
@@ -380,7 +380,7 @@ export default function ProductTable({
         </div>
 
         <div className="inventory-table-scroll hidden w-full overflow-x-auto md:block">
-          <Table className="table-fixed" style={{ minWidth: `${tableWidth}px` }}>
+          <Table className="table-fixed" style={{ width: `${tableWidth}px`, minWidth: `${tableWidth}px` }}>
             <colgroup>
               {PRODUCT_TABLE_COLUMNS.map((column) => (
                 <col key={column.key} style={getColumnStyle(column.key)} />
