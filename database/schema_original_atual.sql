@@ -365,6 +365,43 @@ as $$
   limit 100;
 $$;
 
+create or replace function public.listar_produtos_catalogo_publico()
+returns table (
+  id uuid,
+  cod text,
+  nome text,
+  cod_barra text,
+  categoria text,
+  aplicacao text,
+  medidas text,
+  marcas text,
+  img_url text,
+  min numeric,
+  max numeric,
+  created_at timestamptz
+)
+language sql
+security definer
+set search_path = public
+stable
+as $$
+  select
+    p.id,
+    p.cod,
+    p.nome,
+    p.cod_barra,
+    p.categoria,
+    p.aplicacao,
+    p.medidas,
+    p.marcas,
+    p.img_url,
+    p.min,
+    p.max,
+    p.created_at
+  from public.produtos p
+  order by p.nome asc;
+$$;
+
 grant execute on function public.criar_solicitacao_compra_publica(text, numeric, text, date, uuid, text, text, uuid)
 to anon, authenticated;
 
@@ -372,6 +409,9 @@ grant execute on function public.buscar_solicitacao_compra_publica(text)
 to anon, authenticated;
 
 grant execute on function public.listar_solicitacoes_compra_publica()
+to anon, authenticated;
+
+grant execute on function public.listar_produtos_catalogo_publico()
 to anon, authenticated;
 
 alter table public.tarefas enable row level security;

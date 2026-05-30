@@ -17,12 +17,14 @@ import CatalogoFilters from '@/components/catalogo/CatalogoFilters'
 import CatalogoHeader from '@/components/catalogo/CatalogoHeader'
 import CatalogoPreview from '@/components/catalogo/CatalogoPreview'
 import CatalogoSummaryCards from '@/components/catalogo/CatalogoSummaryCards'
+import { Spinner } from '@/components/ui/spinner'
 
 export default function CatalogoPage() {
-  const { produtos } = useData()
+  const { produtos, isLoaded, isLoading } = useData()
   const [search, setSearch] = useState('')
   const [selectedCategory, setSelectedCategory] = useState('todas')
   const [selectedBrand, setSelectedBrand] = useState('todas')
+  const showLoading = isLoading && !isLoaded && produtos.length === 0
 
   const categoryOptions = useMemo(() => {
     const categories = new Map()
@@ -97,6 +99,15 @@ export default function CatalogoPage() {
     setSearch('')
     setSelectedCategory('todas')
     setSelectedBrand('todas')
+  }
+
+  if (showLoading) {
+    return (
+      <div className="flex min-h-[65vh] flex-col items-center justify-center gap-3 text-muted-foreground">
+        <Spinner className="size-8 text-primary" />
+        <p className="text-sm font-medium">Carregando catalogo...</p>
+      </div>
+    )
   }
 
   return (
