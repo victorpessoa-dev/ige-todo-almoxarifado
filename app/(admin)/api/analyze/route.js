@@ -2,6 +2,7 @@ import { callAI } from '@/lib/server/ai-providers'
 
 const MAX_IMAGES = 3
 const MAX_TOTAL_SIZE = 10 * 1024 * 1024
+const ALLOWED_IMAGE_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp'])
 
 function createUserError(message, status = 400) {
   return Response.json({ error: message }, { status })
@@ -16,7 +17,13 @@ function validateBase64Image(image) {
     return { valid: false }
   }
 
-  const base64Data = image.split(',')[1] || ''
+  const [meta, base64Data = ''] = image.split(',')
+  const mimeType = meta.match(/^data:(.*?);base64$/)?.[1]
+
+  if (!ALLOWED_IMAGE_TYPES.has(mimeType) || !base64Data || /[^a-zA-Z0-9+/=]/.test(base64Data)) {
+    return { valid: false }
+  }
+
   const estimatedSize = (base64Data.length * 3) / 4
 
   if (estimatedSize > 5 * 1024 * 1024) {

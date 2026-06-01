@@ -1,5 +1,10 @@
 import { callAI } from '@/lib/server/ai-providers'
 
+const MAX_IMAGE_SIZE = 5 * 1024 * 1024
+const MAX_CATALOG_ITEMS = 300
+const MAX_TEXT_LENGTH = 120
+const ALLOWED_IMAGE_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp'])
+
 function createUserError(message, status = 400) {
   return Response.json({ error: message }, { status })
 }
@@ -12,28 +17,44 @@ function normalizeText(value = '') {
     .trim()
 }
 
+function cleanText(value, maxLength = MAX_TEXT_LENGTH) {
+  return String(value || '')
+    .replace(/[\u0000-\u001F\u007F]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, maxLength)
+}
+
 export async function POST(req) {
   try {
     const body = await req.json()
 
     const image = body?.image
-    const produtos = Array.isArray(body?.produtos) ? body.produtos.slice(0, 300) : []
+    const produtos = Array.isArray(body?.produtos) ? body.produtos.slice(0, MAX_CATALOG_ITEMS) : []
 
     if (!image || typeof image !== 'string' || !image.startsWith('data:image/')) {
       return createUserError('Envie uma imagem válida.')
     }
 
     const [meta, base64] = image.split(',')
-    const mimeType = meta.match(/^data:(.*?);base64$/)?.[1] || 'image/jpeg'
+    const mimeType = meta.match(/^data:(.*?);base64$/)?.[1]
+
+    if (!ALLOWED_IMAGE_TYPES.has(mimeType) || !base64 || /[^a-zA-Z0-9+/=]/.test(base64)) {
+      return createUserError('Envie uma imagem vÃ¡lida.')
+    }
+
+    if ((base64.length * 3) / 4 > MAX_IMAGE_SIZE) {
+      return createUserError('Imagem muito pesada.')
+    }
 
     const catalogText = produtos
       .map((p) => {
         const codes = [p.cod, p.cod_barra]
           .filter(Boolean)
-          .map((code) => String(code).trim())
+          .map((code) => cleanText(code, 64))
           .filter(Boolean)
 
-        return `códigos: ${[...new Set(codes)].join(', ')} | nome: ${p.nome || ''}`
+        return `codigos: ${[...new Set(codes)].join(', ')} | nome: ${cleanText(p.nome)}`
       })
       .join('\n')
 

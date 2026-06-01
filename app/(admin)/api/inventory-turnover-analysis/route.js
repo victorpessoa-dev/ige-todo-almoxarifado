@@ -1,9 +1,41 @@
 import { callAI } from '@/lib/server/ai-providers'
 
 const MAX_TURNOVER_ANALYSIS_PRODUCTS = 5
+const MAX_TEXT_LENGTH = 140
 
 function createUserError(message, status = 400) {
   return Response.json({ error: message }, { status })
+}
+
+function cleanText(value, maxLength = MAX_TEXT_LENGTH) {
+  return String(value || '')
+    .replace(/[\u0000-\u001F\u007F]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, maxLength)
+}
+
+function cleanNumber(value, fallback = 0) {
+  const number = Number(value)
+  return Number.isFinite(number) ? number : fallback
+}
+
+function normalizeProduct(product = {}) {
+  return {
+    productId: cleanText(product.productId, 80),
+    name: cleanText(product.name),
+    turnoverLabel: cleanText(product.turnoverLabel, 80),
+    currentStock: cleanNumber(product.currentStock),
+    min: cleanNumber(product.min),
+    max: cleanNumber(product.max),
+    avgMonthlyOut: cleanNumber(product.avgMonthlyOut),
+    saida30: cleanNumber(product.saida30),
+    entrada30: cleanNumber(product.entrada30),
+    daysWithoutSales:
+      product.daysWithoutSales === null || product.daysWithoutSales === undefined
+        ? null
+        : cleanNumber(product.daysWithoutSales, null)
+  }
 }
 
 function buildLocalTurnoverAnalysis(products) {
@@ -88,7 +120,7 @@ export async function POST(req) {
     const body = await req.json()
 
     products = Array.isArray(body?.products)
-      ? body.products.slice(0, MAX_TURNOVER_ANALYSIS_PRODUCTS)
+      ? body.products.slice(0, MAX_TURNOVER_ANALYSIS_PRODUCTS).map(normalizeProduct)
       : []
 
     if (products.length === 0) {

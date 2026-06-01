@@ -229,7 +229,9 @@ function SolicitacaoPublicTable({ solicitacoes, onOpen }) {
                   onClick={() => onOpen(solicitacao)}
                 >
                   <TableCell className="px-3 py-3 font-semibold tabular-nums">
-                    <p>{solicitacao.codigo}</p>
+                    <p className="truncate" title={solicitacao.codigo || '-'}>
+                      {solicitacao.codigo || '-'}
+                    </p>
                   </TableCell>
                   <TableCell className="px-3 py-3">
                     <p className="truncate font-medium" title={solicitacao.descricao || '-'}>
@@ -247,12 +249,14 @@ function SolicitacaoPublicTable({ solicitacoes, onOpen }) {
                     </p>
                   </TableCell>
                   <TableCell className="px-3 py-3">
-                    <SolicitacaoStatusBadge type="prioridade" value={solicitacao.prioridade} />
+                    <div className="truncate" title={solicitacao.prioridade || '-'}>
+                      <SolicitacaoStatusBadge type="prioridade" value={solicitacao.prioridade} />
+                    </div>
                   </TableCell>
                   <TableCell className="px-3 py-3">
                     {situacao.label ? (
                       <span
-                        className={`block rounded-md border px-2 py-1 text-xs font-semibold ${situacao.className}`}
+                        className={`block truncate rounded-md border px-2 py-1 text-xs font-semibold ${situacao.className}`}
                         title={situacao.label}
                       >
                         {situacao.label}
@@ -262,7 +266,7 @@ function SolicitacaoPublicTable({ solicitacoes, onOpen }) {
                     )}
                   </TableCell>
                   <TableCell className="px-3 py-3">
-                    <p title={formatDate(getPrevisaoDate(solicitacao))}>
+                    <p className="truncate" title={formatDate(getPrevisaoDate(solicitacao))}>
                       {formatDate(getPrevisaoDate(solicitacao))}
                     </p>
                   </TableCell>

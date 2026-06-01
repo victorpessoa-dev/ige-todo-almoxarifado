@@ -243,6 +243,40 @@ begin
     raise exception 'Quantidade deve ser maior que zero.';
   end if;
 
+  if p_quantidade > 999999 then
+    raise exception 'Quantidade acima do limite permitido.';
+  end if;
+
+  if coalesce(nullif(trim(p_prioridade), ''), 'media') not in ('baixa', 'media', 'alta', 'urgente') then
+    raise exception 'Prioridade invalida.';
+  end if;
+
+  if length(trim(p_descricao)) > 500 then
+    raise exception 'DescriÃ§Ã£o acima do limite de 500 caracteres.';
+  end if;
+
+  if length(trim(coalesce(p_aplicacoes, ''))) > 1000 then
+    raise exception 'AplicaÃ§Ãµes acima do limite de 1000 caracteres.';
+  end if;
+
+  if length(trim(coalesce(p_link_referencia, ''))) > 500 then
+    raise exception 'Link acima do limite de 500 caracteres.';
+  end if;
+
+  if length(trim(coalesce(p_fornecedor_nome, ''))) > 160 then
+    raise exception 'Nome do fornecedor acima do limite de 160 caracteres.';
+  end if;
+
+  if length(trim(coalesce(p_fornecedor_contato, ''))) > 200 then
+    raise exception 'Contato do fornecedor acima do limite de 200 caracteres.';
+  end if;
+
+  if nullif(trim(coalesce(p_link_referencia, '')), '') is not null
+    and trim(p_link_referencia) !~* '^https?://'
+  then
+    raise exception 'Link de referÃªncia invalido.';
+  end if;
+
   if not exists (
     select 1 from public.solicitantes_compra
     where id = p_solicitante_id and ativo = true
