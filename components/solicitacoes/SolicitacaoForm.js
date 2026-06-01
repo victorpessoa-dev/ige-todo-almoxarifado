@@ -30,6 +30,8 @@ export const defaultSolicitacaoForm = {
   centro_custo_nome: '',
   aplicacoes: '',
   link_referencia: '',
+  fornecedor_nome: '',
+  fornecedor_contato: '',
   solicitante_id: '',
   solicitante: '',
   solicitante_nome: '',
@@ -295,6 +297,26 @@ export function SolicitacaoForm({
           placeholder="https://..."
         />
       </Field>
+
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Field label="Nome do fornecedor (opcional)">
+          <Input
+            className="min-w-0 truncate"
+            value={form.fornecedor_nome || ''}
+            onChange={(event) => updateField('fornecedor_nome', event.target.value)}
+            placeholder="Fornecedor sugerido"
+          />
+        </Field>
+
+        <Field label="Contato do fornecedor (opcional)">
+          <Input
+            className="min-w-0 truncate"
+            value={form.fornecedor_contato || ''}
+            onChange={(event) => updateField('fornecedor_contato', event.target.value)}
+            placeholder="Telefone, WhatsApp, e-mail ou site"
+          />
+        </Field>
+      </div>
     </>
   )
 

@@ -553,9 +553,9 @@ export default function InventarioPage() {
             <DialogTitle>Confirmar exclusao</DialogTitle>
           </DialogHeader>
 
-          <p className="text-sm text-muted-foreground">
+          <p className="min-w-0 text-sm text-muted-foreground">
             Deseja realmente excluir o produto{' '}
-            <strong>{deleteDialog.produto?.nome}</strong>?
+            <strong className="break-words">{deleteDialog.produto?.nome}</strong>?
           </p>
 
           <div className="mt-4 flex flex-col justify-end gap-2 sm:flex-row">
@@ -604,7 +604,7 @@ export default function InventarioPage() {
 
           <div className="max-h-52 overflow-y-auto rounded-lg border bg-muted/20 p-3 text-sm">
             {selectedProducts.map((produto) => (
-              <div key={produto.id} className="py-1">
+              <div key={produto.id} className="truncate py-1" title={produto.nome || '-'}>
                 {produto.nome}
               </div>
             ))}
@@ -713,10 +713,10 @@ export default function InventarioPage() {
               {selectedProducts.map((produto) => (
                 <div
                   key={produto.id}
-                  className="flex items-center justify-between gap-3 py-1"
+                  className="flex min-w-0 items-center justify-between gap-3 py-1"
                 >
-                  <span className="truncate">{produto.nome}</span>
-                  <span className="text-muted-foreground">
+                  <span className="min-w-0 truncate" title={produto.nome || '-'}>{produto.nome}</span>
+                  <span className="shrink-0 text-muted-foreground">
                     Estoque: {produto.estoque}
                   </span>
                 </div>
@@ -767,9 +767,14 @@ export default function InventarioPage() {
           </DialogHeader>
 
           <div className="space-y-4">
-            <div className="rounded-lg border bg-muted/20 p-3 text-sm">
-              <p className="font-medium">{compraDialog.produto?.nome}</p>
-              <p className="text-muted-foreground">
+            <div className="min-w-0 rounded-lg border bg-muted/20 p-3 text-sm">
+              <p className="truncate font-medium" title={compraDialog.produto?.nome || '-'}>
+                {compraDialog.produto?.nome}
+              </p>
+              <p
+                className="truncate text-muted-foreground"
+                title={`Código: ${compraDialog.produto?.cod || '-'} | Estoque: ${compraDialog.produto?.estoque || 0} | Max: ${compraDialog.produto?.max || 0}`}
+              >
                 Código: {compraDialog.produto?.cod || '-'} | Estoque: {compraDialog.produto?.estoque || 0} | Max: {compraDialog.produto?.max || 0}
               </p>
               <p className="mt-2 font-semibold">
@@ -778,8 +783,8 @@ export default function InventarioPage() {
             </div>
 
             {lowStockProducts.length > 1 && (
-              <div className="grid gap-2">
-                <label className="text-sm font-medium">Produto com estoque baixo</label>
+              <div className="grid min-w-0 gap-2">
+                <label className="truncate text-sm font-medium" title="Produto com estoque baixo">Produto com estoque baixo</label>
                 <Select
                   value={compraDialog.produto?.id || ''}
                   onValueChange={(value) => {
@@ -794,13 +799,18 @@ export default function InventarioPage() {
                     }
                   }}
                 >
-                  <SelectTrigger className="w-full">
+                  <SelectTrigger className="w-full min-w-0 overflow-hidden">
                     <SelectValue placeholder="Selecione" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="max-w-[calc(100vw-2rem)]">
                     {lowStockProducts.map((produto) => (
                       <SelectItem key={produto.id} value={produto.id}>
-                        {produto.cod ? `${produto.cod} - ${produto.nome}` : produto.nome}
+                        <span
+                          className="block max-w-[min(34rem,calc(100vw-4rem))] truncate"
+                          title={produto.cod ? `${produto.cod} - ${produto.nome}` : produto.nome}
+                        >
+                          {produto.cod ? `${produto.cod} - ${produto.nome}` : produto.nome}
+                        </span>
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -809,41 +819,54 @@ export default function InventarioPage() {
             )}
 
             <div className="grid gap-4 sm:grid-cols-2">
-              <div className="grid gap-2">
-                <label className="text-sm font-medium">Centro de custo</label>
+              <div className="grid min-w-0 gap-2">
+                <label className="truncate text-sm font-medium" title="Centro de custo">Centro de custo</label>
                 <Select
                   value={compraForm.centro_custo_id}
                   onValueChange={(value) => updateCompraField('centro_custo_id', value)}
                 >
-                  <SelectTrigger className="w-full">
+                  <SelectTrigger className="w-full min-w-0 overflow-hidden">
                     <SelectValue placeholder="Selecione" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="max-w-[calc(100vw-2rem)]">
                     {activeCentrosCusto.map((centroCusto) => (
                       <SelectItem key={centroCusto.id} value={centroCusto.id}>
-                        {getCentroCustoLabel(centroCusto)}
+                        <span
+                          className="block max-w-[min(34rem,calc(100vw-4rem))] truncate"
+                          title={getCentroCustoLabel(centroCusto)}
+                        >
+                          {getCentroCustoLabel(centroCusto)}
+                        </span>
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
 
-              <div className="grid gap-2">
-                <label className="text-sm font-medium">Solicitante</label>
+              <div className="grid min-w-0 gap-2">
+                <label className="truncate text-sm font-medium" title="Solicitante">Solicitante</label>
                 <Select
                   value={compraForm.solicitante_id}
                   onValueChange={(value) => updateCompraField('solicitante_id', value)}
                 >
-                  <SelectTrigger className="w-full">
+                  <SelectTrigger className="w-full min-w-0 overflow-hidden">
                     <SelectValue placeholder="Selecione" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="max-w-[calc(100vw-2rem)]">
                     {activeSolicitantes.map((solicitante) => (
                       <SelectItem key={solicitante.id} value={solicitante.id}>
-                        {[
-                          solicitante.nome,
-                          getCentroCustoLabel(getSolicitanteCentroCusto(solicitante))
-                        ].filter(Boolean).join(' - ')}
+                        <span
+                          className="block max-w-[min(34rem,calc(100vw-4rem))] truncate"
+                          title={[
+                            solicitante.nome,
+                            getCentroCustoLabel(getSolicitanteCentroCusto(solicitante))
+                          ].filter(Boolean).join(' - ')}
+                        >
+                          {[
+                            solicitante.nome,
+                            getCentroCustoLabel(getSolicitanteCentroCusto(solicitante))
+                          ].filter(Boolean).join(' - ')}
+                        </span>
                       </SelectItem>
                     ))}
                   </SelectContent>

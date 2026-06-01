@@ -216,7 +216,7 @@ export function SolicitacaoTable({
                       <span className={`h-2.5 w-2.5 rounded-full ${getStatusDotClass(solicitacao.status_geral)}`} />
                       <span className="truncate">{solicitacao.codigo || '-'}</span>
                     </p>
-                    <p className="mt-1 line-clamp-2 text-sm" title={solicitacao.descricao || '-'}>
+                    <p className="mt-1 line-clamp-2 break-words text-sm [overflow-wrap:anywhere]" title={solicitacao.descricao || '-'}>
                       {solicitacao.descricao}
                     </p>
                     <p

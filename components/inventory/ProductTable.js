@@ -353,8 +353,10 @@ export default function ProductTable({
                   <div className="min-w-0 flex-1">
                     <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0">
-                        <p className="break-words font-semibold">{produto.nome}</p>
-                        <p className="mt-1 text-xs text-muted-foreground">
+                        <p className="truncate font-semibold" title={produto.nome || '-'}>
+                          {produto.nome}
+                        </p>
+                        <p className="mt-1 truncate text-xs text-muted-foreground" title={`Cod: ${produto.cod || '-'}`}>
                           Cod: {produto.cod || '-'}
                         </p>
                       </div>
@@ -498,12 +500,14 @@ export default function ProductTable({
                   </TableCell>
 
                   <TableCell className="font-medium text-muted-foreground">
-                    {produto.cod}
+                    <p className="truncate" title={produto.cod || '-'}>
+                      {produto.cod}
+                    </p>
                   </TableCell>
 
                   <TableCell>
                     <div className="min-w-0">
-                      <p className="truncate font-medium text-foreground">
+                      <p className="truncate font-medium text-foreground" title={produto.nome || '-'}>
                         {produto.nome}
                       </p>
                     </div>
@@ -523,7 +527,7 @@ export default function ProductTable({
                   <TableCell>{produto.max}</TableCell>
 
                   <TableCell>
-                    <Badge variant="outline" className={status.className}>
+                    <Badge variant="outline" className={`${status.className} max-w-full truncate`}>
                       {status.label}
                     </Badge>
                   </TableCell>

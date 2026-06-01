@@ -88,7 +88,7 @@ function InfoItem({ label, value }) {
   return (
     <div className="min-w-0 rounded-lg border bg-muted/20 px-3 py-2">
       <p className="truncate text-xs uppercase text-muted-foreground" title={label}>{label}</p>
-      <p className="mt-1 break-words text-sm font-medium">{value || '-'}</p>
+      <p className="mt-1 min-w-0 break-words text-sm font-medium [overflow-wrap:anywhere]">{value || '-'}</p>
     </div>
   )
 }
@@ -140,6 +140,8 @@ function buildFormFromSolicitacao(solicitacao) {
     centro_custo_nome: solicitacao?.centro_custo || '',
     aplicacoes: solicitacao?.aplicacoes || '',
     link_referencia: solicitacao?.link_referencia || '',
+    fornecedor_nome: solicitacao?.fornecedor_nome || '',
+    fornecedor_contato: solicitacao?.fornecedor_contato || '',
     solicitante_id: solicitacao?.solicitante_id || '',
     solicitante: solicitacao?.solicitante || '',
     solicitante_nome: solicitacao?.solicitante || '',
@@ -165,6 +167,8 @@ function buildPayload(form) {
     centro_custo_nome: form.centro_custo_nome || form.centro_custo || null,
     aplicacoes: form.aplicacoes || null,
     link_referencia: form.link_referencia || null,
+    fornecedor_nome: form.fornecedor_nome?.trim?.() || null,
+    fornecedor_contato: form.fornecedor_contato?.trim?.() || null,
     solicitante_id: form.solicitante_id || null,
     solicitante: form.solicitante,
     solicitante_nome: form.solicitante_nome || form.solicitante,
@@ -297,7 +301,7 @@ export function SolicitacaoDetailsDialog({
         <DialogContent className="h-[100dvh] max-h-[100dvh] w-full max-w-none overflow-y-auto rounded-none p-4 sm:h-auto sm:max-h-[calc(100vh-2rem)] sm:w-[95vw] sm:max-w-6xl sm:rounded-lg sm:p-6">
           <DialogHeader className="pr-10">
             <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-              <DialogTitle className="min-w-0 line-clamp-3 pr-2 text-left text-base sm:text-lg" title={dialogTitle}>
+              <DialogTitle className="min-w-0 line-clamp-3 break-words pr-2 text-left text-base [overflow-wrap:anywhere] sm:text-lg" title={dialogTitle}>
                 {dialogTitle}
               </DialogTitle>
 
@@ -466,6 +470,24 @@ export function SolicitacaoDetailsDialog({
                     />
                   </Field>
                 </div>
+
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <Field label="Nome do fornecedor">
+                    <Input
+                      className="min-w-0 truncate"
+                      value={form.fornecedor_nome || ''}
+                      onChange={(event) => updateField('fornecedor_nome', event.target.value)}
+                    />
+                  </Field>
+
+                  <Field label="Contato do fornecedor">
+                    <Input
+                      className="min-w-0 truncate"
+                      value={form.fornecedor_contato || ''}
+                      onChange={(event) => updateField('fornecedor_contato', event.target.value)}
+                    />
+                  </Field>
+                </div>
               </div>
             ) : (
               <>
@@ -492,13 +514,15 @@ export function SolicitacaoDetailsDialog({
                           href={solicitacao.link_referencia}
                           target="_blank"
                           rel="noreferrer"
-                          className="break-all text-primary underline-offset-4 hover:underline"
+                          className="break-words text-primary underline-offset-4 [overflow-wrap:anywhere] hover:underline"
                         >
                           {solicitacao.link_referencia}
                         </a>
                       ) : '-'
                     }
                   />
+                  <InfoItem label="Fornecedor sugerido" value={solicitacao?.fornecedor_nome} />
+                  <InfoItem label="Contato do fornecedor" value={solicitacao?.fornecedor_contato} />
                 </div>
               </>
             )}

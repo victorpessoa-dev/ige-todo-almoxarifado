@@ -770,9 +770,11 @@ export default function BarcodeScannerCard({
         </div>
 
         {barcodeProduct && (
-          <div className="mt-4 rounded-lg border bg-muted/30 p-4">
-            <p className="font-semibold">{barcodeProduct.nome}</p>
-            <p className="text-xs text-muted-foreground">
+          <div className="mt-4 min-w-0 rounded-lg border bg-muted/30 p-4">
+            <p className="truncate font-semibold" title={barcodeProduct.nome || '-'}>
+              {barcodeProduct.nome}
+            </p>
+            <p className="truncate text-xs text-muted-foreground" title={`Estoque: ${barcodeProduct.estoque}`}>
               Estoque: {barcodeProduct.estoque}
             </p>
 

@@ -98,10 +98,16 @@ create table if not exists public.solicitacoes_compra (
   centro_custo text,
   aplicacoes text,
   link_referencia text,
+  fornecedor_nome text,
+  fornecedor_contato text,
   visivel_publico smallint not null default 0 check (visivel_publico in (0, 1)),
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+
+alter table public.solicitacoes_compra
+  add column if not exists fornecedor_nome text,
+  add column if not exists fornecedor_contato text;
 
 create index if not exists tarefas_created_at_idx on public.tarefas (created_at desc);
 create index if not exists lembretes_created_at_idx on public.lembretes (created_at desc);
@@ -192,6 +198,17 @@ create trigger trg_solicitacao_compra_codigo
 before insert or update on public.solicitacoes_compra
 for each row execute function public.set_solicitacao_compra_codigo();
 
+drop function if exists public.criar_solicitacao_compra_publica(
+  text,
+  numeric,
+  text,
+  date,
+  uuid,
+  text,
+  text,
+  uuid
+);
+
 create or replace function public.criar_solicitacao_compra_publica(
   p_descricao text,
   p_quantidade numeric,
@@ -200,6 +217,8 @@ create or replace function public.criar_solicitacao_compra_publica(
   p_centro_custo_id uuid,
   p_aplicacoes text,
   p_link_referencia text,
+  p_fornecedor_nome text,
+  p_fornecedor_contato text,
   p_solicitante_id uuid
 )
 returns table (
@@ -246,6 +265,8 @@ begin
     centro_custo_id,
     aplicacoes,
     link_referencia,
+    fornecedor_nome,
+    fornecedor_contato,
     solicitante_id,
     status_geral,
     status_cotacao,
@@ -260,6 +281,8 @@ begin
     p_centro_custo_id,
     nullif(trim(coalesce(p_aplicacoes, '')), ''),
     nullif(trim(coalesce(p_link_referencia, '')), ''),
+    nullif(trim(coalesce(p_fornecedor_nome, '')), ''),
+    nullif(trim(coalesce(p_fornecedor_contato, '')), ''),
     p_solicitante_id,
     'nova',
     'nao_iniciado',
@@ -402,7 +425,7 @@ as $$
   order by p.nome asc;
 $$;
 
-grant execute on function public.criar_solicitacao_compra_publica(text, numeric, text, date, uuid, text, text, uuid)
+grant execute on function public.criar_solicitacao_compra_publica(text, numeric, text, date, uuid, text, text, text, text, uuid)
 to anon, authenticated;
 
 grant execute on function public.buscar_solicitacao_compra_publica(text)
@@ -413,6 +436,13 @@ to anon, authenticated;
 
 grant execute on function public.listar_produtos_catalogo_publico()
 to anon, authenticated;
+
+grant usage on schema public to anon, authenticated;
+
+grant select on public.solicitantes_compra to anon, authenticated;
+grant select on public.centros_custo to anon, authenticated;
+grant insert on public.solicitacoes_compra to anon, authenticated;
+grant usage, select on sequence public.solicitacoes_compra_codigo_seq to anon, authenticated;
 
 alter table public.tarefas enable row level security;
 alter table public.lembretes enable row level security;
@@ -537,3 +567,5 @@ exception
   when undefined_object then null;
 end;
 $$;
+
+notify pgrst, 'reload schema';

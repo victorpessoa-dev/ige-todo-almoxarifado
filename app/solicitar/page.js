@@ -30,6 +30,10 @@ import {
   TableRow
 } from '@/components/ui/table'
 import {
+  ColumnResizeHandle,
+  useResizableColumns
+} from '@/components/ui/resizable-table-columns'
+import {
   Dialog,
   DialogContent,
   DialogHeader,
@@ -54,6 +58,16 @@ function formatDate(value) {
 function getPrevisaoDate(solicitacao) {
   return solicitacao.previsao_entrega || solicitacao.previsao_desejada
 }
+
+const PUBLIC_SOLICITACAO_TABLE_COLUMNS = [
+  { key: 'codigo', width: 86, minWidth: 76 },
+  { key: 'descricao', width: 320, minWidth: 180 },
+  { key: 'solicitante', width: 170, minWidth: 110 },
+  { key: 'centro_custo', width: 170, minWidth: 110 },
+  { key: 'prioridade', width: 112, minWidth: 100 },
+  { key: 'situacao', width: 142, minWidth: 110 },
+  { key: 'previsao', width: 110, minWidth: 100 }
+]
 
 function DetailStatus({ label, value, options }) {
   const option = getSolicitacaoOption(options, value)
@@ -94,12 +108,21 @@ function InfoItem({ label, value }) {
   return (
     <div className="min-w-0 rounded-lg border bg-muted/20 px-3 py-2">
       <p className="text-xs uppercase text-muted-foreground">{label}</p>
-      <p className="mt-1 break-words text-sm font-medium">{value || '-'}</p>
+      <p className="mt-1 min-w-0 break-words text-sm font-medium [overflow-wrap:anywhere]">{value || '-'}</p>
     </div>
   )
 }
 
 function SolicitacaoPublicTable({ solicitacoes, onOpen }) {
+  const {
+    getColumnStyle,
+    startResize,
+    tableWidth
+  } = useResizableColumns(
+    PUBLIC_SOLICITACAO_TABLE_COLUMNS,
+    'ige-public-solicitacao-table-column-widths'
+  )
+
   if (solicitacoes.length === 0) {
     return (
       <div className="rounded-xl border border-dashed p-8 text-center text-sm text-muted-foreground">
@@ -124,7 +147,7 @@ function SolicitacaoPublicTable({ solicitacoes, onOpen }) {
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
                   <p className="truncate font-semibold tabular-nums">{solicitacao.codigo}</p>
-                  <p className="mt-1 line-clamp-2 text-sm" title={solicitacao.descricao || '-'}>
+                  <p className="mt-1 line-clamp-2 text-sm break-words [overflow-wrap:anywhere]" title={solicitacao.descricao || '-'}>
                     {solicitacao.descricao}
                   </p>
                   <p className="mt-1 truncate text-xs text-muted-foreground" title={solicitacao.solicitante || '-'}>
@@ -156,26 +179,43 @@ function SolicitacaoPublicTable({ solicitacoes, onOpen }) {
         })}
       </div>
 
-      <div className="hidden overflow-hidden rounded-xl border bg-background md:block">
-        <Table className="table-fixed">
+      <div className="hidden overflow-x-auto rounded-xl border bg-background md:block">
+        <Table className="table-fixed" style={{ width: `${tableWidth}px`, minWidth: `${tableWidth}px` }}>
           <colgroup>
-            <col className="w-[90px]" />
-            <col className="w-[34%]" />
-            <col className="w-[18%]" />
-            <col className="w-[18%]" />
-            <col className="w-[120px]" />
-            <col className="w-[130px]" />
-            <col className="w-[120px]" />
+            {PUBLIC_SOLICITACAO_TABLE_COLUMNS.map((column) => (
+              <col key={column.key} style={getColumnStyle(column.key)} />
+            ))}
           </colgroup>
           <TableHeader>
             <TableRow className="hover:bg-transparent">
-              <TableHead className="h-12 px-4">Cod.</TableHead>
-              <TableHead className="h-12 px-4">Produto</TableHead>
-              <TableHead className="h-12 px-4">Solicitante</TableHead>
-              <TableHead className="h-12 px-4">Centro</TableHead>
-              <TableHead className="h-12 px-4">Prioridade</TableHead>
-              <TableHead className="h-12 px-4">Situação</TableHead>
-              <TableHead className="h-12 px-4">Previsão</TableHead>
+              <TableHead className="relative h-12 px-3 pr-4">
+                Cod.
+                <ColumnResizeHandle columnKey="codigo" onResizeStart={startResize} />
+              </TableHead>
+              <TableHead className="relative h-12 px-3 pr-4">
+                Produto
+                <ColumnResizeHandle columnKey="descricao" onResizeStart={startResize} />
+              </TableHead>
+              <TableHead className="relative h-12 px-3 pr-4">
+                Solicitante
+                <ColumnResizeHandle columnKey="solicitante" onResizeStart={startResize} />
+              </TableHead>
+              <TableHead className="relative h-12 px-3 pr-4">
+                Centro
+                <ColumnResizeHandle columnKey="centro_custo" onResizeStart={startResize} />
+              </TableHead>
+              <TableHead className="relative h-12 px-3 pr-4">
+                Prioridade
+                <ColumnResizeHandle columnKey="prioridade" onResizeStart={startResize} />
+              </TableHead>
+              <TableHead className="relative h-12 px-3 pr-4">
+                Situação
+                <ColumnResizeHandle columnKey="situacao" onResizeStart={startResize} />
+              </TableHead>
+              <TableHead className="relative h-12 px-3 pr-4">
+                Previsão
+                <ColumnResizeHandle columnKey="previsao" onResizeStart={startResize} />
+              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -188,31 +228,31 @@ function SolicitacaoPublicTable({ solicitacoes, onOpen }) {
                   className="cursor-pointer"
                   onClick={() => onOpen(solicitacao)}
                 >
-                  <TableCell className="px-4 py-3 font-semibold tabular-nums">
-                    <p className="truncate">{solicitacao.codigo}</p>
+                  <TableCell className="px-3 py-3 font-semibold tabular-nums">
+                    <p>{solicitacao.codigo}</p>
                   </TableCell>
-                  <TableCell className="px-4 py-3">
+                  <TableCell className="px-3 py-3">
                     <p className="truncate font-medium" title={solicitacao.descricao || '-'}>
                       {solicitacao.descricao || '-'}
                     </p>
                   </TableCell>
-                  <TableCell className="px-4 py-3">
+                  <TableCell className="px-3 py-3">
                     <p className="truncate" title={solicitacao.solicitante || '-'}>
                       {solicitacao.solicitante || '-'}
                     </p>
                   </TableCell>
-                  <TableCell className="px-4 py-3">
+                  <TableCell className="px-3 py-3">
                     <p className="truncate" title={solicitacao.centro_custo || '-'}>
                       {solicitacao.centro_custo || '-'}
                     </p>
                   </TableCell>
-                  <TableCell className="px-4 py-3">
+                  <TableCell className="px-3 py-3">
                     <SolicitacaoStatusBadge type="prioridade" value={solicitacao.prioridade} />
                   </TableCell>
-                  <TableCell className="px-4 py-3">
+                  <TableCell className="px-3 py-3">
                     {situacao.label ? (
                       <span
-                        className={`block truncate rounded-md border px-2 py-1 text-xs font-semibold ${situacao.className}`}
+                        className={`block rounded-md border px-2 py-1 text-xs font-semibold ${situacao.className}`}
                         title={situacao.label}
                       >
                         {situacao.label}
@@ -221,8 +261,8 @@ function SolicitacaoPublicTable({ solicitacoes, onOpen }) {
                       '-'
                     )}
                   </TableCell>
-                  <TableCell className="px-4 py-3">
-                    <p className="truncate" title={formatDate(getPrevisaoDate(solicitacao))}>
+                  <TableCell className="px-3 py-3">
+                    <p title={formatDate(getPrevisaoDate(solicitacao))}>
                       {formatDate(getPrevisaoDate(solicitacao))}
                     </p>
                   </TableCell>
@@ -245,7 +285,7 @@ function SolicitacaoPublicDetailsDialog({ solicitacao, open, onOpenChange }) {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="h-[100dvh] max-h-[100dvh] w-full max-w-none overflow-y-auto rounded-none p-4 sm:h-auto sm:max-h-[calc(100vh-2rem)] sm:w-[95vw] sm:max-w-3xl sm:rounded-lg sm:p-6">
         <DialogHeader>
-              <DialogTitle className="line-clamp-3 text-left text-base sm:text-lg" title={`${solicitacao.codigo} - ${solicitacao.descricao}`}>
+              <DialogTitle className="line-clamp-3 break-words text-left text-base [overflow-wrap:anywhere] sm:text-lg" title={`${solicitacao.codigo} - ${solicitacao.descricao}`}>
                 {solicitacao.codigo} - {solicitacao.descricao}
               </DialogTitle>
         </DialogHeader>
@@ -535,7 +575,7 @@ export default function SolicitarPage() {
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                   <div className="min-w-0">
                     <p className="truncate font-semibold tabular-nums">{statusResult.codigo}</p>
-                    <p className="mt-1 line-clamp-2 text-sm text-muted-foreground" title={statusResult.descricao || '-'}>
+                    <p className="mt-1 line-clamp-2 break-words text-sm text-muted-foreground [overflow-wrap:anywhere]" title={statusResult.descricao || '-'}>
                       {statusResult.descricao}
                     </p>
                   </div>
