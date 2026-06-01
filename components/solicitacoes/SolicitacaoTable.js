@@ -208,18 +208,21 @@ export function SolicitacaoTable({
                 tabIndex={0}
                 onClick={() => onOpen(solicitacao)}
                 onKeyDown={(event) => handleCardKeyDown(event, solicitacao)}
-                className="rounded-xl border bg-card p-4 text-left shadow-sm transition hover:border-primary/40"
+                className="min-w-0 rounded-xl border bg-card p-4 text-left shadow-sm transition hover:border-primary/40"
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
-                    <p className="flex items-center gap-2 font-semibold">
+                    <p className="flex min-w-0 items-center gap-2 font-semibold">
                       <span className={`h-2.5 w-2.5 rounded-full ${getStatusDotClass(solicitacao.status_geral)}`} />
-                      <span>{solicitacao.codigo || '-'}</span>
+                      <span className="truncate">{solicitacao.codigo || '-'}</span>
                     </p>
-                    <p className="mt-1 line-clamp-2 text-sm">
+                    <p className="mt-1 line-clamp-2 text-sm" title={solicitacao.descricao || '-'}>
                       {solicitacao.descricao}
                     </p>
-                    <p className="mt-1 text-xs text-muted-foreground">
+                    <p
+                      className="mt-1 truncate text-xs text-muted-foreground"
+                      title={`${solicitacao.solicitante || '-'} | ${solicitacao.centro_custo || '-'}`}
+                    >
                       {solicitacao.solicitante || '-'} | {solicitacao.centro_custo || '-'}
                     </p>
                   </div>
@@ -231,7 +234,10 @@ export function SolicitacaoTable({
                     value={solicitacao.prioridade}
                   />
                   {situacao.label && (
-                    <span className={`rounded-md border px-2 py-1 text-xs font-semibold ${situacao.className}`}>
+                    <span
+                      className={`block max-w-full truncate rounded-md border px-2 py-1 text-xs font-semibold ${situacao.className}`}
+                      title={situacao.label}
+                    >
                       {situacao.label}
                     </span>
                   )}
@@ -372,14 +378,20 @@ export function SolicitacaoTable({
                       <TableCell className="font-medium">
                         <span className="flex items-center gap-2">
                           <span className={`h-2.5 w-2.5 rounded-full ${getStatusDotClass(solicitacao.status_geral)}`} />
-                          <span>{solicitacao.codigo || '-'}</span>
+                          <span className="truncate">{solicitacao.codigo || '-'}</span>
                         </span>
                       </TableCell>
                       <TableCell>
-                        <p className="truncate font-medium">{solicitacao.descricao}</p>
+                        <p className="truncate font-medium" title={solicitacao.descricao || '-'}>
+                          {solicitacao.descricao || '-'}
+                        </p>
                       </TableCell>
-                      <TableCell>{solicitacao.solicitante || '-'}</TableCell>
-                      <TableCell className="max-w-[180px]">
+                      <TableCell>
+                        <p className="truncate" title={solicitacao.solicitante || '-'}>
+                          {solicitacao.solicitante || '-'}
+                        </p>
+                      </TableCell>
+                      <TableCell>
                         <p className="truncate" title={solicitacao.centro_custo || '-'}>
                           {solicitacao.centro_custo || '-'}
                         </p>
@@ -392,16 +404,28 @@ export function SolicitacaoTable({
                       </TableCell>
                       <TableCell>
                         {situacao.label ? (
-                          <span className={`rounded-md border px-2 py-1 text-xs font-semibold ${situacao.className}`}>
+                          <span
+                            className={`block truncate rounded-md border px-2 py-1 text-xs font-semibold ${situacao.className}`}
+                            title={situacao.label}
+                          >
                             {situacao.label}
                           </span>
                         ) : (
                           '-'
                         )}
                       </TableCell>
-                      <TableCell>{formatCurrency(solicitacao.valor_total)}</TableCell>
                       <TableCell>
-                        {formatDate(solicitacao.previsao_entrega || solicitacao.previsao_desejada)}
+                        <p className="truncate" title={formatCurrency(solicitacao.valor_total)}>
+                          {formatCurrency(solicitacao.valor_total)}
+                        </p>
+                      </TableCell>
+                      <TableCell>
+                        <p
+                          className="truncate"
+                          title={formatDate(solicitacao.previsao_entrega || solicitacao.previsao_desejada)}
+                        >
+                          {formatDate(solicitacao.previsao_entrega || solicitacao.previsao_desejada)}
+                        </p>
                       </TableCell>
                       <TableCell className="text-center">
                         <PublicVisibilityToggle

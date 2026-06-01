@@ -58,8 +58,8 @@ const defaultCentroCusto = {
 
 function Field({ label, children }) {
   return (
-    <div className="grid gap-2">
-      <label className="text-sm font-medium">{label}</label>
+    <div className="grid min-w-0 gap-2">
+      <label className="truncate text-sm font-medium" title={label}>{label}</label>
       {children}
     </div>
   )
@@ -67,8 +67,8 @@ function Field({ label, children }) {
 
 function AtivoField({ checked, onChange }) {
   return (
-    <div className="flex items-center justify-between rounded-lg border bg-muted/20 px-3 py-2">
-      <div>
+    <div className="flex min-w-0 items-center justify-between gap-3 rounded-lg border bg-muted/20 px-3 py-2">
+      <div className="min-w-0">
         <p className="text-sm font-medium">Cadastro ativo</p>
         <p className="text-xs text-muted-foreground">
           Itens ativos aparecem nas listas públicas.
@@ -284,7 +284,7 @@ export function SolicitacaoCadastrosDialog({
             <TabsContent value="solicitantes" className="space-y-4">
               <div className="flex flex-col gap-3 rounded-lg border bg-muted/20 p-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                  <p className="text-sm font-semibold">Solicitantes cadastrados</p>
+                  <p className="truncate text-sm font-semibold" title="Solicitantes cadastrados">Solicitantes cadastrados</p>
                   <p className="text-xs text-muted-foreground">
                     {solicitantes.length} registro{solicitantes.length === 1 ? '' : 's'}
                   </p>
@@ -303,8 +303,11 @@ export function SolicitacaoCadastrosDialog({
                     <div key={item.id} className="rounded-lg border bg-card p-3">
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0">
-                          <p className="truncate font-medium">{item.nome}</p>
-                          <p className="mt-1 text-xs text-muted-foreground">
+                          <p className="truncate font-medium" title={item.nome || '-'}>{item.nome}</p>
+                          <p
+                            className="mt-1 truncate text-xs text-muted-foreground"
+                            title={getCentroCustoLabel(centrosCusto, item.centro_custo_id) || '-'}
+                          >
                             {getCentroCustoLabel(centrosCusto, item.centro_custo_id) || '-'}
                           </p>
                         </div>
@@ -339,7 +342,13 @@ export function SolicitacaoCadastrosDialog({
 
               <div className="hidden overflow-hidden rounded-lg border md:block">
                 <div className="overflow-x-auto">
-                  <Table className="min-w-[720px]">
+                  <Table className="min-w-[720px] table-fixed">
+                    <colgroup>
+                      <col className="w-[36%]" />
+                      <col className="w-[38%]" />
+                      <col className="w-[100px]" />
+                      <col className="w-[96px]" />
+                    </colgroup>
                     <TableHeader>
                       <TableRow className="hover:bg-transparent">
                         <TableHead>Nome</TableHead>
@@ -354,9 +363,15 @@ export function SolicitacaoCadastrosDialog({
                       ) : (
                         solicitantes.map((item) => (
                           <TableRow key={item.id}>
-                            <TableCell className="font-medium">{item.nome}</TableCell>
+                            <TableCell className="font-medium">
+                              <p className="truncate" title={item.nome || '-'}>
+                                {item.nome || '-'}
+                              </p>
+                            </TableCell>
                             <TableCell className="text-muted-foreground">
-                              {getCentroCustoLabel(centrosCusto, item.centro_custo_id) || '-'}
+                              <p className="truncate" title={getCentroCustoLabel(centrosCusto, item.centro_custo_id) || '-'}>
+                                {getCentroCustoLabel(centrosCusto, item.centro_custo_id) || '-'}
+                              </p>
                             </TableCell>
                             <TableCell>
                               <StatusBadge active={item.ativo} />
@@ -393,7 +408,7 @@ export function SolicitacaoCadastrosDialog({
             <TabsContent value="centros" className="space-y-4">
               <div className="flex flex-col gap-3 rounded-lg border bg-muted/20 p-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                  <p className="text-sm font-semibold">Centros de custo cadastrados</p>
+                  <p className="truncate text-sm font-semibold" title="Centros de custo cadastrados">Centros de custo cadastrados</p>
                   <p className="text-xs text-muted-foreground">
                     {centrosCusto.length} registro{centrosCusto.length === 1 ? '' : 's'}
                   </p>
@@ -412,8 +427,12 @@ export function SolicitacaoCadastrosDialog({
                     <div key={item.id} className="rounded-lg border bg-card p-3">
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0">
-                          <p className="font-medium tabular-nums">{item.codigo || '-'}</p>
-                          <p className="mt-1 truncate text-sm text-muted-foreground">{item.nome}</p>
+                          <p className="truncate font-medium tabular-nums" title={item.codigo || '-'}>
+                            {item.codigo || '-'}
+                          </p>
+                          <p className="mt-1 truncate text-sm text-muted-foreground" title={item.nome || '-'}>
+                            {item.nome}
+                          </p>
                         </div>
                         <StatusBadge active={item.ativo} />
                       </div>
@@ -446,7 +465,13 @@ export function SolicitacaoCadastrosDialog({
 
               <div className="hidden overflow-hidden rounded-lg border md:block">
                 <div className="overflow-x-auto">
-                  <Table className="min-w-[640px]">
+                  <Table className="min-w-[640px] table-fixed">
+                    <colgroup>
+                      <col className="w-[160px]" />
+                      <col />
+                      <col className="w-[100px]" />
+                      <col className="w-[96px]" />
+                    </colgroup>
                     <TableHeader>
                       <TableRow className="hover:bg-transparent">
                         <TableHead>Código</TableHead>
@@ -462,9 +487,15 @@ export function SolicitacaoCadastrosDialog({
                         centrosCusto.map((item) => (
                           <TableRow key={item.id}>
                             <TableCell className="font-medium tabular-nums">
-                              {item.codigo || '-'}
+                              <p className="truncate" title={item.codigo || '-'}>
+                                {item.codigo || '-'}
+                              </p>
                             </TableCell>
-                            <TableCell>{item.nome}</TableCell>
+                            <TableCell>
+                              <p className="truncate" title={item.nome || '-'}>
+                                {item.nome || '-'}
+                              </p>
+                            </TableCell>
                             <TableCell>
                               <StatusBadge active={item.ativo} />
                             </TableCell>
@@ -518,6 +549,7 @@ export function SolicitacaoCadastrosDialog({
             <form onSubmit={submitSolicitante} className="grid gap-4">
               <Field label="Nome">
                 <Input
+                  className="min-w-0"
                   value={solicitanteForm.nome}
                   onChange={(event) => setSolicitanteForm((prev) => ({ ...prev, nome: event.target.value }))}
                   required
@@ -528,13 +560,18 @@ export function SolicitacaoCadastrosDialog({
                   value={solicitanteForm.centro_custo_id || ''}
                   onValueChange={(value) => setSolicitanteForm((prev) => ({ ...prev, centro_custo_id: value }))}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className="w-full min-w-0 overflow-hidden">
                     <SelectValue placeholder="Selecione" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="max-w-[calc(100vw-2rem)]">
                     {centrosCusto.map((centroCusto) => (
                       <SelectItem key={centroCusto.id} value={centroCusto.id}>
-                        {[centroCusto.codigo, centroCusto.nome].filter(Boolean).join(' - ')}
+                        <span
+                          className="block max-w-[min(34rem,calc(100vw-4rem))] truncate"
+                          title={[centroCusto.codigo, centroCusto.nome].filter(Boolean).join(' - ')}
+                        >
+                          {[centroCusto.codigo, centroCusto.nome].filter(Boolean).join(' - ')}
+                        </span>
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -557,6 +594,7 @@ export function SolicitacaoCadastrosDialog({
             <form onSubmit={submitCentroCusto} className="grid gap-4">
               <Field label="Nome">
                 <Input
+                  className="min-w-0"
                   value={centroCustoForm.nome}
                   onChange={(event) => setCentroCustoForm((prev) => ({ ...prev, nome: event.target.value }))}
                   required
@@ -564,6 +602,7 @@ export function SolicitacaoCadastrosDialog({
               </Field>
               <Field label="Código">
                 <Input
+                  className="min-w-0 truncate"
                   value={centroCustoForm.codigo}
                   onChange={(event) => setCentroCustoForm((prev) => ({ ...prev, codigo: event.target.value }))}
                 />

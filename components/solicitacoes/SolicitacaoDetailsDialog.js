@@ -87,7 +87,7 @@ function formatCurrency(value) {
 function InfoItem({ label, value }) {
   return (
     <div className="min-w-0 rounded-lg border bg-muted/20 px-3 py-2">
-      <p className="text-xs uppercase text-muted-foreground">{label}</p>
+      <p className="truncate text-xs uppercase text-muted-foreground" title={label}>{label}</p>
       <p className="mt-1 break-words text-sm font-medium">{value || '-'}</p>
     </div>
   )
@@ -95,8 +95,8 @@ function InfoItem({ label, value }) {
 
 function Field({ label, children }) {
   return (
-    <div className="grid gap-2">
-      <label className="text-sm font-medium">{label}</label>
+    <div className="grid min-w-0 gap-2">
+      <label className="truncate text-sm font-medium" title={label}>{label}</label>
       {children}
     </div>
   )
@@ -106,9 +106,9 @@ function StatusItem({ label, value, options }) {
   const option = getSolicitacaoOption(options, value)
 
   return (
-    <div className="rounded-lg border bg-muted/20 px-3 py-2">
-      <p className="text-xs uppercase text-muted-foreground">{label}</p>
-      <p className="mt-1 text-sm font-semibold">{option.label}</p>
+    <div className="min-w-0 rounded-lg border bg-muted/20 px-3 py-2">
+      <p className="truncate text-xs uppercase text-muted-foreground" title={label}>{label}</p>
+      <p className="mt-1 truncate text-sm font-semibold" title={option.label}>{option.label}</p>
     </div>
   )
 }
@@ -296,8 +296,8 @@ export function SolicitacaoDetailsDialog({
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="h-[100dvh] max-h-[100dvh] w-full max-w-none overflow-y-auto rounded-none p-4 sm:h-auto sm:max-h-[calc(100vh-2rem)] sm:w-[95vw] sm:max-w-6xl sm:rounded-lg sm:p-6">
           <DialogHeader className="pr-10">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-              <DialogTitle className="line-clamp-3 pr-2 text-left text-base sm:text-lg">
+            <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+              <DialogTitle className="min-w-0 line-clamp-3 pr-2 text-left text-base sm:text-lg" title={dialogTitle}>
                 {dialogTitle}
               </DialogTitle>
 
@@ -342,7 +342,10 @@ export function SolicitacaoDetailsDialog({
                 value={solicitacao?.prioridade}
               />
               {situacao?.label && (
-                <span className={`rounded-md border px-2 py-1 text-xs font-semibold ${situacao.className}`}>
+                <span
+                  className={`block max-w-full truncate rounded-md border px-2 py-1 text-xs font-semibold ${situacao.className}`}
+                  title={situacao.label}
+                >
                   {situacao.label}
                 </span>
               )}
@@ -352,6 +355,7 @@ export function SolicitacaoDetailsDialog({
               <div className="grid gap-4">
                 <Field label="Descrição do item">
                   <Textarea
+                    className="min-w-0"
                     value={form.descricao}
                     onChange={(event) => updateField('descricao', event.target.value)}
                     rows={4}
@@ -365,16 +369,24 @@ export function SolicitacaoDetailsDialog({
                       value={form.solicitante_id || ''}
                       onValueChange={(value) => updateField('solicitante_id', value)}
                     >
-                      <SelectTrigger>
+                      <SelectTrigger className="w-full min-w-0 overflow-hidden">
                         <SelectValue placeholder="Selecione" />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="max-w-[calc(100vw-2rem)]">
                         {solicitantes.map((solicitante) => (
                           <SelectItem key={solicitante.id} value={solicitante.id}>
-                            {[
-                              solicitante.nome,
-                              getCentroCustoLabel(getSolicitanteCentroCusto(solicitante, centrosCusto))
-                            ].filter(Boolean).join(' - ')}
+                            <span
+                              className="block max-w-[min(34rem,calc(100vw-4rem))] truncate"
+                              title={[
+                                solicitante.nome,
+                                getCentroCustoLabel(getSolicitanteCentroCusto(solicitante, centrosCusto))
+                              ].filter(Boolean).join(' - ')}
+                            >
+                              {[
+                                solicitante.nome,
+                                getCentroCustoLabel(getSolicitanteCentroCusto(solicitante, centrosCusto))
+                              ].filter(Boolean).join(' - ')}
+                            </span>
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -386,13 +398,18 @@ export function SolicitacaoDetailsDialog({
                       value={form.centro_custo_id || ''}
                       onValueChange={(value) => updateField('centro_custo_id', value)}
                     >
-                      <SelectTrigger>
+                      <SelectTrigger className="w-full min-w-0 overflow-hidden">
                         <SelectValue placeholder="Selecione" />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="max-w-[calc(100vw-2rem)]">
                         {centrosCusto.map((centroCusto) => (
                           <SelectItem key={centroCusto.id} value={centroCusto.id}>
-                            {getCentroCustoLabel(centroCusto)}
+                            <span
+                              className="block max-w-[min(34rem,calc(100vw-4rem))] truncate"
+                              title={getCentroCustoLabel(centroCusto)}
+                            >
+                              {getCentroCustoLabel(centroCusto)}
+                            </span>
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -401,6 +418,7 @@ export function SolicitacaoDetailsDialog({
 
                   <Field label="Quantidade">
                     <Input
+                      className="min-w-0"
                       type="number"
                       min={1}
                       value={form.quantidade}
@@ -413,13 +431,15 @@ export function SolicitacaoDetailsDialog({
                       value={form.prioridade}
                       onValueChange={(value) => updateField('prioridade', value)}
                     >
-                      <SelectTrigger>
+                      <SelectTrigger className="w-full min-w-0 overflow-hidden">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
                         {SOLICITACAO_PRIORIDADE_OPTIONS.map((option) => (
                           <SelectItem key={option.value} value={option.value}>
-                            {option.label}
+                            <span className="block max-w-[min(34rem,calc(100vw-4rem))] truncate" title={option.label}>
+                              {option.label}
+                            </span>
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -430,6 +450,7 @@ export function SolicitacaoDetailsDialog({
                 <div className="grid gap-4 sm:grid-cols-2">
                   <Field label="Aplicações específicas">
                     <Textarea
+                      className="min-w-0"
                       value={form.aplicacoes || ''}
                       onChange={(event) => updateField('aplicacoes', event.target.value)}
                       rows={3}
@@ -438,6 +459,7 @@ export function SolicitacaoDetailsDialog({
 
                   <Field label="Link de referência">
                     <Input
+                      className="min-w-0 truncate"
                       value={form.link_referencia || ''}
                       onChange={(event) => updateField('link_referencia', event.target.value)}
                       placeholder="https://..."
@@ -470,7 +492,7 @@ export function SolicitacaoDetailsDialog({
                           href={solicitacao.link_referencia}
                           target="_blank"
                           rel="noreferrer"
-                          className="text-primary underline-offset-4 hover:underline"
+                          className="break-all text-primary underline-offset-4 hover:underline"
                         >
                           {solicitacao.link_referencia}
                         </a>
@@ -491,13 +513,15 @@ export function SolicitacaoDetailsDialog({
                       value={form.status_geral}
                       onValueChange={(value) => updateField('status_geral', value)}
                     >
-                      <SelectTrigger>
+                      <SelectTrigger className="w-full min-w-0 overflow-hidden">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
                         {SOLICITACAO_STATUS_GERAL_OPTIONS.map((option) => (
                           <SelectItem key={option.value} value={option.value}>
-                            {option.label}
+                            <span className="block max-w-[min(34rem,calc(100vw-4rem))] truncate" title={option.label}>
+                              {option.label}
+                            </span>
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -509,13 +533,15 @@ export function SolicitacaoDetailsDialog({
                       value={form.status_cotacao}
                       onValueChange={(value) => updateField('status_cotacao', value)}
                     >
-                      <SelectTrigger>
+                      <SelectTrigger className="w-full min-w-0 overflow-hidden">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
                         {SOLICITACAO_STATUS_COTACAO_OPTIONS.map((option) => (
                           <SelectItem key={option.value} value={option.value}>
-                            {option.label}
+                            <span className="block max-w-[min(34rem,calc(100vw-4rem))] truncate" title={option.label}>
+                              {option.label}
+                            </span>
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -527,13 +553,15 @@ export function SolicitacaoDetailsDialog({
                       value={form.status_pedido}
                       onValueChange={(value) => updateField('status_pedido', value)}
                     >
-                      <SelectTrigger>
+                      <SelectTrigger className="w-full min-w-0 overflow-hidden">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
                         {SOLICITACAO_STATUS_PEDIDO_OPTIONS.map((option) => (
                           <SelectItem key={option.value} value={option.value}>
-                            {option.label}
+                            <span className="block max-w-[min(34rem,calc(100vw-4rem))] truncate" title={option.label}>
+                              {option.label}
+                            </span>
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -545,13 +573,15 @@ export function SolicitacaoDetailsDialog({
                       value={form.status_transporte}
                       onValueChange={(value) => updateField('status_transporte', value)}
                     >
-                      <SelectTrigger>
+                      <SelectTrigger className="w-full min-w-0 overflow-hidden">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
                         {SOLICITACAO_STATUS_TRANSPORTE_OPTIONS.map((option) => (
                           <SelectItem key={option.value} value={option.value}>
-                            {option.label}
+                            <span className="block max-w-[min(34rem,calc(100vw-4rem))] truncate" title={option.label}>
+                              {option.label}
+                            </span>
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -562,6 +592,7 @@ export function SolicitacaoDetailsDialog({
                 <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                   <Field label="Valor unitário">
                     <Input
+                      className="min-w-0 truncate"
                       inputMode="decimal"
                       value={form.valor_unitario || ''}
                       onChange={(event) => updateField('valor_unitario', event.target.value)}
@@ -570,6 +601,7 @@ export function SolicitacaoDetailsDialog({
                   </Field>
                   <Field label="Valor total">
                     <Input
+                      className="min-w-0 truncate"
                       inputMode="decimal"
                       value={form.valor_total || ''}
                       onChange={(event) => updateField('valor_total', event.target.value)}
@@ -577,24 +609,33 @@ export function SolicitacaoDetailsDialog({
                     />
                   </Field>
                   <Field label="Previsão desejada">
-                    <Input type="date" value={form.previsao_desejada || ''} onChange={(event) => updateField('previsao_desejada', event.target.value)} />
+                    <Input className="min-w-0" type="date" value={form.previsao_desejada || ''} onChange={(event) => updateField('previsao_desejada', event.target.value)} />
                   </Field>
                   <Field label="Previsão de entrega">
-                    <Input type="date" value={form.previsao_entrega || ''} onChange={(event) => updateField('previsao_entrega', event.target.value)} />
+                    <Input className="min-w-0" type="date" value={form.previsao_entrega || ''} onChange={(event) => updateField('previsao_entrega', event.target.value)} />
                   </Field>
                   <Field label="Produto vinculado">
                     <Select
                       value={form.produto_id || 'sem_produto'}
                       onValueChange={(value) => updateField('produto_id', value === 'sem_produto' ? '' : value)}
                     >
-                      <SelectTrigger>
+                      <SelectTrigger className="w-full min-w-0 overflow-hidden">
                         <SelectValue />
                       </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="sem_produto">Sem vinculo</SelectItem>
+                      <SelectContent className="max-w-[calc(100vw-2rem)]">
+                        <SelectItem value="sem_produto">
+                          <span className="block max-w-[min(34rem,calc(100vw-4rem))] truncate" title="Sem vinculo">
+                            Sem vinculo
+                          </span>
+                        </SelectItem>
                         {produtos.map((produto) => (
                           <SelectItem key={produto.id} value={produto.id}>
-                            {produto.cod} - {produto.nome}
+                            <span
+                              className="block max-w-[min(34rem,calc(100vw-4rem))] truncate"
+                              title={`${produto.cod} - ${produto.nome}`}
+                            >
+                              {produto.cod} - {produto.nome}
+                            </span>
                           </SelectItem>
                         ))}
                       </SelectContent>

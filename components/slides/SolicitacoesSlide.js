@@ -84,7 +84,14 @@ export function SolicitacoesSlide({ solicitacoes, active, onEnd }) {
         </div>
       ) : (
         <div className="min-h-0 flex-1 overflow-hidden rounded-xl border bg-card shadow-sm">
-          <Table>
+          <Table className="table-fixed">
+            <colgroup>
+              <col className="w-[100px]" />
+              <col />
+              <col className="w-[20%]" />
+              <col className="w-[220px]" />
+              <col className="w-[140px]" />
+            </colgroup>
             <TableHeader>
               <TableRow className="hover:bg-transparent">
                 <TableHead className="h-12 px-4 text-base">Cod.</TableHead>
@@ -98,15 +105,19 @@ export function SolicitacoesSlide({ solicitacoes, active, onEnd }) {
               {importantes.map((solicitacao) => (
                 <TableRow key={solicitacao.id} className="hover:bg-muted/30">
                   <TableCell className="px-4 py-3 font-semibold tabular-nums">
-                    {solicitacao.codigo || '-'}
+                    <p className="truncate" title={solicitacao.codigo || '-'}>
+                      {solicitacao.codigo || '-'}
+                    </p>
                   </TableCell>
-                  <TableCell className="max-w-[460px] px-4 py-3">
-                    <p className="line-clamp-2 font-medium">
+                  <TableCell className="px-4 py-3">
+                    <p className="line-clamp-2 font-medium" title={solicitacao.descricao || '-'}>
                       {solicitacao.descricao || '-'}
                     </p>
                   </TableCell>
                   <TableCell className="px-4 py-3">
-                    {solicitacao.solicitante || '-'}
+                    <p className="truncate" title={solicitacao.solicitante || '-'}>
+                      {solicitacao.solicitante || '-'}
+                    </p>
                   </TableCell>
                   <TableCell className="px-4 py-3">
                     <div className="flex flex-wrap gap-2">
@@ -118,7 +129,12 @@ export function SolicitacoesSlide({ solicitacoes, active, onEnd }) {
                     </div>
                   </TableCell>
                   <TableCell className="px-4 py-3">
-                    {formatDate(solicitacao.previsao_entrega || solicitacao.previsao_desejada)}
+                    <p
+                      className="truncate"
+                      title={formatDate(solicitacao.previsao_entrega || solicitacao.previsao_desejada)}
+                    >
+                      {formatDate(solicitacao.previsao_entrega || solicitacao.previsao_desejada)}
+                    </p>
                   </TableCell>
                 </TableRow>
               ))}

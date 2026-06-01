@@ -59,11 +59,11 @@ function DetailStatus({ label, value, options }) {
   const option = getSolicitacaoOption(options, value)
 
   return (
-    <div className="rounded-lg border bg-muted/20 px-3 py-2">
+    <div className="min-w-0 rounded-lg border bg-muted/20 px-3 py-2">
       <p className="text-xs uppercase tracking-wide text-muted-foreground">
         {label}
       </p>
-      <p className="mt-1 text-sm font-medium">{option.label}</p>
+      <p className="mt-1 truncate text-sm font-medium" title={option.label}>{option.label}</p>
     </div>
   )
 }
@@ -119,16 +119,18 @@ function SolicitacaoPublicTable({ solicitacoes, onOpen }) {
               key={solicitacao.codigo}
               type="button"
               onClick={() => onOpen(solicitacao)}
-              className="rounded-xl border bg-background p-4 text-left shadow-sm transition hover:border-primary/50"
+              className="min-w-0 rounded-xl border bg-background p-4 text-left shadow-sm transition hover:border-primary/50"
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
-                  <p className="font-semibold tabular-nums">{solicitacao.codigo}</p>
-                  <p className="mt-1 line-clamp-2 text-sm">{solicitacao.descricao}</p>
-                  <p className="mt-1 text-xs text-muted-foreground">
+                  <p className="truncate font-semibold tabular-nums">{solicitacao.codigo}</p>
+                  <p className="mt-1 line-clamp-2 text-sm" title={solicitacao.descricao || '-'}>
+                    {solicitacao.descricao}
+                  </p>
+                  <p className="mt-1 truncate text-xs text-muted-foreground" title={solicitacao.solicitante || '-'}>
                     {solicitacao.solicitante || '-'}
                   </p>
-                  <p className="mt-1 line-clamp-1 text-xs text-muted-foreground">
+                  <p className="mt-1 truncate text-xs text-muted-foreground" title={solicitacao.centro_custo || '-'}>
                     {solicitacao.centro_custo || '-'}
                   </p>
                 </div>
@@ -137,7 +139,10 @@ function SolicitacaoPublicTable({ solicitacoes, onOpen }) {
               <div className="mt-3 flex flex-wrap gap-2">
                 <SolicitacaoStatusBadge type="prioridade" value={solicitacao.prioridade} />
                 {situacao.label && (
-                  <span className={`rounded-md border px-2 py-1 text-xs font-semibold ${situacao.className}`}>
+                  <span
+                    className={`block max-w-full truncate rounded-md border px-2 py-1 text-xs font-semibold ${situacao.className}`}
+                    title={situacao.label}
+                  >
                     {situacao.label}
                   </span>
                 )}
@@ -152,7 +157,16 @@ function SolicitacaoPublicTable({ solicitacoes, onOpen }) {
       </div>
 
       <div className="hidden overflow-hidden rounded-xl border bg-background md:block">
-        <Table>
+        <Table className="table-fixed">
+          <colgroup>
+            <col className="w-[90px]" />
+            <col className="w-[34%]" />
+            <col className="w-[18%]" />
+            <col className="w-[18%]" />
+            <col className="w-[120px]" />
+            <col className="w-[130px]" />
+            <col className="w-[120px]" />
+          </colgroup>
           <TableHeader>
             <TableRow className="hover:bg-transparent">
               <TableHead className="h-12 px-4">Cod.</TableHead>
@@ -175,13 +189,19 @@ function SolicitacaoPublicTable({ solicitacoes, onOpen }) {
                   onClick={() => onOpen(solicitacao)}
                 >
                   <TableCell className="px-4 py-3 font-semibold tabular-nums">
-                    {solicitacao.codigo}
+                    <p className="truncate">{solicitacao.codigo}</p>
                   </TableCell>
-                  <TableCell className="max-w-[420px] px-4 py-3">
-                    <p className="truncate font-medium">{solicitacao.descricao}</p>
+                  <TableCell className="px-4 py-3">
+                    <p className="truncate font-medium" title={solicitacao.descricao || '-'}>
+                      {solicitacao.descricao || '-'}
+                    </p>
                   </TableCell>
-                  <TableCell className="px-4 py-3">{solicitacao.solicitante || '-'}</TableCell>
-                  <TableCell className="max-w-[220px] px-4 py-3">
+                  <TableCell className="px-4 py-3">
+                    <p className="truncate" title={solicitacao.solicitante || '-'}>
+                      {solicitacao.solicitante || '-'}
+                    </p>
+                  </TableCell>
+                  <TableCell className="px-4 py-3">
                     <p className="truncate" title={solicitacao.centro_custo || '-'}>
                       {solicitacao.centro_custo || '-'}
                     </p>
@@ -191,14 +211,21 @@ function SolicitacaoPublicTable({ solicitacoes, onOpen }) {
                   </TableCell>
                   <TableCell className="px-4 py-3">
                     {situacao.label ? (
-                      <span className={`rounded-md border px-2 py-1 text-xs font-semibold ${situacao.className}`}>
+                      <span
+                        className={`block truncate rounded-md border px-2 py-1 text-xs font-semibold ${situacao.className}`}
+                        title={situacao.label}
+                      >
                         {situacao.label}
                       </span>
                     ) : (
                       '-'
                     )}
                   </TableCell>
-                  <TableCell className="px-4 py-3">{formatDate(getPrevisaoDate(solicitacao))}</TableCell>
+                  <TableCell className="px-4 py-3">
+                    <p className="truncate" title={formatDate(getPrevisaoDate(solicitacao))}>
+                      {formatDate(getPrevisaoDate(solicitacao))}
+                    </p>
+                  </TableCell>
                 </TableRow>
               )
             })}
@@ -218,9 +245,9 @@ function SolicitacaoPublicDetailsDialog({ solicitacao, open, onOpenChange }) {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="h-[100dvh] max-h-[100dvh] w-full max-w-none overflow-y-auto rounded-none p-4 sm:h-auto sm:max-h-[calc(100vh-2rem)] sm:w-[95vw] sm:max-w-3xl sm:rounded-lg sm:p-6">
         <DialogHeader>
-          <DialogTitle className="line-clamp-3 text-left text-base sm:text-lg">
-            {solicitacao.codigo} - {solicitacao.descricao}
-          </DialogTitle>
+              <DialogTitle className="line-clamp-3 text-left text-base sm:text-lg" title={`${solicitacao.codigo} - ${solicitacao.descricao}`}>
+                {solicitacao.codigo} - {solicitacao.descricao}
+              </DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4">
@@ -228,7 +255,10 @@ function SolicitacaoPublicDetailsDialog({ solicitacao, open, onOpenChange }) {
             <SolicitacaoStatusBadge value={solicitacao.status_geral} />
             <SolicitacaoStatusBadge type="prioridade" value={solicitacao.prioridade} />
             {situacao.label && (
-              <span className={`rounded-md border px-2 py-1 text-xs font-semibold ${situacao.className}`}>
+              <span
+                className={`block max-w-full truncate rounded-md border px-2 py-1 text-xs font-semibold ${situacao.className}`}
+                title={situacao.label}
+              >
                 {situacao.label}
               </span>
             )}
@@ -504,15 +534,18 @@ export default function SolicitarPage() {
               <div className="space-y-3 rounded-xl border bg-background p-4">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                   <div className="min-w-0">
-                    <p className="font-semibold tabular-nums">{statusResult.codigo}</p>
-                    <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">
+                    <p className="truncate font-semibold tabular-nums">{statusResult.codigo}</p>
+                    <p className="mt-1 line-clamp-2 text-sm text-muted-foreground" title={statusResult.descricao || '-'}>
                       {statusResult.descricao}
                     </p>
                   </div>
                   <div className="flex flex-col items-start gap-2 sm:items-end">
                     <SolicitacaoStatusBadge value={statusResult.status_geral} />
                     {statusResultSituacao?.label && (
-                      <span className={`rounded-md border px-2 py-1 text-xs font-semibold ${statusResultSituacao.className}`}>
+                      <span
+                        className={`block max-w-full truncate rounded-md border px-2 py-1 text-xs font-semibold ${statusResultSituacao.className}`}
+                        title={statusResultSituacao.label}
+                      >
                         {statusResultSituacao.label}
                       </span>
                     )}
@@ -522,12 +555,24 @@ export default function SolicitarPage() {
                 <StatusGrid solicitacao={statusResult} />
 
                 <div className="grid gap-1 text-xs text-muted-foreground sm:grid-cols-2 lg:grid-cols-3">
-                  <span>Solicitante: {statusResult.solicitante || '-'}</span>
-                  <span>Centro: {statusResult.centro_custo || '-'}</span>
-                  <span>Quantidade: {statusResult.quantidade || '-'}</span>
-                  <span>Previsão desejada: {formatDate(statusResult.previsao_desejada)}</span>
-                  <span>Previsão de entrega: {formatDate(statusResult.previsao_entrega)}</span>
-                  <span>Atualizado em: {formatDate(statusResult.updated_at)}</span>
+                  <span className="truncate" title={`Solicitante: ${statusResult.solicitante || '-'}`}>
+                    Solicitante: {statusResult.solicitante || '-'}
+                  </span>
+                  <span className="truncate" title={`Centro: ${statusResult.centro_custo || '-'}`}>
+                    Centro: {statusResult.centro_custo || '-'}
+                  </span>
+                  <span className="truncate" title={`Quantidade: ${statusResult.quantidade || '-'}`}>
+                    Quantidade: {statusResult.quantidade || '-'}
+                  </span>
+                  <span className="truncate" title={`Previsão desejada: ${formatDate(statusResult.previsao_desejada)}`}>
+                    Previsão desejada: {formatDate(statusResult.previsao_desejada)}
+                  </span>
+                  <span className="truncate" title={`Previsão de entrega: ${formatDate(statusResult.previsao_entrega)}`}>
+                    Previsão de entrega: {formatDate(statusResult.previsao_entrega)}
+                  </span>
+                  <span className="truncate" title={`Atualizado em: ${formatDate(statusResult.updated_at)}`}>
+                    Atualizado em: {formatDate(statusResult.updated_at)}
+                  </span>
                 </div>
               </div>
             )}
