@@ -48,7 +48,7 @@ export function Sidebar({ onNavigate }) {
   return (
     <aside className="fixed inset-y-0 left-0 z-40 flex h-dvh w-64 flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground shadow-lg md:w-64">
       <div className="px-4 py-8">
-        <Link href="/solicitacoes" onClick={handleClick} className="block md:hidden">
+        <Link href="/solicitacoes" onClick={handleClick} className="block lg:hidden">
           <Image
             src="/ige-supergesso.png"
             alt="Logo"
@@ -57,7 +57,7 @@ export function Sidebar({ onNavigate }) {
             className="mx-auto mb-2"
           />
         </Link>
-        <Link href="/painel" onClick={handleClick} className="hidden md:block">
+        <Link href="/painel" onClick={handleClick} className="hidden lg:block">
           <Image
             src="/ige-supergesso.png"
             alt="Logo"

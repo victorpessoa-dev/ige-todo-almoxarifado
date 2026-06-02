@@ -22,6 +22,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { LoadingState } from '@/components/ui/spinner'
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from '@/components/ui/select'
+import {
   Table,
   TableBody,
   TableCell,
@@ -33,6 +40,7 @@ import {
   ColumnResizeHandle,
   useResizableColumns
 } from '@/components/ui/resizable-table-columns'
+import SortableTableHead from '@/components/ui/sortable-table-head'
 import {
   Dialog,
   DialogContent,
@@ -42,6 +50,7 @@ import {
 import { getUserMessage } from '@/lib/user-messages'
 import { SolicitacaoStatusBadge } from '@/components/solicitacoes/SolicitacaoStatusBadge'
 import {
+  SOLICITACAO_PRIORIDADE_OPTIONS,
   SOLICITACAO_STATUS_COTACAO_OPTIONS,
   SOLICITACAO_STATUS_PEDIDO_OPTIONS,
   SOLICITACAO_STATUS_TRANSPORTE_OPTIONS,
@@ -57,6 +66,31 @@ function formatDate(value) {
 
 function getPrevisaoDate(solicitacao) {
   return solicitacao.previsao_entrega || solicitacao.previsao_desejada
+}
+
+function compareText(a, b) {
+  return String(a || '').localeCompare(String(b || ''), 'pt-BR', {
+    numeric: true,
+    sensitivity: 'base'
+  })
+}
+
+function compareSolicitacaoByKey(a, b, key) {
+  if (key === 'prioridade') {
+    return (
+      getSolicitacaoPrioridadeOrder(a.prioridade) -
+      getSolicitacaoPrioridadeOrder(b.prioridade)
+    )
+  }
+
+  const valueByKey = {
+    descricao: (item) => item.descricao,
+    solicitante: (item) => item.solicitante,
+    centro_custo: (item) => item.centro_custo
+  }
+
+  const getValue = valueByKey[key] || valueByKey.descricao
+  return compareText(getValue(a), getValue(b))
 }
 
 const PUBLIC_SOLICITACAO_TABLE_COLUMNS = [
@@ -113,7 +147,7 @@ function InfoItem({ label, value }) {
   )
 }
 
-function SolicitacaoPublicTable({ solicitacoes, onOpen }) {
+function SolicitacaoPublicTable({ solicitacoes, onOpen, sortConfig, onSort }) {
   const {
     getColumnStyle,
     startResize,
@@ -192,22 +226,42 @@ function SolicitacaoPublicTable({ solicitacoes, onOpen }) {
                 Cod.
                 <ColumnResizeHandle columnKey="codigo" onResizeStart={startResize} />
               </TableHead>
-              <TableHead className="relative h-12 px-3 pr-4">
-                Produto
+              <SortableTableHead
+                label="Produto"
+                columnKey="descricao"
+                sortConfig={sortConfig}
+                onSort={onSort}
+                className="relative h-12 px-3 pr-4"
+              >
                 <ColumnResizeHandle columnKey="descricao" onResizeStart={startResize} />
-              </TableHead>
-              <TableHead className="relative h-12 px-3 pr-4">
-                Solicitante
+              </SortableTableHead>
+              <SortableTableHead
+                label="Solicitante"
+                columnKey="solicitante"
+                sortConfig={sortConfig}
+                onSort={onSort}
+                className="relative h-12 px-3 pr-4"
+              >
                 <ColumnResizeHandle columnKey="solicitante" onResizeStart={startResize} />
-              </TableHead>
-              <TableHead className="relative h-12 px-3 pr-4">
-                Centro
+              </SortableTableHead>
+              <SortableTableHead
+                label="Centro"
+                columnKey="centro_custo"
+                sortConfig={sortConfig}
+                onSort={onSort}
+                className="relative h-12 px-3 pr-4"
+              >
                 <ColumnResizeHandle columnKey="centro_custo" onResizeStart={startResize} />
-              </TableHead>
-              <TableHead className="relative h-12 px-3 pr-4">
-                Prioridade
+              </SortableTableHead>
+              <SortableTableHead
+                label="Prioridade"
+                columnKey="prioridade"
+                sortConfig={sortConfig}
+                onSort={onSort}
+                className="relative h-12 px-3 pr-4"
+              >
                 <ColumnResizeHandle columnKey="prioridade" onResizeStart={startResize} />
-              </TableHead>
+              </SortableTableHead>
               <TableHead className="relative h-12 px-3 pr-4">
                 Situação
                 <ColumnResizeHandle columnKey="situacao" onResizeStart={startResize} />
@@ -337,6 +391,11 @@ export default function SolicitarPage() {
   const [isLoadingLists, setIsLoadingLists] = useState(true)
   const [isLoadingSolicitacoes, setIsLoadingSolicitacoes] = useState(true)
   const [codigoBusca, setCodigoBusca] = useState('')
+  const [prioridadeFiltro, setPrioridadeFiltro] = useState('todas')
+  const [publicSortConfig, setPublicSortConfig] = useState({
+    key: 'prioridade',
+    direction: 'asc'
+  })
   const [statusResult, setStatusResult] = useState(null)
   const [isSearching, setIsSearching] = useState(false)
   const [pedidoDialogOpen, setPedidoDialogOpen] = useState(false)
@@ -346,7 +405,7 @@ export default function SolicitarPage() {
     : null
   const publicSearch = codigoBusca.trim().toLowerCase()
   const filteredSolicitacoesPublicas = useMemo(() => {
-    const filtered = publicSearch
+    const filteredBySearch = publicSearch
       ? solicitacoesPublicas.filter((solicitacao) =>
         [
           solicitacao.codigo,
@@ -359,18 +418,30 @@ export default function SolicitarPage() {
       )
       : solicitacoesPublicas
 
-    return [...filtered].sort((a, b) => {
-      const priorityDiff =
-        getSolicitacaoPrioridadeOrder(a.prioridade) -
-        getSolicitacaoPrioridadeOrder(b.prioridade)
+    const filtered = prioridadeFiltro === 'todas'
+      ? filteredBySearch
+      : filteredBySearch.filter((solicitacao) => solicitacao.prioridade === prioridadeFiltro)
 
-      if (priorityDiff !== 0) return priorityDiff
+    return [...filtered].sort((a, b) => {
+      const direction = publicSortConfig.direction === 'asc' ? 1 : -1
+      const sortDiff = compareSolicitacaoByKey(a, b, publicSortConfig.key)
+      if (sortDiff !== 0) return sortDiff * direction
 
       return String(b.codigo || '').localeCompare(String(a.codigo || ''), 'pt-BR', {
         numeric: true
       })
     })
-  }, [publicSearch, solicitacoesPublicas])
+  }, [prioridadeFiltro, publicSearch, publicSortConfig, solicitacoesPublicas])
+
+  const handlePublicSort = (key) => {
+    setPublicSortConfig((current) => ({
+      key,
+      direction:
+        current.key === key && current.direction === 'asc'
+          ? 'desc'
+          : 'asc'
+    }))
+  }
 
   const loadPublicSolicitacoes = async () => {
     setIsLoadingSolicitacoes(true)
@@ -425,9 +496,6 @@ export default function SolicitarPage() {
     try {
       const result = await createPublicSolicitacao(form)
       setCreatedSolicitacao(result || null)
-      if (result?.codigo) {
-        setCodigoBusca(result.codigo)
-      }
       setSubmitted(true)
       setForm(defaultSolicitacaoForm)
       setPedidoDialogOpen(false)
@@ -563,12 +631,25 @@ export default function SolicitarPage() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <form onSubmit={handleSearchStatus} className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto]">
+            <form onSubmit={handleSearchStatus} className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_180px_auto]">
               <Input
                 value={codigoBusca}
                 onChange={(event) => setCodigoBusca(event.target.value)}
                 placeholder="Busque por código, produto ou solicitante"
               />
+              <Select value={prioridadeFiltro} onValueChange={setPrioridadeFiltro}>
+                <SelectTrigger aria-label="Filtrar por prioridade" className="w-full">
+                  <SelectValue placeholder="Prioridade" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todas">Todas prioridades</SelectItem>
+                  {SOLICITACAO_PRIORIDADE_OPTIONS.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
               <Button type="submit" disabled={isSearching} className="w-full sm:w-auto">
                 Buscar
               </Button>
@@ -642,6 +723,8 @@ export default function SolicitarPage() {
               <SolicitacaoPublicTable
                 solicitacoes={filteredSolicitacoesPublicas}
                 onOpen={setSelectedPublicSolicitacao}
+                sortConfig={publicSortConfig}
+                onSort={handlePublicSort}
               />
             )}
           </CardContent>

@@ -93,14 +93,14 @@ export default function AdminLayout({ children }) {
 
   return (
     <div className="flex h-dvh w-full overflow-hidden bg-background">
-      <div className="hidden w-64 shrink-0 md:block" aria-hidden="true" />
+      <div className="hidden w-64 shrink-0 lg:block" aria-hidden="true" />
 
-      <div className="hidden md:block">
+      <div className="hidden lg:block">
         <Sidebar />
       </div>
 
       {sidebarOpen && (
-        <div className="fixed inset-0 z-50 md:hidden">
+        <div className="fixed inset-0 z-50 lg:hidden">
           <div
             className="absolute inset-0 bg-black/50"
             onClick={() => setSidebarOpen(false)}
@@ -113,7 +113,7 @@ export default function AdminLayout({ children }) {
       )}
 
       <main className="flex min-w-0 flex-1 flex-col overflow-hidden">
-        <div className="sticky top-0 z-30 flex items-center justify-between border-b bg-background/95 px-4 py-4 backdrop-blur supports-[backdrop-filter]:bg-background/80 md:hidden">
+        <div className="sticky top-0 z-30 flex items-center justify-between border-b bg-background/95 px-4 py-4 backdrop-blur supports-[backdrop-filter]:bg-background/80 lg:hidden">
           <button
             type="button"
             aria-label="Abrir menu"
@@ -135,7 +135,7 @@ export default function AdminLayout({ children }) {
           <div className="w-6" aria-hidden="true" />
         </div>
 
-        <div className="admin-main-scroll scrollbar-soft flex-1 overflow-y-auto overflow-x-hidden px-3 py-3 sm:px-5 sm:py-5 md:px-7 md:py-6 lg:px-8">
+        <div className="admin-main-scroll scrollbar-soft flex-1 overflow-y-auto overflow-x-hidden px-3 py-3 sm:px-5 sm:py-5 md:px-6 md:py-5 lg:px-8 lg:py-6">
           {children}
         </div>
       </main>

@@ -11,10 +11,34 @@ import {
   TableHeader,
   TableRow
 } from '@/components/ui/table'
-import { SolicitacaoStatusBadge } from '@/components/solicitacoes/SolicitacaoStatusBadge'
-import { getSolicitacaoPrioridadeOrder } from '@/constants/solicitacoes-config'
+import {
+  SOLICITACAO_PRIORIDADE_OPTIONS,
+  SOLICITACAO_STATUS_GERAL_OPTIONS,
+  getSolicitacaoOption,
+  getSolicitacaoPrioridadeOrder,
+  getSolicitacaoSituacao
+} from '@/constants/solicitacoes-config'
 import { formatDateBR, getLocalDateTime } from '@/lib/date-utils'
 import { useAutoScroll } from '@/lib/hooks/useAutoScroll'
+
+const SLIDE_SOLICITACAO_TABLE_COLUMNS = [
+  { key: 'codigo', width: 92 },
+  { key: 'item', width: 260 },
+  { key: 'solicitante', width: 160 },
+  { key: 'centro', width: 230 },
+  { key: 'prioridade', width: 110 },
+  { key: 'situacao', width: 210 },
+  { key: 'previsao', width: 120 }
+]
+
+const SLIDE_SOLICITACAO_TABLE_WIDTH = SLIDE_SOLICITACAO_TABLE_COLUMNS.reduce(
+  (total, column) => total + column.width,
+  0
+)
+
+function getColumnWidthPercent(width) {
+  return `${(width / SLIDE_SOLICITACAO_TABLE_WIDTH) * 100}%`
+}
 
 function isAtrasada(solicitacao) {
   const dateValue = solicitacao.previsao_entrega || solicitacao.previsao_desejada
@@ -33,6 +57,60 @@ function isAtrasada(solicitacao) {
 
 function formatDate(value) {
   return formatDateBR(value, 'Sem previsão')
+}
+
+function getStatusDotClass(status) {
+  const option = getSolicitacaoOption(SOLICITACAO_STATUS_GERAL_OPTIONS, status)
+
+  if (option.className.includes('emerald')) return 'bg-emerald-500'
+  if (option.className.includes('green')) return 'bg-green-500'
+  if (option.className.includes('yellow')) return 'bg-yellow-500'
+  if (option.className.includes('red')) return 'bg-red-500'
+  if (option.className.includes('amber')) return 'bg-amber-500'
+  if (option.className.includes('orange')) return 'bg-orange-500'
+  if (option.className.includes('violet')) return 'bg-violet-500'
+  if (option.className.includes('indigo')) return 'bg-indigo-500'
+  if (option.className.includes('blue')) return 'bg-blue-500'
+  if (option.className.includes('slate')) return 'bg-slate-500'
+
+  return 'bg-sky-500'
+}
+
+function PrioridadeBadge({ value }) {
+  const option = getSolicitacaoOption(SOLICITACAO_PRIORIDADE_OPTIONS, value)
+
+  return (
+    <span
+      className={`inline-flex max-w-full truncate rounded-md border px-2 py-1 text-xs font-semibold ${option.className}`}
+      title={option.label}
+    >
+      {option.label}
+    </span>
+  )
+}
+
+function SituacaoBadge({ solicitacao }) {
+  const situacao = getSolicitacaoSituacao(solicitacao)
+
+  if (!situacao.label) return <span className="text-muted-foreground">-</span>
+
+  return (
+    <span
+      className={`inline-flex max-w-full truncate rounded-md border px-2 py-1 text-xs font-semibold ${situacao.className}`}
+      title={situacao.label}
+    >
+      {situacao.label}
+    </span>
+  )
+}
+
+function StatusDot({ solicitacao }) {
+  return (
+    <span
+      aria-hidden="true"
+      className={`h-2.5 w-2.5 shrink-0 rounded-full ${getStatusDotClass(solicitacao.status_geral)}`}
+    />
+  )
 }
 
 export function SolicitacoesSlide({ solicitacoes, active, onEnd }) {
@@ -66,74 +144,81 @@ export function SolicitacoesSlide({ solicitacoes, active, onEnd }) {
 
   return (
     <div className="flex h-full flex-col overflow-hidden p-5 sm:p-8">
-        <div className="mb-4 flex items-center justify-center gap-2 text-center sm:mb-6 sm:gap-3">
-          <ShoppingCart className="h-8 w-8 sm:h-10 sm:w-10 text-primary" />
-          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-foreground">
-            Solicitações de Compra
-            </h2>
-        </div>
-
+      <div className="mb-4 flex items-center justify-center gap-2 text-center sm:mb-6 sm:gap-3">
+        <ShoppingCart className="h-8 w-8 text-primary sm:h-10 sm:w-10" />
+        <h2 className="text-2xl font-bold text-foreground sm:text-3xl md:text-4xl">
+          Solicitações de Compra
+        </h2>
+      </div>
 
       {abertas.length === 0 ? (
         <div className="flex flex-1 items-center justify-center rounded-xl border border-dashed bg-muted/30 text-muted-foreground">
           Nenhuma solicitação em aberto.
         </div>
       ) : (
-        <div ref={ref} className="slide-scroll scrollbar-soft min-h-0 flex-1 overflow-y-auto rounded-xl border bg-card shadow-sm">
-          <Table className="table-fixed">
+        <div ref={ref} className="slide-scroll scrollbar-soft min-h-0 flex-1 overflow-auto rounded-xl border bg-card shadow-sm">
+          <Table
+            className="w-full table-fixed"
+          >
             <colgroup>
-              <col className="w-[100px]" />
-              <col />
-              <col className="w-[20%]" />
-              <col className="w-[220px]" />
-              <col className="w-[140px]" />
+              {SLIDE_SOLICITACAO_TABLE_COLUMNS.map((column) => (
+                <col key={column.key} style={{ width: getColumnWidthPercent(column.width) }} />
+              ))}
             </colgroup>
             <TableHeader>
               <TableRow className="hover:bg-transparent">
-                <TableHead className="h-12 px-4 text-base">Cod.</TableHead>
-                <TableHead className="h-12 px-4 text-base">Produto</TableHead>
-                <TableHead className="h-12 px-4 text-base">Solicitante</TableHead>
-                <TableHead className="h-12 px-4 text-base">Status</TableHead>
-                <TableHead className="h-12 px-4 text-base">Previsão</TableHead>
+                <TableHead className="h-12 px-3 text-base">Código</TableHead>
+                <TableHead className="h-12 px-3 text-base">Item</TableHead>
+                <TableHead className="h-12 px-3 text-base">Solicitante</TableHead>
+                <TableHead className="h-12 px-3 text-base">Centro</TableHead>
+                <TableHead className="h-12 px-3 text-base">Prioridade</TableHead>
+                <TableHead className="h-12 px-3 text-base">Situação</TableHead>
+                <TableHead className="h-12 px-3 text-base">Previsão</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {abertas.map((solicitacao) => (
-                <TableRow key={solicitacao.id} className="hover:bg-muted/30">
-                  <TableCell className="px-4 py-3 font-semibold tabular-nums">
-                    <p className="truncate" title={solicitacao.codigo || '-'}>
-                      {solicitacao.codigo || '-'}
-                    </p>
-                  </TableCell>
-                  <TableCell className="px-4 py-3">
-                    <p className="line-clamp-2 font-medium" title={solicitacao.descricao || '-'}>
-                      {solicitacao.descricao || '-'}
-                    </p>
-                  </TableCell>
-                  <TableCell className="px-4 py-3">
-                    <p className="truncate" title={solicitacao.solicitante || '-'}>
-                      {solicitacao.solicitante || '-'}
-                    </p>
-                  </TableCell>
-                  <TableCell className="px-4 py-3">
-                    <div className="flex flex-wrap gap-2">
-                      <SolicitacaoStatusBadge value={solicitacao.status_geral} />
-                      <SolicitacaoStatusBadge
-                        type="prioridade"
-                        value={solicitacao.prioridade}
-                      />
-                    </div>
-                  </TableCell>
-                  <TableCell className="px-4 py-3">
-                    <p
-                      className="truncate"
-                      title={formatDate(solicitacao.previsao_entrega || solicitacao.previsao_desejada)}
-                    >
-                      {formatDate(solicitacao.previsao_entrega || solicitacao.previsao_desejada)}
-                    </p>
-                  </TableCell>
-                </TableRow>
-              ))}
+              {abertas.map((solicitacao) => {
+                const previsao = formatDate(solicitacao.previsao_entrega || solicitacao.previsao_desejada)
+
+                return (
+                  <TableRow key={solicitacao.id} className="hover:bg-muted/30">
+                    <TableCell className="px-3 py-3 font-semibold tabular-nums">
+                      <div className="flex min-w-0 items-center gap-2">
+                        <StatusDot solicitacao={solicitacao} />
+                        <p className="truncate" title={solicitacao.codigo || '-'}>
+                          {solicitacao.codigo || '-'}
+                        </p>
+                      </div>
+                    </TableCell>
+                    <TableCell className="px-3 py-3">
+                      <p className="truncate font-medium" title={solicitacao.descricao || '-'}>
+                        {solicitacao.descricao || '-'}
+                      </p>
+                    </TableCell>
+                    <TableCell className="px-3 py-3">
+                      <p className="truncate" title={solicitacao.solicitante || '-'}>
+                        {solicitacao.solicitante || '-'}
+                      </p>
+                    </TableCell>
+                    <TableCell className="px-3 py-3">
+                      <p className="truncate" title={solicitacao.centro_custo || '-'}>
+                        {solicitacao.centro_custo || '-'}
+                      </p>
+                    </TableCell>
+                    <TableCell className="px-3 py-3">
+                      <PrioridadeBadge value={solicitacao.prioridade} />
+                    </TableCell>
+                    <TableCell className="px-3 py-3">
+                      <SituacaoBadge solicitacao={solicitacao} />
+                    </TableCell>
+                    <TableCell className="px-3 py-3">
+                      <p className="truncate" title={previsao}>
+                        {previsao}
+                      </p>
+                    </TableCell>
+                  </TableRow>
+                )
+              })}
             </TableBody>
           </Table>
         </div>
