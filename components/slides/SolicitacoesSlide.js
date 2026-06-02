@@ -1,7 +1,7 @@
 'use client'
 
-import { useEffect } from 'react'
-import { AlertTriangle, ShoppingCart } from 'lucide-react'
+import { useEffect, useMemo, useRef } from 'react'
+import { ShoppingCart } from 'lucide-react'
 
 import {
   Table,
@@ -14,6 +14,7 @@ import {
 import { SolicitacaoStatusBadge } from '@/components/solicitacoes/SolicitacaoStatusBadge'
 import { getSolicitacaoPrioridadeOrder } from '@/constants/solicitacoes-config'
 import { formatDateBR, getLocalDateTime } from '@/lib/date-utils'
+import { useAutoScroll } from '@/lib/hooks/useAutoScroll'
 
 function isAtrasada(solicitacao) {
   const dateValue = solicitacao.previsao_entrega || solicitacao.previsao_desejada
@@ -35,38 +36,33 @@ function formatDate(value) {
 }
 
 export function SolicitacoesSlide({ solicitacoes, active, onEnd }) {
-  const abertas = solicitacoes.filter(
-    (item) => !['concluida', 'cancelada'].includes(item.status_geral)
-  )
-  const importantes = [...abertas]
-    .sort((a, b) => {
-      const aAtrasada = isAtrasada(a) ? 1 : 0
-      const bAtrasada = isAtrasada(b) ? 1 : 0
-      if (aAtrasada !== bAtrasada) return bAtrasada - aAtrasada
+  const ref = useRef(null)
+  const abertas = useMemo(() => {
+    return solicitacoes
+      .filter((item) => !['concluida', 'cancelada'].includes(item.status_geral))
+      .sort((a, b) => {
+        const aAtrasada = isAtrasada(a) ? 1 : 0
+        const bAtrasada = isAtrasada(b) ? 1 : 0
+        if (aAtrasada !== bAtrasada) return bAtrasada - aAtrasada
 
-      const priorityDiff =
-        getSolicitacaoPrioridadeOrder(a.prioridade) -
-        getSolicitacaoPrioridadeOrder(b.prioridade)
-      if (priorityDiff !== 0) return priorityDiff
+        const priorityDiff =
+          getSolicitacaoPrioridadeOrder(a.prioridade) -
+          getSolicitacaoPrioridadeOrder(b.prioridade)
+        if (priorityDiff !== 0) return priorityDiff
 
-      const aDate = a.created_at ? new Date(a.created_at).getTime() : 0
-      const bDate = b.created_at ? new Date(b.created_at).getTime() : 0
-      return bDate - aDate
-    })
-    .slice(0, 6)
-  const totalAtencao = abertas.filter(
-    (item) => item.prioridade === 'urgente' || isAtrasada(item)
-  ).length
+        const aDate = a.created_at ? new Date(a.created_at).getTime() : 0
+        const bDate = b.created_at ? new Date(b.created_at).getTime() : 0
+        return bDate - aDate
+      })
+  }, [solicitacoes])
+
+  useAutoScroll(ref, abertas.length > 0 ? onEnd : undefined, active)
 
   useEffect(() => {
-    if (!active) return undefined
-
-    const timeout = setTimeout(() => {
-      onEnd?.()
-    }, 12000)
-
-    return () => clearTimeout(timeout)
-  }, [active, onEnd])
+    if (active && ref.current) {
+      ref.current.scrollTo({ top: 0 })
+    }
+  }, [active])
 
   return (
     <div className="flex h-full flex-col overflow-hidden p-5 sm:p-8">
@@ -78,12 +74,12 @@ export function SolicitacoesSlide({ solicitacoes, active, onEnd }) {
         </div>
 
 
-      {importantes.length === 0 ? (
+      {abertas.length === 0 ? (
         <div className="flex flex-1 items-center justify-center rounded-xl border border-dashed bg-muted/30 text-muted-foreground">
           Nenhuma solicitação em aberto.
         </div>
       ) : (
-        <div className="min-h-0 flex-1 overflow-hidden rounded-xl border bg-card shadow-sm">
+        <div ref={ref} className="slide-scroll scrollbar-soft min-h-0 flex-1 overflow-y-auto rounded-xl border bg-card shadow-sm">
           <Table className="table-fixed">
             <colgroup>
               <col className="w-[100px]" />
@@ -102,7 +98,7 @@ export function SolicitacoesSlide({ solicitacoes, active, onEnd }) {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {importantes.map((solicitacao) => (
+              {abertas.map((solicitacao) => (
                 <TableRow key={solicitacao.id} className="hover:bg-muted/30">
                   <TableCell className="px-4 py-3 font-semibold tabular-nums">
                     <p className="truncate" title={solicitacao.codigo || '-'}>
