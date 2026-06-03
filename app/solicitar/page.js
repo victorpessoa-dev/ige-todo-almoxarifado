@@ -41,6 +41,7 @@ import {
   useResizableColumns
 } from '@/components/ui/resizable-table-columns'
 import SortableTableHead from '@/components/ui/sortable-table-head'
+import TablePagination from '@/components/ui/table-pagination'
 import {
   Dialog,
   DialogContent,
@@ -59,6 +60,8 @@ import {
   getSolicitacaoSituacao
 } from '@/constants/solicitacoes-config'
 import { formatDateBR } from '@/lib/date-utils'
+
+const DEFAULT_PAGE_SIZE = 25
 
 function formatDate(value) {
   return formatDateBR(value)
@@ -86,7 +89,8 @@ function compareSolicitacaoByKey(a, b, key) {
   const valueByKey = {
     descricao: (item) => item.descricao,
     solicitante: (item) => item.solicitante,
-    centro_custo: (item) => item.centro_custo
+    centro_custo: (item) => item.centro_custo,
+    situacao: (item) => getSolicitacaoSituacao(item).label
   }
 
   const getValue = valueByKey[key] || valueByKey.descricao
@@ -262,10 +266,15 @@ function SolicitacaoPublicTable({ solicitacoes, onOpen, sortConfig, onSort }) {
               >
                 <ColumnResizeHandle columnKey="prioridade" onResizeStart={startResize} />
               </SortableTableHead>
-              <TableHead className="relative h-12 px-3 pr-4">
-                Situação
+              <SortableTableHead
+                label="Situação"
+                columnKey="situacao"
+                sortConfig={sortConfig}
+                onSort={onSort}
+                className="relative h-12 px-3 pr-4"
+              >
                 <ColumnResizeHandle columnKey="situacao" onResizeStart={startResize} />
-              </TableHead>
+              </SortableTableHead>
               <TableHead className="relative h-12 px-3 pr-4">
                 Previsão
                 <ColumnResizeHandle columnKey="previsao" onResizeStart={startResize} />
@@ -392,6 +401,8 @@ export default function SolicitarPage() {
   const [isLoadingSolicitacoes, setIsLoadingSolicitacoes] = useState(true)
   const [codigoBusca, setCodigoBusca] = useState('')
   const [prioridadeFiltro, setPrioridadeFiltro] = useState('todas')
+  const [publicCurrentPage, setPublicCurrentPage] = useState(1)
+  const [publicPageSize, setPublicPageSize] = useState(DEFAULT_PAGE_SIZE)
   const [publicSortConfig, setPublicSortConfig] = useState({
     key: 'prioridade',
     direction: 'asc'
@@ -433,7 +444,19 @@ export default function SolicitarPage() {
     })
   }, [prioridadeFiltro, publicSearch, publicSortConfig, solicitacoesPublicas])
 
+  const publicTotalPages = Math.max(
+    1,
+    Math.ceil(filteredSolicitacoesPublicas.length / publicPageSize)
+  )
+  const safePublicCurrentPage = Math.min(publicCurrentPage, publicTotalPages)
+  const paginatedSolicitacoesPublicas = useMemo(() => {
+    const start = (safePublicCurrentPage - 1) * publicPageSize
+
+    return filteredSolicitacoesPublicas.slice(start, start + publicPageSize)
+  }, [filteredSolicitacoesPublicas, publicPageSize, safePublicCurrentPage])
+
   const handlePublicSort = (key) => {
+    setPublicCurrentPage(1)
     setPublicSortConfig((current) => ({
       key,
       direction:
@@ -634,10 +657,19 @@ export default function SolicitarPage() {
             <form onSubmit={handleSearchStatus} className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_180px_auto]">
               <Input
                 value={codigoBusca}
-                onChange={(event) => setCodigoBusca(event.target.value)}
+                onChange={(event) => {
+                  setCodigoBusca(event.target.value)
+                  setPublicCurrentPage(1)
+                }}
                 placeholder="Busque por código, produto ou solicitante"
               />
-              <Select value={prioridadeFiltro} onValueChange={setPrioridadeFiltro}>
+              <Select
+                value={prioridadeFiltro}
+                onValueChange={(value) => {
+                  setPrioridadeFiltro(value)
+                  setPublicCurrentPage(1)
+                }}
+              >
                 <SelectTrigger aria-label="Filtrar por prioridade" className="w-full">
                   <SelectValue placeholder="Prioridade" />
                 </SelectTrigger>
@@ -721,10 +753,24 @@ export default function SolicitarPage() {
               <LoadingState className="rounded-xl border" />
             ) : (
               <SolicitacaoPublicTable
-                solicitacoes={filteredSolicitacoesPublicas}
+                solicitacoes={paginatedSolicitacoesPublicas}
                 onOpen={setSelectedPublicSolicitacao}
                 sortConfig={publicSortConfig}
                 onSort={handlePublicSort}
+              />
+            )}
+            {!isLoadingSolicitacoes && filteredSolicitacoesPublicas.length > 0 && (
+              <TablePagination
+                page={safePublicCurrentPage}
+                totalPages={publicTotalPages}
+                totalItems={filteredSolicitacoesPublicas.length}
+                pageSize={publicPageSize}
+                itemLabel="pedidos"
+                onPageChange={setPublicCurrentPage}
+                onPageSizeChange={(value) => {
+                  setPublicPageSize(value)
+                  setPublicCurrentPage(1)
+                }}
               />
             )}
           </CardContent>

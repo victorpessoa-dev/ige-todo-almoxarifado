@@ -155,8 +155,14 @@ export function SolicitacaoTable({
 
   const sortedSolicitacoes = useMemo(() => {
     return [...solicitacoes].sort((a, b) => {
-      const aValue = a[sortConfig.key] || ''
-      const bValue = b[sortConfig.key] || ''
+      const aValue =
+        sortConfig.key === 'situacao'
+          ? getSolicitacaoSituacao(a).label
+          : a[sortConfig.key] || ''
+      const bValue =
+        sortConfig.key === 'situacao'
+          ? getSolicitacaoSituacao(b).label
+          : b[sortConfig.key] || ''
 
       if (sortConfig.key === 'prioridade') {
         const aOrder = getSolicitacaoPrioridadeOrder(aValue)
@@ -329,10 +335,15 @@ export function SolicitacaoTable({
                 >
                   <ColumnResizeHandle columnKey="prioridade" onResizeStart={startResize} />
                 </SortableTableHead>
-                <TableHead className="relative pr-4">
-                  Situação
+                <SortableTableHead
+                  label="Situação"
+                  columnKey="situacao"
+                  sortConfig={sortConfig}
+                  onSort={handleSort}
+                  className="relative pr-4"
+                >
                   <ColumnResizeHandle columnKey="situacao" onResizeStart={startResize} />
-                </TableHead>
+                </SortableTableHead>
                 <SortableTableHead
                   label="Valor"
                   columnKey="valor_total"
