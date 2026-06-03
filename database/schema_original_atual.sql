@@ -80,9 +80,10 @@ create table if not exists public.solicitacoes_compra (
   codigo text unique,
   user_id uuid references auth.users(id) on delete set null,
   produto_id uuid references public.produtos(id) on delete set null,
-  solicitante_id uuid references public.solicitantes_compra(id) on delete set null,
+  solicitante_id uuid not null references public.solicitantes_compra(id) on delete restrict,
   centro_custo_id uuid references public.centros_custo(id) on delete set null,
-  descricao text not null,
+  nome_item text not null,
+  descricao text,
   quantidade numeric not null default 1 check (quantidade > 0),
   prioridade text not null default 'media',
   status_geral text not null default 'nova',
@@ -106,8 +107,17 @@ create table if not exists public.solicitacoes_compra (
 );
 
 alter table public.solicitacoes_compra
+  add column if not exists nome_item text,
   add column if not exists fornecedor_nome text,
   add column if not exists fornecedor_contato text;
+
+update public.solicitacoes_compra
+set nome_item = coalesce(nullif(trim(nome_item), ''), nullif(trim(descricao), ''), 'Item sem nome')
+where nullif(trim(coalesce(nome_item, '')), '') is null;
+
+alter table public.solicitacoes_compra
+  alter column nome_item set not null,
+  alter column descricao drop not null;
 
 create index if not exists tarefas_created_at_idx on public.tarefas (created_at desc);
 create index if not exists lembretes_created_at_idx on public.lembretes (created_at desc);
@@ -198,18 +208,11 @@ create trigger trg_solicitacao_compra_codigo
 before insert or update on public.solicitacoes_compra
 for each row execute function public.set_solicitacao_compra_codigo();
 
-drop function if exists public.criar_solicitacao_compra_publica(
-  text,
-  numeric,
-  text,
-  date,
-  uuid,
-  text,
-  text,
-  uuid
-);
+drop function if exists public.criar_solicitacao_compra_publica(text, numeric, text, date, uuid, text, text, text, text, uuid);
+drop function if exists public.criar_solicitacao_compra_publica(text, text, numeric, text, date, uuid, text, text, text, text, uuid);
 
 create or replace function public.criar_solicitacao_compra_publica(
+  p_nome_item text,
   p_descricao text,
   p_quantidade numeric,
   p_prioridade text,
@@ -235,8 +238,8 @@ as $$
 declare
   nova_solicitacao public.solicitacoes_compra%rowtype;
 begin
-  if nullif(trim(p_descricao), '') is null then
-    raise exception 'Descrição do item é obrigatória.';
+  if nullif(trim(coalesce(p_nome_item, '')), '') is null then
+    raise exception 'Nome do item e obrigatorio.';
   end if;
 
   if p_quantidade is null or p_quantidade <= 0 then
@@ -251,7 +254,11 @@ begin
     raise exception 'Prioridade invalida.';
   end if;
 
-  if length(trim(p_descricao)) > 500 then
+  if length(trim(coalesce(p_nome_item, ''))) > 160 then
+    raise exception 'Nome do item acima do limite de 160 caracteres.';
+  end if;
+
+  if length(trim(coalesce(p_descricao, ''))) > 500 then
     raise exception 'DescriÃ§Ã£o acima do limite de 500 caracteres.';
   end if;
 
@@ -292,6 +299,7 @@ begin
   end if;
 
   insert into public.solicitacoes_compra (
+    nome_item,
     descricao,
     quantidade,
     prioridade,
@@ -308,7 +316,8 @@ begin
     status_transporte,
     data_solicitacao
   ) values (
-    trim(p_descricao),
+    trim(p_nome_item),
+    nullif(trim(coalesce(p_descricao, '')), ''),
     p_quantidade,
     coalesce(nullif(trim(p_prioridade), ''), 'media'),
     p_previsao_desejada,
@@ -339,6 +348,7 @@ $$;
 create or replace function public.buscar_solicitacao_compra_publica(p_codigo text)
 returns table (
   codigo text,
+  nome_item text,
   descricao text,
   quantidade numeric,
   prioridade text,
@@ -350,6 +360,7 @@ returns table (
   previsao_entrega date,
   solicitante text,
   centro_custo text,
+  aplicacoes text,
   data_solicitacao timestamptz,
   updated_at timestamptz
 )
@@ -360,6 +371,7 @@ stable
 as $$
   select
     s.codigo,
+    s.nome_item,
     s.descricao,
     s.quantidade,
     s.prioridade,
@@ -371,6 +383,7 @@ as $$
     s.previsao_entrega,
     s.solicitante,
     s.centro_custo,
+    s.aplicacoes,
     s.data_solicitacao,
     s.updated_at
   from public.solicitacoes_compra s
@@ -382,6 +395,7 @@ $$;
 create or replace function public.listar_solicitacoes_compra_publica()
 returns table (
   codigo text,
+  nome_item text,
   descricao text,
   quantidade numeric,
   prioridade text,
@@ -393,6 +407,7 @@ returns table (
   previsao_entrega date,
   solicitante text,
   centro_custo text,
+  aplicacoes text,
   data_solicitacao timestamptz,
   updated_at timestamptz
 )
@@ -403,6 +418,7 @@ stable
 as $$
   select
     s.codigo,
+    s.nome_item,
     s.descricao,
     s.quantidade,
     s.prioridade,
@@ -414,6 +430,7 @@ as $$
     s.previsao_entrega,
     s.solicitante,
     s.centro_custo,
+    s.aplicacoes,
     s.data_solicitacao,
     s.updated_at
   from public.solicitacoes_compra s
@@ -459,7 +476,7 @@ as $$
   order by p.nome asc;
 $$;
 
-grant execute on function public.criar_solicitacao_compra_publica(text, numeric, text, date, uuid, text, text, text, text, uuid)
+grant execute on function public.criar_solicitacao_compra_publica(text, text, numeric, text, date, uuid, text, text, text, text, uuid)
 to anon, authenticated;
 
 grant execute on function public.buscar_solicitacao_compra_publica(text)

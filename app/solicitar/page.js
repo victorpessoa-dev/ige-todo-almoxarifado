@@ -49,6 +49,7 @@ import {
   DialogTitle
 } from '@/components/ui/dialog'
 import { getUserMessage } from '@/lib/user-messages'
+import { formatSolicitacaoItem } from '@/lib/solicitacoes-format'
 import { SolicitacaoStatusBadge } from '@/components/solicitacoes/SolicitacaoStatusBadge'
 import {
   SOLICITACAO_PRIORIDADE_OPTIONS,
@@ -87,19 +88,19 @@ function compareSolicitacaoByKey(a, b, key) {
   }
 
   const valueByKey = {
-    descricao: (item) => item.descricao,
+    nome_item: (item) => formatSolicitacaoItem(item),
     solicitante: (item) => item.solicitante,
     centro_custo: (item) => item.centro_custo,
     situacao: (item) => getSolicitacaoSituacao(item).label
   }
 
-  const getValue = valueByKey[key] || valueByKey.descricao
+  const getValue = valueByKey[key] || valueByKey.nome_item
   return compareText(getValue(a), getValue(b))
 }
 
 const PUBLIC_SOLICITACAO_TABLE_COLUMNS = [
   { key: 'codigo', width: 86, minWidth: 76 },
-  { key: 'descricao', width: 320, minWidth: 180 },
+  { key: 'nome_item', width: 320, minWidth: 180 },
   { key: 'solicitante', width: 170, minWidth: 110 },
   { key: 'centro_custo', width: 170, minWidth: 110 },
   { key: 'prioridade', width: 112, minWidth: 100 },
@@ -146,7 +147,7 @@ function InfoItem({ label, value }) {
   return (
     <div className="min-w-0 rounded-lg border bg-muted/20 px-3 py-2">
       <p className="text-xs uppercase text-muted-foreground">{label}</p>
-      <p className="mt-1 min-w-0 break-words text-sm font-medium [overflow-wrap:anywhere]">{value || '-'}</p>
+      <p className="mt-1 min-w-0 whitespace-pre-line break-words text-sm font-medium [overflow-wrap:anywhere]">{value || '-'}</p>
     </div>
   )
 }
@@ -185,8 +186,8 @@ function SolicitacaoPublicTable({ solicitacoes, onOpen, sortConfig, onSort }) {
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
                   <p className="truncate font-semibold tabular-nums">{solicitacao.codigo}</p>
-                  <p className="mt-1 line-clamp-2 text-sm break-words [overflow-wrap:anywhere]" title={solicitacao.descricao || '-'}>
-                    {solicitacao.descricao}
+                  <p className="mt-1 line-clamp-2 text-sm break-words [overflow-wrap:anywhere]" title={formatSolicitacaoItem(solicitacao) || '-'}>
+                    {formatSolicitacaoItem(solicitacao)}
                   </p>
                   <p className="mt-1 truncate text-xs text-muted-foreground" title={solicitacao.solicitante || '-'}>
                     {solicitacao.solicitante || '-'}
@@ -232,12 +233,12 @@ function SolicitacaoPublicTable({ solicitacoes, onOpen, sortConfig, onSort }) {
               </TableHead>
               <SortableTableHead
                 label="Produto"
-                columnKey="descricao"
+                columnKey="nome_item"
                 sortConfig={sortConfig}
                 onSort={onSort}
                 className="relative h-12 px-3 pr-4"
               >
-                <ColumnResizeHandle columnKey="descricao" onResizeStart={startResize} />
+                <ColumnResizeHandle columnKey="nome_item" onResizeStart={startResize} />
               </SortableTableHead>
               <SortableTableHead
                 label="Solicitante"
@@ -297,8 +298,8 @@ function SolicitacaoPublicTable({ solicitacoes, onOpen, sortConfig, onSort }) {
                     </p>
                   </TableCell>
                   <TableCell className="px-3 py-3">
-                    <p className="truncate font-medium" title={solicitacao.descricao || '-'}>
-                      {solicitacao.descricao || '-'}
+                    <p className="truncate font-medium" title={formatSolicitacaoItem(solicitacao) || '-'}>
+                      {formatSolicitacaoItem(solicitacao) || '-'}
                     </p>
                   </TableCell>
                   <TableCell className="px-3 py-3">
@@ -352,8 +353,8 @@ function SolicitacaoPublicDetailsDialog({ solicitacao, open, onOpenChange }) {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="h-[100dvh] max-h-[100dvh] w-full max-w-none overflow-y-auto rounded-none p-4 sm:h-auto sm:max-h-[calc(100vh-2rem)] sm:w-[95vw] sm:max-w-3xl sm:rounded-lg sm:p-6">
         <DialogHeader>
-              <DialogTitle className="line-clamp-3 break-words text-left text-base [overflow-wrap:anywhere] sm:text-lg" title={`${solicitacao.codigo} - ${solicitacao.descricao}`}>
-                {solicitacao.codigo} - {solicitacao.descricao}
+              <DialogTitle className="line-clamp-3 break-words text-left text-base [overflow-wrap:anywhere] sm:text-lg" title={`${solicitacao.codigo} - ${formatSolicitacaoItem(solicitacao)}`}>
+                {solicitacao.codigo} - {formatSolicitacaoItem(solicitacao)}
               </DialogTitle>
         </DialogHeader>
 
@@ -382,7 +383,9 @@ function SolicitacaoPublicDetailsDialog({ solicitacao, open, onOpenChange }) {
             <InfoItem label="Atualizado em" value={formatDate(solicitacao.updated_at)} />
           </div>
 
+          <InfoItem label="Nome do item" value={solicitacao.nome_item} />
           <InfoItem label="Descrição do item" value={solicitacao.descricao} />
+          <InfoItem label="Aplicação" value={solicitacao.aplicacoes} />
         </div>
       </DialogContent>
     </Dialog>
@@ -420,7 +423,9 @@ export default function SolicitarPage() {
       ? solicitacoesPublicas.filter((solicitacao) =>
         [
           solicitacao.codigo,
+          solicitacao.nome_item,
           solicitacao.descricao,
+          solicitacao.aplicacoes,
           solicitacao.solicitante,
           solicitacao.centro_custo
         ]
@@ -554,7 +559,9 @@ export default function SolicitarPage() {
       const results = solicitacoesPublicas.filter((solicitacao) =>
         [
           solicitacao.codigo,
+          solicitacao.nome_item,
           solicitacao.descricao,
+          solicitacao.aplicacoes,
           solicitacao.solicitante
         ]
           .filter(Boolean)
@@ -692,8 +699,8 @@ export default function SolicitarPage() {
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                   <div className="min-w-0">
                     <p className="truncate font-semibold tabular-nums">{statusResult.codigo}</p>
-                    <p className="mt-1 line-clamp-2 break-words text-sm text-muted-foreground [overflow-wrap:anywhere]" title={statusResult.descricao || '-'}>
-                      {statusResult.descricao}
+                    <p className="mt-1 line-clamp-2 break-words text-sm text-muted-foreground [overflow-wrap:anywhere]" title={formatSolicitacaoItem(statusResult) || '-'}>
+                      {formatSolicitacaoItem(statusResult)}
                     </p>
                   </div>
                   <div className="flex flex-col items-start gap-2 sm:items-end">

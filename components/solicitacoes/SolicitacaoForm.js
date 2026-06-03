@@ -21,6 +21,7 @@ import {
 } from '@/constants/solicitacoes-config'
 
 export const defaultSolicitacaoForm = {
+  nome_item: '',
   descricao: '',
   quantidade: 1,
   prioridade: 'media',
@@ -225,14 +226,23 @@ export function SolicitacaoForm({
 
   const itemFields = (
     <>
+      <Field label="Nome do item">
+        <Input
+          className="min-w-0 truncate"
+          value={form.nome_item || ''}
+          onChange={(event) => updateField('nome_item', event.target.value)}
+          placeholder="Ex.: Rolamento 6203, correia A-42, tinta acrilica"
+          required={!useTabs}
+        />
+      </Field>
+
       <Field label="Descrição do item">
         <Textarea
           className="min-w-0"
           value={form.descricao}
           onChange={(event) => updateField('descricao', event.target.value)}
           rows={4}
-          placeholder="Informe o item, modelo, medida, marca ou referência"
-          required={!useTabs}
+          placeholder="Modelo, medida, marca, referência ou observação técnica"
         />
       </Field>
 
@@ -278,7 +288,7 @@ export function SolicitacaoForm({
         </Field>
       </div>
 
-      <Field label="Aplicações específicas">
+      <Field label="Aplicação">
         <Textarea
           className="min-w-0"
           value={form.aplicacoes || ''}

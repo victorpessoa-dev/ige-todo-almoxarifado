@@ -20,6 +20,7 @@ import {
 } from '@/constants/solicitacoes-config'
 import { formatDateBR, getLocalDateTime } from '@/lib/date-utils'
 import { useAutoScroll } from '@/lib/hooks/useAutoScroll'
+import { formatSolicitacaoItem } from '@/lib/solicitacoes-format'
 
 const SLIDE_SOLICITACAO_TABLE_COLUMNS = [
   { key: 'codigo', width: 92 },
@@ -191,8 +192,8 @@ export function SolicitacoesSlide({ solicitacoes, active, onEnd }) {
                       </div>
                     </TableCell>
                     <TableCell className="px-3 py-3">
-                      <p className="truncate font-medium" title={solicitacao.descricao || '-'}>
-                        {solicitacao.descricao || '-'}
+                      <p className="truncate font-medium" title={formatSolicitacaoItem(solicitacao) || '-'}>
+                        {formatSolicitacaoItem(solicitacao) || '-'}
                       </p>
                     </TableCell>
                     <TableCell className="px-3 py-3">

@@ -10,6 +10,7 @@ import { Sidebar } from '@/components/sidebar'
 import { LoadingState } from '@/components/ui/spinner'
 import { Menu } from 'lucide-react'
 import Image from 'next/image'
+import { formatSolicitacaoItem } from '@/lib/solicitacoes-format'
 
 export default function AdminLayout({ children }) {
   const { isAuthenticated, isLoading } = useAuth()
@@ -75,7 +76,7 @@ export default function AdminLayout({ children }) {
       {
         description:
           total === 1
-            ? `${primeiraSolicitacao.codigo || 'Sem código'} - ${primeiraSolicitacao.descricao || 'Pedido sem descrição'}`
+            ? `${primeiraSolicitacao.codigo || 'Sem código'} - ${formatSolicitacaoItem(primeiraSolicitacao) || 'Pedido sem descrição'}`
             : 'Existem novos pedidos aguardando aceite.',
         action: {
           label: 'Ver',

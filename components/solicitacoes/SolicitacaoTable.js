@@ -9,7 +9,7 @@ import {
   TableHeader,
   TableRow
 } from '@/components/ui/table'
-import { Eye } from 'lucide-react'
+import { Eye, EyeOff } from 'lucide-react'
 import TablePagination from '@/components/ui/table-pagination'
 import {
   ColumnResizeHandle,
@@ -17,6 +17,7 @@ import {
 } from '@/components/ui/resizable-table-columns'
 import SortableTableHead from '@/components/ui/sortable-table-head'
 import { SolicitacaoStatusBadge } from './SolicitacaoStatusBadge'
+import { formatSolicitacaoItem } from '@/lib/solicitacoes-format'
 import {
   SOLICITACAO_STATUS_GERAL_OPTIONS,
   getSolicitacaoOption,
@@ -29,7 +30,7 @@ const DEFAULT_PAGE_SIZE = 25
 
 const SOLICITACAO_TABLE_COLUMNS = [
   { key: 'codigo', width: 110, minWidth: 80 },
-  { key: 'descricao', width: 380, minWidth: 180 },
+  { key: 'nome_item', width: 380, minWidth: 180 },
   { key: 'solicitante', width: 140, minWidth: 100 },
   { key: 'centro_custo', width: 130, minWidth: 90 },
   { key: 'prioridade', width: 120, minWidth: 100 },
@@ -75,6 +76,8 @@ function isPublicVisible(value) {
 }
 
 function PublicVisibilityToggle({ checked, disabled, onChange }) {
+  const Icon = checked ? Eye : EyeOff
+
   return (
     <button
       type="button"
@@ -83,22 +86,16 @@ function PublicVisibilityToggle({ checked, disabled, onChange }) {
         event.stopPropagation()
         onChange(!checked)
       }}
-      className="inline-flex h-7 w-12 items-center justify-center rounded-full bg-transparent transition disabled:cursor-wait disabled:opacity-60"
+      className={`inline-flex size-8 items-center justify-center rounded-md bg-transparent transition disabled:cursor-wait disabled:opacity-60 ${
+        checked
+          ? 'text-emerald-700 hover:text-emerald-800'
+          : 'text-red-700 hover:text-red-800'
+      }`}
       aria-pressed={checked}
       aria-label="Alternar visibilidade pública"
       title={checked ? 'Visível no público' : 'Oculto do público'}
     >
-      <span
-        className={`relative h-5 w-10 rounded-full border bg-transparent transition ${
-          checked ? 'border-emerald-500' : 'border-red-500'
-        }`}
-      >
-        <span
-          className={`absolute top-0.5 h-4 w-4 rounded-full shadow-sm transition ${
-            checked ? 'left-[18px] bg-emerald-500' : 'left-0.5 bg-red-500'
-          }`}
-        />
-      </span>
+      <Icon className="h-4 w-4" />
     </button>
   )
 }
@@ -158,10 +155,14 @@ export function SolicitacaoTable({
       const aValue =
         sortConfig.key === 'situacao'
           ? getSolicitacaoSituacao(a).label
+          : sortConfig.key === 'nome_item'
+            ? formatSolicitacaoItem(a)
           : a[sortConfig.key] || ''
       const bValue =
         sortConfig.key === 'situacao'
           ? getSolicitacaoSituacao(b).label
+          : sortConfig.key === 'nome_item'
+            ? formatSolicitacaoItem(b)
           : b[sortConfig.key] || ''
 
       if (sortConfig.key === 'prioridade') {
@@ -222,8 +223,8 @@ export function SolicitacaoTable({
                       <span className={`h-2.5 w-2.5 rounded-full ${getStatusDotClass(solicitacao.status_geral)}`} />
                       <span className="truncate">{solicitacao.codigo || '-'}</span>
                     </p>
-                    <p className="mt-1 line-clamp-2 break-words text-sm [overflow-wrap:anywhere]" title={solicitacao.descricao || '-'}>
-                      {solicitacao.descricao}
+                    <p className="mt-1 line-clamp-2 break-words text-sm [overflow-wrap:anywhere]" title={formatSolicitacaoItem(solicitacao) || '-'}>
+                      {formatSolicitacaoItem(solicitacao)}
                     </p>
                     <p
                       className="mt-1 truncate text-xs text-muted-foreground"
@@ -301,12 +302,12 @@ export function SolicitacaoTable({
                 </SortableTableHead>
                 <SortableTableHead
                   label="Item"
-                  columnKey="descricao"
+                  columnKey="nome_item"
                   sortConfig={sortConfig}
                   onSort={handleSort}
                   className="relative pr-4"
                 >
-                  <ColumnResizeHandle columnKey="descricao" onResizeStart={startResize} />
+                  <ColumnResizeHandle columnKey="nome_item" onResizeStart={startResize} />
                 </SortableTableHead>
                 <SortableTableHead
                   label="Solicitante"
@@ -393,8 +394,8 @@ export function SolicitacaoTable({
                         </span>
                       </TableCell>
                       <TableCell>
-                        <p className="truncate font-medium" title={solicitacao.descricao || '-'}>
-                          {solicitacao.descricao || '-'}
+                        <p className="truncate font-medium" title={formatSolicitacaoItem(solicitacao) || '-'}>
+                          {formatSolicitacaoItem(solicitacao) || '-'}
                         </p>
                       </TableCell>
                       <TableCell>

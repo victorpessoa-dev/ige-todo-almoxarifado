@@ -93,7 +93,10 @@ export function getSolicitacaoSituacao(solicitacao = {}) {
   const cotacao = solicitacao.status_cotacao
   const pedido = solicitacao.status_pedido
   const entrega = solicitacao.status_transporte
-  const descricao = String(solicitacao.descricao || '').trim()
+  const descricao = [solicitacao.nome_item, solicitacao.descricao]
+    .filter(Boolean)
+    .join(' ')
+    .trim()
   const previsaoEntrega = solicitacao.previsao_entrega
 
   if (cotacao === 'cotando') {

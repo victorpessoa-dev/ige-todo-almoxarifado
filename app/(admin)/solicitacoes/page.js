@@ -86,7 +86,9 @@ export default function SolicitacoesPage() {
         !search ||
         [
           solicitacao.codigo,
+          solicitacao.nome_item,
           solicitacao.descricao,
+          solicitacao.aplicacoes,
           solicitacao.solicitante,
           solicitacao.centro_custo
         ]

@@ -32,6 +32,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { defaultSolicitacaoForm } from './SolicitacaoForm'
 import { SolicitacaoStatusBadge } from './SolicitacaoStatusBadge'
 import { getUserMessage } from '@/lib/user-messages'
+import { formatSolicitacaoItem } from '@/lib/solicitacoes-format'
 import {
   SOLICITACAO_PRIORIDADE_OPTIONS,
   SOLICITACAO_STATUS_COTACAO_OPTIONS,
@@ -88,7 +89,7 @@ function InfoItem({ label, value }) {
   return (
     <div className="min-w-0 rounded-lg border bg-muted/20 px-3 py-2">
       <p className="truncate text-xs uppercase text-muted-foreground" title={label}>{label}</p>
-      <p className="mt-1 min-w-0 break-words text-sm font-medium [overflow-wrap:anywhere]">{value || '-'}</p>
+      <p className="mt-1 min-w-0 whitespace-pre-line break-words text-sm font-medium [overflow-wrap:anywhere]">{value || '-'}</p>
     </div>
   )
 }
@@ -131,6 +132,7 @@ function getSolicitanteCentroCusto(solicitante, centrosCusto) {
 function buildFormFromSolicitacao(solicitacao) {
   return {
     ...defaultSolicitacaoForm,
+    nome_item: solicitacao?.nome_item || '',
     descricao: solicitacao?.descricao || '',
     quantidade: solicitacao?.quantidade || 1,
     prioridade: solicitacao?.prioridade || 'media',
@@ -158,6 +160,7 @@ function buildFormFromSolicitacao(solicitacao) {
 
 function buildPayload(form) {
   return {
+    nome_item: form.nome_item,
     descricao: form.descricao,
     quantidade: Number(form.quantidade || 0),
     prioridade: form.prioridade,
@@ -292,7 +295,7 @@ export function SolicitacaoDetailsDialog({
   const situacao = solicitacao ? getSolicitacaoSituacao(solicitacao) : null
   const dialogTitle = [
     solicitacao?.codigo || 'Solicitacao',
-    solicitacao?.descricao
+    formatSolicitacaoItem(solicitacao)
   ].filter(Boolean).join(' - ')
 
   return (
@@ -357,13 +360,21 @@ export function SolicitacaoDetailsDialog({
 
             {isEditing ? (
               <div className="grid gap-4">
+                <Field label="Nome do item">
+                  <Input
+                    className="min-w-0 truncate"
+                    value={form.nome_item || ''}
+                    onChange={(event) => updateField('nome_item', event.target.value)}
+                    required
+                  />
+                </Field>
+
                 <Field label="Descrição do item">
                   <Textarea
                     className="min-w-0"
                     value={form.descricao}
                     onChange={(event) => updateField('descricao', event.target.value)}
                     rows={4}
-                    required
                   />
                 </Field>
 
@@ -452,7 +463,7 @@ export function SolicitacaoDetailsDialog({
                 </div>
 
                 <div className="grid gap-4 sm:grid-cols-2">
-                  <Field label="Aplicações específicas">
+                  <Field label="Aplicação">
                     <Textarea
                       className="min-w-0"
                       value={form.aplicacoes || ''}
@@ -502,10 +513,11 @@ export function SolicitacaoDetailsDialog({
                   <InfoItem label="Atualizado em" value={formatDate(solicitacao?.updated_at)} />
                 </div>
 
+                <InfoItem label="Nome do item" value={solicitacao?.nome_item} />
                 <InfoItem label="Descrição do item" value={solicitacao?.descricao} />
 
                 <div className="grid gap-3 sm:grid-cols-2">
-                  <InfoItem label="Aplicações específicas" value={solicitacao?.aplicacoes} />
+                  <InfoItem label="Aplicação" value={solicitacao?.aplicacoes} />
                   <InfoItem
                     label="Link de referência"
                     value={
