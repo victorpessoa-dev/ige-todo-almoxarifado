@@ -20,7 +20,8 @@ import {
 import { SolicitacaoTable } from '@/components/solicitacoes/SolicitacaoTable'
 import { getUserMessage } from '@/lib/user-messages'
 import { downloadSolicitacoesExcel } from '@/lib/excel'
-import { getLocalDateTime } from '@/lib/date-utils'
+import { getLocalDateTime, getTodayDateInputValue } from '@/lib/date-utils'
+import { getSolicitacaoStatusDefaults } from '@/constants/solicitacoes-config'
 
 function isAtrasada(solicitacao) {
   const dateValue = solicitacao.previsao_entrega || solicitacao.previsao_desejada
@@ -155,7 +156,8 @@ export default function SolicitacoesPage() {
       )
       await updateSolicitacao(solicitacao.id, {
         status_geral: 'concluida',
-        status_transporte: 'entregue'
+        ...getSolicitacaoStatusDefaults('concluida'),
+        previsao_entrega: solicitacao.previsao_entrega || getTodayDateInputValue()
       })
       toast.success('Entrada de estoque gerada com sucesso!')
       setDetailsOpen(false)

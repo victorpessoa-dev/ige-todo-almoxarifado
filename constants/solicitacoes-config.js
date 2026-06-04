@@ -51,6 +51,7 @@ export const SOLICITACAO_STATUS_PEDIDO_OPTIONS = [
   { value: 'pedido_encerrado', label: 'Pedido encerrado' },
   { value: 'pedido_aprovado', label: 'Pedido aprovado' },
   { value: 'pedido_adiado', label: 'Pedido adiado' },
+  { value: 'pedido_cancelado', label: 'Pedido cancelado' },
   { value: 'aguardando_pagamento', label: 'Aguardando pagamento' },
   { value: 'outra', label: 'Outra' },
   { value: 'preparando_pedido', label: 'Preparando pedido' }
@@ -83,6 +84,26 @@ export function getSolicitacaoPrioridadeOrder(prioridade) {
   return order[prioridade] ?? 99
 }
 
+export function getSolicitacaoStatusDefaults(statusGeral) {
+  if (statusGeral === 'concluida') {
+    return {
+      status_cotacao: 'cotacao_aprovada',
+      status_pedido: 'pedido_aprovado',
+      status_transporte: 'entregue_conferido'
+    }
+  }
+
+  if (statusGeral === 'cancelada') {
+    return {
+      status_cotacao: 'cancelada',
+      status_pedido: 'pedido_cancelado',
+      status_transporte: 'cancelada'
+    }
+  }
+
+  return {}
+}
+
 function startOfLocalDay(value) {
   const date = value ? new Date(value) : new Date()
   date.setHours(0, 0, 0, 0)
@@ -90,6 +111,7 @@ function startOfLocalDay(value) {
 }
 
 export function getSolicitacaoSituacao(solicitacao = {}) {
+  const geral = solicitacao.status_geral
   const cotacao = solicitacao.status_cotacao
   const pedido = solicitacao.status_pedido
   const entrega = solicitacao.status_transporte
@@ -98,6 +120,18 @@ export function getSolicitacaoSituacao(solicitacao = {}) {
     .join(' ')
     .trim()
   const previsaoEntrega = solicitacao.previsao_entrega
+
+  if (
+    geral === 'cancelada' ||
+    cotacao === 'cancelada' ||
+    pedido === 'pedido_cancelado' ||
+    entrega === 'cancelada'
+  ) {
+    return {
+      label: 'CANCELADA',
+      className: 'border-slate-200 bg-slate-50 text-slate-800'
+    }
+  }
 
   if (cotacao === 'cotando') {
     return {

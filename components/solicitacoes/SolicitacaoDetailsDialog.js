@@ -39,10 +39,11 @@ import {
   SOLICITACAO_STATUS_GERAL_OPTIONS,
   SOLICITACAO_STATUS_PEDIDO_OPTIONS,
   SOLICITACAO_STATUS_TRANSPORTE_OPTIONS,
+  getSolicitacaoStatusDefaults,
   getSolicitacaoOption,
   getSolicitacaoSituacao
 } from '@/constants/solicitacoes-config'
-import { formatDateBR, toDateInputValue } from '@/lib/date-utils'
+import { formatDateBR, getTodayDateInputValue, toDateInputValue } from '@/lib/date-utils'
 
 function toDateInput(value) {
   return toDateInputValue(value)
@@ -69,6 +70,23 @@ function formatDecimalInput(value) {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2
   })
+}
+
+function completeMoneyFields(form) {
+  const quantidade = Number(form.quantidade || 0)
+  const valorUnitario = parseDecimalValue(form.valor_unitario)
+  const valorTotal = parseDecimalValue(form.valor_total)
+  const nextForm = { ...form }
+
+  if (quantidade > 0 && valorUnitario > 0 && !valorTotal) {
+    nextForm.valor_total = formatDecimalInput(quantidade * valorUnitario)
+  }
+
+  if (quantidade > 0 && valorTotal > 0 && !valorUnitario) {
+    nextForm.valor_unitario = formatDecimalInput(valorTotal / quantidade)
+  }
+
+  return nextForm
 }
 
 function formatDate(value) {
@@ -159,30 +177,32 @@ function buildFormFromSolicitacao(solicitacao) {
 }
 
 function buildPayload(form) {
+  const completedForm = completeMoneyFields(form)
+
   return {
-    nome_item: form.nome_item,
-    descricao: form.descricao,
-    quantidade: Number(form.quantidade || 0),
-    prioridade: form.prioridade,
-    previsao_desejada: form.previsao_desejada || null,
-    centro_custo_id: form.centro_custo_id || null,
-    centro_custo: form.centro_custo || null,
-    centro_custo_nome: form.centro_custo_nome || form.centro_custo || null,
-    aplicacoes: form.aplicacoes || null,
-    link_referencia: form.link_referencia || null,
-    fornecedor_nome: form.fornecedor_nome?.trim?.() || null,
-    fornecedor_contato: form.fornecedor_contato?.trim?.() || null,
-    solicitante_id: form.solicitante_id || null,
-    solicitante: form.solicitante,
-    solicitante_nome: form.solicitante_nome || form.solicitante,
-    status_geral: form.status_geral,
-    valor_unitario: parseDecimalValue(form.valor_unitario),
-    valor_total: parseDecimalValue(form.valor_total),
-    previsao_entrega: form.previsao_entrega || null,
-    status_cotacao: form.status_cotacao,
-    status_pedido: form.status_pedido,
-    status_transporte: form.status_transporte,
-    produto_id: form.produto_id || null
+    nome_item: completedForm.nome_item,
+    descricao: completedForm.descricao,
+    quantidade: Number(completedForm.quantidade || 0),
+    prioridade: completedForm.prioridade,
+    previsao_desejada: completedForm.previsao_desejada || null,
+    centro_custo_id: completedForm.centro_custo_id || null,
+    centro_custo: completedForm.centro_custo || null,
+    centro_custo_nome: completedForm.centro_custo_nome || completedForm.centro_custo || null,
+    aplicacoes: completedForm.aplicacoes || null,
+    link_referencia: completedForm.link_referencia || null,
+    fornecedor_nome: completedForm.fornecedor_nome?.trim?.() || null,
+    fornecedor_contato: completedForm.fornecedor_contato?.trim?.() || null,
+    solicitante_id: completedForm.solicitante_id || null,
+    solicitante: completedForm.solicitante,
+    solicitante_nome: completedForm.solicitante_nome || completedForm.solicitante,
+    status_geral: completedForm.status_geral,
+    valor_unitario: parseDecimalValue(completedForm.valor_unitario),
+    valor_total: parseDecimalValue(completedForm.valor_total),
+    previsao_entrega: completedForm.previsao_entrega || null,
+    status_cotacao: completedForm.status_cotacao,
+    status_pedido: completedForm.status_pedido,
+    status_transporte: completedForm.status_transporte,
+    produto_id: completedForm.produto_id || null
   }
 }
 
@@ -211,7 +231,15 @@ export function SolicitacaoDetailsDialog({
 
   const updateField = (field, value) => {
     setForm((prev) => {
-      const nextForm = { ...prev, [field]: value }
+      const nextForm = {
+        ...prev,
+        [field]: value,
+        ...(field === 'status_geral' ? getSolicitacaoStatusDefaults(value) : {})
+      }
+
+      if (field === 'status_geral' && value === 'concluida' && !nextForm.previsao_entrega) {
+        nextForm.previsao_entrega = getTodayDateInputValue()
+      }
 
       if (field === 'solicitante_id') {
         const solicitante = solicitantes.find((item) => item.id === value)
@@ -234,16 +262,8 @@ export function SolicitacaoDetailsDialog({
         nextForm.centro_custo_nome = label
       }
 
-      if (field === 'quantidade' || field === 'valor_unitario') {
-        const quantidade = Number(field === 'quantidade' ? value : nextForm.quantidade || 0)
-        const valorUnitario = parseDecimalValue(
-          field === 'valor_unitario' ? value : nextForm.valor_unitario || 0
-        )
-
-        nextForm.valor_total =
-          quantidade > 0 && valorUnitario > 0
-            ? formatDecimalInput(quantidade * valorUnitario)
-            : ''
+      if (['quantidade', 'valor_unitario', 'valor_total'].includes(field)) {
+        return completeMoneyFields(nextForm)
       }
 
       return nextForm
@@ -740,7 +760,11 @@ export function SolicitacaoDetailsDialog({
                 variant="outline"
                 onClick={() =>
                   quickUpdate(
-                    { status_geral: 'concluida', status_transporte: 'entregue_conferido' },
+                    {
+                      status_geral: 'concluida',
+                      ...getSolicitacaoStatusDefaults('concluida'),
+                      previsao_entrega: solicitacao?.previsao_entrega || getTodayDateInputValue()
+                    },
                     'Solicitação concluída!'
                   )
                 }
@@ -760,7 +784,15 @@ export function SolicitacaoDetailsDialog({
               <Button
                 type="button"
                 variant="destructive"
-                onClick={() => quickUpdate({ status_geral: 'cancelada' }, 'Solicitação cancelada!')}
+                onClick={() =>
+                  quickUpdate(
+                    {
+                      status_geral: 'cancelada',
+                      ...getSolicitacaoStatusDefaults('cancelada')
+                    },
+                    'Solicitação cancelada!'
+                  )
+                }
               >
                 Cancelar
               </Button>

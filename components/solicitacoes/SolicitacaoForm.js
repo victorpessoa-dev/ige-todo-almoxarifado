@@ -17,8 +17,10 @@ import {
   SOLICITACAO_STATUS_COTACAO_OPTIONS,
   SOLICITACAO_STATUS_GERAL_OPTIONS,
   SOLICITACAO_STATUS_PEDIDO_OPTIONS,
-  SOLICITACAO_STATUS_TRANSPORTE_OPTIONS
+  SOLICITACAO_STATUS_TRANSPORTE_OPTIONS,
+  getSolicitacaoStatusDefaults
 } from '@/constants/solicitacoes-config'
+import { getTodayDateInputValue } from '@/lib/date-utils'
 
 export const defaultSolicitacaoForm = {
   nome_item: '',
@@ -102,6 +104,23 @@ function formatDecimalInput(value) {
   })
 }
 
+function completeMoneyFields(form) {
+  const quantidade = Number(form.quantidade || 0)
+  const valorUnitario = parseDecimalValue(form.valor_unitario)
+  const valorTotal = parseDecimalValue(form.valor_total)
+  const nextForm = { ...form }
+
+  if (quantidade > 0 && valorUnitario > 0 && !valorTotal) {
+    nextForm.valor_total = formatDecimalInput(quantidade * valorUnitario)
+  }
+
+  if (quantidade > 0 && valorTotal > 0 && !valorUnitario) {
+    nextForm.valor_unitario = formatDecimalInput(valorTotal / quantidade)
+  }
+
+  return nextForm
+}
+
 export function SolicitacaoForm({
   form,
   setForm,
@@ -126,7 +145,15 @@ export function SolicitacaoForm({
     : ''
 
   const updateField = (field, value) => {
-    const nextForm = { ...form, [field]: value }
+    const nextForm = {
+      ...form,
+      [field]: value,
+      ...(field === 'status_geral' ? getSolicitacaoStatusDefaults(value) : {})
+    }
+
+    if (field === 'status_geral' && value === 'concluida' && !nextForm.previsao_entrega) {
+      nextForm.previsao_entrega = getTodayDateInputValue()
+    }
 
     if (field === 'solicitante_id') {
       const solicitante = solicitantes.find((item) => item.id === value)
@@ -149,18 +176,9 @@ export function SolicitacaoForm({
       nextForm.centro_custo_nome = label
     }
 
-    if (field === 'quantidade' || field === 'valor_unitario') {
-      const nextQuantidade = Number(
-        field === 'quantidade' ? value : nextForm.quantidade || 0
-      )
-      const nextValorUnitario = parseDecimalValue(
-        field === 'valor_unitario' ? value : nextForm.valor_unitario || 0
-      )
-
-      nextForm.valor_total =
-        nextQuantidade > 0 && nextValorUnitario > 0
-          ? formatDecimalInput(nextQuantidade * nextValorUnitario)
-          : ''
+    if (['quantidade', 'valor_unitario', 'valor_total'].includes(field)) {
+      setForm(completeMoneyFields(nextForm))
+      return
     }
 
     setForm(nextForm)
