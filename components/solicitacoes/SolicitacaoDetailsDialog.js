@@ -72,17 +72,42 @@ function formatDecimalInput(value) {
   })
 }
 
-function completeMoneyFields(form) {
+function completeMoneyFields(form, changedField) {
   const quantidade = Number(form.quantidade || 0)
   const valorUnitario = parseDecimalValue(form.valor_unitario)
   const valorTotal = parseDecimalValue(form.valor_total)
   const nextForm = { ...form }
 
-  if (quantidade > 0 && valorUnitario > 0 && !valorTotal) {
+  if (quantidade <= 0) return nextForm
+
+  if (changedField === 'valor_unitario') {
+    nextForm.valor_total = valorUnitario > 0
+      ? formatDecimalInput(quantidade * valorUnitario)
+      : ''
+    return nextForm
+  }
+
+  if (changedField === 'valor_total') {
+    nextForm.valor_unitario = valorTotal > 0
+      ? formatDecimalInput(valorTotal / quantidade)
+      : ''
+    return nextForm
+  }
+
+  if (changedField === 'quantidade') {
+    if (valorUnitario > 0) {
+      nextForm.valor_total = formatDecimalInput(quantidade * valorUnitario)
+    } else if (valorTotal > 0) {
+      nextForm.valor_unitario = formatDecimalInput(valorTotal / quantidade)
+    }
+    return nextForm
+  }
+
+  if (valorUnitario > 0 && !valorTotal) {
     nextForm.valor_total = formatDecimalInput(quantidade * valorUnitario)
   }
 
-  if (quantidade > 0 && valorTotal > 0 && !valorUnitario) {
+  if (valorTotal > 0 && !valorUnitario) {
     nextForm.valor_unitario = formatDecimalInput(valorTotal / quantidade)
   }
 
@@ -263,7 +288,7 @@ export function SolicitacaoDetailsDialog({
       }
 
       if (['quantidade', 'valor_unitario', 'valor_total'].includes(field)) {
-        return completeMoneyFields(nextForm)
+        return completeMoneyFields(nextForm, field)
       }
 
       return nextForm
