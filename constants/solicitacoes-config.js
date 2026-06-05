@@ -1,3 +1,5 @@
+import { toDateInputValue } from '@/lib/date-utils'
+
 export const SOLICITACAO_PRIORIDADE_OPTIONS = [
   {
     value: 'baixa',
@@ -104,12 +106,6 @@ export function getSolicitacaoStatusDefaults(statusGeral) {
   return {}
 }
 
-function startOfLocalDay(value) {
-  const date = value ? new Date(value) : new Date()
-  date.setHours(0, 0, 0, 0)
-  return date
-}
-
 export function getSolicitacaoSituacao(solicitacao = {}) {
   const geral = solicitacao.status_geral
   const cotacao = solicitacao.status_cotacao
@@ -196,8 +192,15 @@ export function getSolicitacaoSituacao(solicitacao = {}) {
     }
   }
 
-  const today = startOfLocalDay()
-  const deliveryDate = startOfLocalDay(previsaoEntrega)
+  const today = toDateInputValue(new Date())
+  const deliveryDate = toDateInputValue(previsaoEntrega)
+
+  if (!deliveryDate) {
+    return {
+      label: 'SEM DATA DE ENTREGA',
+      className: 'border-slate-200 bg-slate-50 text-slate-800'
+    }
+  }
 
   if (today < deliveryDate) {
     return {

@@ -20,7 +20,7 @@ import {
 import { SolicitacaoTable } from '@/components/solicitacoes/SolicitacaoTable'
 import { getUserMessage } from '@/lib/user-messages'
 import { downloadSolicitacoesExcel } from '@/lib/excel'
-import { getLocalDateTime, getTodayDateInputValue } from '@/lib/date-utils'
+import { getTodayDateInputValue, toDateInputValue } from '@/lib/date-utils'
 import { getSolicitacaoStatusDefaults } from '@/constants/solicitacoes-config'
 
 function isAtrasada(solicitacao) {
@@ -32,11 +32,9 @@ function isAtrasada(solicitacao) {
     return false
   }
 
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
-
-  const targetTime = getLocalDateTime(dateValue)
-  return targetTime !== null && targetTime < today.getTime()
+  const today = toDateInputValue(new Date())
+  const targetDate = toDateInputValue(dateValue)
+  return !!targetDate && targetDate < today
 }
 
 function formatCurrency(value) {
