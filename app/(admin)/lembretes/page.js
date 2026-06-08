@@ -290,7 +290,7 @@ export default function LembretesPage() {
         </Dialog>
       </div>
 
-      <div className="flex flex-col gap-4 sm:gap-6 max-h-[85vh] sm:max-h-[90vh] overflow-y-auto pr-2 pb-6">
+      <div className="ige-scrollbar flex flex-col gap-4 sm:gap-6 max-h-[85vh] sm:max-h-[90vh] overflow-y-auto pr-2 pb-6">
 
         {groupByDate(lembretesPendentes).map(([date, items]) => (
           <DateGroup key={date} dateLabel={date} items={items} />

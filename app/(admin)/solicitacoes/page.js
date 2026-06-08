@@ -290,7 +290,7 @@ export default function SolicitacoesPage() {
       />
 
       <Dialog open={newPedidoOpen} onOpenChange={handleNewPedidoOpenChange}>
-        <DialogContent className="h-[100dvh] max-h-[100dvh] w-full max-w-none overflow-y-auto rounded-none p-4 sm:h-auto sm:max-h-[calc(100vh-2rem)] sm:w-[95vw] sm:max-w-3xl sm:rounded-lg sm:p-6">
+        <DialogContent className="ige-scrollbar h-[100dvh] max-h-[100dvh] w-full max-w-none overflow-y-auto rounded-none p-4 sm:h-auto sm:max-h-[calc(100vh-2rem)] sm:w-[95vw] sm:max-w-3xl sm:rounded-lg sm:p-6">
           <DialogHeader>
             <DialogTitle>Novo pedido</DialogTitle>
           </DialogHeader>

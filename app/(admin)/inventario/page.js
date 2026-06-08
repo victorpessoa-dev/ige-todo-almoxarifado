@@ -460,7 +460,7 @@ export default function InventarioPage() {
               </Button>
             </DialogTrigger>
 
-            <DialogContent className="max-h-[calc(100vh-2rem)] w-[95vw] overflow-y-auto p-4 sm:max-w-xl sm:p-6">
+            <DialogContent className="ige-scrollbar max-h-[calc(100vh-2rem)] w-[95vw] overflow-y-auto p-4 sm:max-w-xl sm:p-6">
               <DialogHeader>
                 <DialogTitle>Adicionar Produto</DialogTitle>
               </DialogHeader>
@@ -602,7 +602,7 @@ export default function InventarioPage() {
             Deseja realmente excluir {selectedProducts.length} produto(s)?
           </p>
 
-          <div className="max-h-52 overflow-y-auto rounded-lg border bg-muted/20 p-3 text-sm">
+          <div className="ige-scrollbar max-h-52 overflow-y-auto rounded-lg border bg-muted/20 p-3 text-sm">
             {selectedProducts.map((produto) => (
               <div key={produto.id} className="truncate py-1" title={produto.nome || '-'}>
                 {produto.nome}
@@ -658,7 +658,7 @@ export default function InventarioPage() {
         open={!!editingProduto}
         onOpenChange={() => setEditingProduto(null)}
       >
-        <DialogContent className="max-h-[calc(100vh-2rem)] w-[95vw] overflow-y-auto p-4 sm:max-w-xl sm:p-6">
+        <DialogContent className="ige-scrollbar max-h-[calc(100vh-2rem)] w-[95vw] overflow-y-auto p-4 sm:max-w-xl sm:p-6">
           <DialogHeader>
             <DialogTitle>Editar Produto</DialogTitle>
           </DialogHeader>
@@ -709,7 +709,7 @@ export default function InventarioPage() {
               />
             </div>
 
-            <div className="max-h-52 overflow-y-auto rounded-lg border bg-muted/20 p-3 text-sm">
+            <div className="ige-scrollbar max-h-52 overflow-y-auto rounded-lg border bg-muted/20 p-3 text-sm">
               {selectedProducts.map((produto) => (
                 <div
                   key={produto.id}

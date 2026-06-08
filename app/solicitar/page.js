@@ -267,7 +267,7 @@ function SolicitacaoPublicTable({ solicitacoes, onOpen, sortConfig, onSort }) {
         })}
       </div>
 
-      <div className="hidden overflow-x-auto rounded-xl border bg-background md:block">
+      <div className="ige-scrollbar inventory-table-scroll hidden overflow-x-auto rounded-xl border bg-background md:block">
         <Table className="table-fixed" style={{ width: `${tableWidth}px`, minWidth: `${tableWidth}px` }}>
           <colgroup>
             {PUBLIC_SOLICITACAO_TABLE_COLUMNS.map((column) => (
@@ -433,7 +433,7 @@ function SolicitacaoPublicDetailsDialog({ solicitacao, open, onOpenChange }) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="h-[100dvh] max-h-[100dvh] w-full max-w-none overflow-y-auto rounded-none p-4 sm:h-auto sm:max-h-[calc(100vh-2rem)] sm:w-[95vw] sm:max-w-3xl sm:rounded-lg sm:p-6">
+      <DialogContent className="ige-scrollbar h-[100dvh] max-h-[100dvh] w-full max-w-none overflow-y-auto rounded-none p-4 sm:h-auto sm:max-h-[calc(100vh-2rem)] sm:w-[95vw] sm:max-w-3xl sm:rounded-lg sm:p-6">
         <DialogHeader>
               <DialogTitle className="line-clamp-3 break-words text-left text-base [overflow-wrap:anywhere] sm:text-lg" title={`${solicitacao.codigo} - ${formatSolicitacaoItem(solicitacao)}`}>
                 {solicitacao.codigo} - {formatSolicitacaoItem(solicitacao)}
@@ -870,7 +870,7 @@ export default function SolicitarPage() {
         </Card>
 
         <Dialog open={pedidoDialogOpen} onOpenChange={setPedidoDialogOpen}>
-          <DialogContent className="h-[100dvh] max-h-[100dvh] w-full max-w-none overflow-y-auto rounded-none p-4 sm:h-auto sm:max-h-[calc(100vh-2rem)] sm:w-[95vw] sm:max-w-3xl sm:rounded-lg sm:p-6">
+          <DialogContent className="ige-scrollbar h-[100dvh] max-h-[100dvh] w-full max-w-none overflow-y-auto rounded-none p-4 sm:h-auto sm:max-h-[calc(100vh-2rem)] sm:w-[95vw] sm:max-w-3xl sm:rounded-lg sm:p-6">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 <Send className="h-5 w-5 text-primary" />

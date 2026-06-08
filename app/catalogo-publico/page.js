@@ -48,7 +48,7 @@ export default function CatalogoPublicoPage() {
   return (
     <main className="h-screen w-full bg-muted">
       {isLoading ? (
-        <div className="flex h-full items-start justify-center overflow-auto bg-[#eef2f7] p-2 sm:p-4">
+        <div className="ige-scrollbar flex h-full items-start justify-center overflow-auto bg-[#eef2f7] p-2 sm:p-4">
           <section className="relative flex min-h-[620px] w-full max-w-[1040px] items-center justify-center overflow-hidden border border-[#d7dde6] bg-white p-6 sm:min-h-[760px] sm:p-10">
             <div className="absolute inset-x-0 top-0 h-3 bg-gradient-to-r from-[#0f172a] via-[#1d4ed8] to-[#38bdf8]" />
             <div className="absolute -bottom-32 -right-32 h-72 w-72 rounded-full border-[42px] border-[#dbeafe] opacity-75" />

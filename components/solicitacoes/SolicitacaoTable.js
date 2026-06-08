@@ -341,7 +341,7 @@ export function SolicitacaoTable({
       </div>
 
       <div className="hidden overflow-hidden rounded-2xl border bg-card shadow-sm md:block">
-        <div className="inventory-table-scroll w-full overflow-x-auto px-2">
+        <div className="ige-scrollbar inventory-table-scroll w-full overflow-x-auto px-2">
           <Table className="table-fixed" style={{ width: `${tableWidth}px`, minWidth: `${tableWidth}px` }}>
             <colgroup>
               {SOLICITACAO_TABLE_COLUMNS.map((column) => (

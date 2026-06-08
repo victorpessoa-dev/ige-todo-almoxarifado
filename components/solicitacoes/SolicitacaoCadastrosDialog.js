@@ -261,7 +261,7 @@ export function SolicitacaoCadastrosDialog({
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="h-[100dvh] max-h-[100dvh] w-full max-w-none overflow-y-auto rounded-none p-4 sm:h-auto sm:max-h-[calc(100vh-2rem)] sm:w-[95vw] sm:max-w-5xl sm:rounded-lg sm:p-6">
+        <DialogContent className="ige-scrollbar h-[100dvh] max-h-[100dvh] w-full max-w-none overflow-y-auto rounded-none p-4 sm:h-auto sm:max-h-[calc(100vh-2rem)] sm:w-[95vw] sm:max-w-5xl sm:rounded-lg sm:p-6">
           <DialogHeader>
             <DialogTitle>Cadastros de solicitação</DialogTitle>
             <DialogDescription>
@@ -341,7 +341,7 @@ export function SolicitacaoCadastrosDialog({
               </div>
 
               <div className="hidden overflow-hidden rounded-lg border md:block">
-                <div className="overflow-x-auto">
+                <div className="ige-scrollbar inventory-table-scroll overflow-x-auto">
                   <Table className="min-w-[720px] table-fixed">
                     <colgroup>
                       <col className="w-[36%]" />
@@ -464,7 +464,7 @@ export function SolicitacaoCadastrosDialog({
               </div>
 
               <div className="hidden overflow-hidden rounded-lg border md:block">
-                <div className="overflow-x-auto">
+                <div className="ige-scrollbar inventory-table-scroll overflow-x-auto">
                   <Table className="min-w-[640px] table-fixed">
                     <colgroup>
                       <col className="w-[160px]" />

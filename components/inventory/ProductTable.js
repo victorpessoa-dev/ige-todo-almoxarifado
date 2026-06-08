@@ -381,7 +381,7 @@ export default function ProductTable({
           })}
         </div>
 
-        <div className="inventory-table-scroll hidden w-full overflow-x-auto md:block">
+        <div className="ige-scrollbar inventory-table-scroll hidden w-full overflow-x-auto md:block">
           <Table className="table-fixed" style={{ width: `${tableWidth}px`, minWidth: `${tableWidth}px` }}>
             <colgroup>
               {PRODUCT_TABLE_COLUMNS.map((column) => (

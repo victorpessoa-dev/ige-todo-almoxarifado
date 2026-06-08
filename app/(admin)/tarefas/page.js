@@ -342,7 +342,7 @@ export default function TarefasPage() {
         </Dialog>
       </div>
 
-      <div className="flex flex-col gap-4 sm:gap-6 max-h-[85vh] sm:max-h-[90vh] overflow-y-auto pr-2 scroll-smooth scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent pb-6">
+      <div className="ige-scrollbar flex flex-col gap-4 sm:gap-6 max-h-[85vh] sm:max-h-[90vh] overflow-y-auto pr-2 scroll-smooth pb-6">
         <div className="flex flex-col gap-4">
           <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
             <Circle className="h-5 w-5" />

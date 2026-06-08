@@ -736,7 +736,7 @@ export default function AnaliseGiroPage() {
 
                 {Array.isArray(turnoverAnalysis?.recommendations) &&
                   turnoverAnalysis.recommendations.length > 0 && (
-                    <div className="max-h-[60vh] space-y-2 overflow-y-auto pr-1">
+                    <div className="ige-scrollbar max-h-[60vh] space-y-2 overflow-y-auto pr-1">
                       {turnoverAnalysis.recommendations.map((item, index) => (
                         <div
                           key={`${item.productId || item.name}-${index}`}

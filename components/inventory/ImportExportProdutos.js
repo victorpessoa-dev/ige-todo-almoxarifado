@@ -773,7 +773,7 @@ export default function ImportExportProdutos() {
               </div>
             </div>
 
-            <div className="min-h-0 flex-1 space-y-3 overflow-y-auto pr-1">
+            <div className="ige-scrollbar min-h-0 flex-1 space-y-3 overflow-y-auto pr-1">
               {itemsWithDuplicates.map((item) => (
                 <div
                   key={item.id}
