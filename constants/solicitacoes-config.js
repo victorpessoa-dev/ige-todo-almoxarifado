@@ -4,22 +4,22 @@ export const SOLICITACAO_PRIORIDADE_OPTIONS = [
   {
     value: 'baixa',
     label: 'Baixa',
-    className: 'border-emerald-200 bg-emerald-50 text-emerald-700'
+    className: 'border-[#86efac] bg-[#dcfce7] text-[#166534]'
   },
   {
     value: 'media',
     label: 'Média',
-    className: 'border-amber-200 bg-amber-50 text-amber-700'
+    className: 'border-[#93c5fd] bg-[#dbeafe] text-[#1e40af]'
   },
   {
     value: 'alta',
     label: 'Alta',
-    className: 'border-orange-200 bg-orange-50 text-orange-700'
+    className: 'border-[#fb923c] bg-[#ffedd5] text-[#9a3412]'
   },
   {
     value: 'urgente',
     label: 'Urgente',
-    className: 'border-red-200 bg-red-50 text-red-700'
+    className: 'border-[#f87171] bg-[#fee2e2] text-[#991b1b]'
   }
 ]
 
@@ -125,56 +125,56 @@ export function getSolicitacaoSituacao(solicitacao = {}) {
   ) {
     return {
       label: 'CANCELADA',
-      className: 'border-slate-200 bg-slate-50 text-slate-800'
+      className: 'border-[#fca5a5] bg-[#fee2e2] text-[#991b1b]'
     }
   }
 
   if (cotacao === 'cotando') {
     return {
       label: 'COTAÇÃO',
-      className: 'border-violet-200 bg-violet-50 text-violet-800'
+      className: 'border-[#d8b4fe] bg-[#f3e8ff] text-[#6b21a8]'
     }
   }
 
   if (cotacao === 'nao_iniciado') {
     return {
       label: 'COTAÇÃO NÃO INICIADA!',
-      className: 'border-sky-200 bg-sky-50 text-sky-800'
+      className: 'border-[#7dd3fc] bg-[#e0f2fe] text-[#075985]'
     }
   }
 
   if (cotacao === 'adiada' || pedido === 'pedido_adiado' || entrega === 'adiada') {
     return {
       label: 'PEDIDO ADIADO!',
-      className: 'border-amber-200 bg-amber-50 text-amber-800'
+      className: 'border-[#fcd34d] bg-[#fef3c7] text-[#92400e]'
     }
   }
 
   if (pedido === 'pedido_em_analise') {
     return {
       label: 'AGUARDANDO RETORNO DO PEDIDO',
-      className: 'border-blue-200 bg-blue-50 text-blue-800'
+      className: 'border-[#a5b4fc] bg-[#e0e7ff] text-[#3730a3]'
     }
   }
 
   if (pedido === 'aguardando_pagamento') {
     return {
       label: 'AGUARDANDO PAGAMENTO',
-      className: 'border-orange-200 bg-orange-50 text-orange-800'
+      className: 'border-[#fb923c] bg-[#ffedd5] text-[#9a3412]'
     }
   }
 
   if (pedido === 'preparando_pedido') {
     return {
       label: 'PREPARANDO PEDIDO',
-      className: 'border-blue-200 bg-blue-50 text-blue-800'
+      className: 'border-[#5eead4] bg-[#ccfbf1] text-[#115e59]'
     }
   }
 
   if (entrega === 'disponivel_retirada') {
     return {
       label: 'DISPONÍVEL PARA RETIRADA',
-      className: 'border-emerald-200 bg-emerald-50 text-emerald-800'
+      className: 'border-[#67e8f9] bg-[#cffafe] text-[#155e75]'
     }
   }
 
@@ -188,7 +188,7 @@ export function getSolicitacaoSituacao(solicitacao = {}) {
   if (!previsaoEntrega) {
     return {
       label: 'SEM DATA DE ENTREGA',
-      className: 'border-slate-200 bg-slate-50 text-slate-800'
+      className: 'border-[#cbd5e1] bg-[#f1f5f9] text-[#334155]'
     }
   }
 
@@ -198,33 +198,33 @@ export function getSolicitacaoSituacao(solicitacao = {}) {
   if (!deliveryDate) {
     return {
       label: 'SEM DATA DE ENTREGA',
-      className: 'border-slate-200 bg-slate-50 text-slate-800'
+      className: 'border-[#cbd5e1] bg-[#f1f5f9] text-[#334155]'
     }
   }
 
   if (today < deliveryDate) {
     return {
       label: 'NO PRAZO!',
-      className: 'border-emerald-200 bg-emerald-50 text-emerald-800'
+      className: 'border-[#86efac] bg-[#dcfce7] text-[#166534]'
     }
   }
 
   if (entrega === 'entregue_conferido') {
     return {
       label: 'ENTREGUE E CONFERIDO!',
-      className: 'border-green-200 bg-green-50 text-green-800'
+      className: 'border-[#22c55e] bg-[#dcfce7] text-[#14532d]'
     }
   }
 
   if (today > deliveryDate) {
     return {
       label: 'ATRASADA!',
-      className: 'border-red-200 bg-red-50 text-red-800'
+      className: 'border-[#f87171] bg-[#fee2e2] text-[#991b1b]'
     }
   }
 
   return {
     label: 'PARA CHEGAR HOJE!',
-    className: 'border-amber-200 bg-amber-50 text-amber-800'
+    className: 'border-[#facc15] bg-[#fef9c3] text-[#854d0e]'
   }
 }
