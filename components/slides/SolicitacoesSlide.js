@@ -59,7 +59,7 @@ function isAtrasada(solicitacao) {
 }
 
 function formatDate(value) {
-  return formatDateBR(value, 'Sem previsão')
+  return formatDateBR(value, '-')
 }
 
 function getStatusDotClass(status) {

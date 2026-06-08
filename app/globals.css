@@ -281,6 +281,16 @@
     table-layout: fixed;
   }
 
+  .slide-scroll {
+    overscroll-behavior-x: contain;
+    overscroll-behavior-y: auto;
+  }
+
+  .inventory-table-scroll {
+    overscroll-behavior-x: contain;
+    overscroll-behavior-y: auto;
+  }
+
   .fc .fc-toolbar {
     gap: 0.5rem;
     flex-wrap: wrap;
