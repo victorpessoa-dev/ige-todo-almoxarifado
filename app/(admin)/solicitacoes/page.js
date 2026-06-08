@@ -21,6 +21,10 @@ import { SolicitacaoTable } from '@/components/solicitacoes/SolicitacaoTable'
 import { getUserMessage } from '@/lib/user-messages'
 import { downloadSolicitacoesExcel } from '@/lib/excel'
 import { getTodayDateInputValue, toDateInputValue } from '@/lib/date-utils'
+import {
+  getSolicitacaoCentroCusto,
+  getSolicitacaoSolicitante
+} from '@/lib/solicitacoes-format'
 import { getSolicitacaoStatusDefaults } from '@/constants/solicitacoes-config'
 
 function isAtrasada(solicitacao) {
@@ -88,8 +92,8 @@ export default function SolicitacoesPage() {
           solicitacao.nome_item,
           solicitacao.descricao,
           solicitacao.aplicacoes,
-          solicitacao.solicitante,
-          solicitacao.centro_custo
+          getSolicitacaoSolicitante(solicitacao),
+          getSolicitacaoCentroCusto(solicitacao)
         ]
           .filter(Boolean)
           .some((value) => String(value).toLowerCase().includes(search))

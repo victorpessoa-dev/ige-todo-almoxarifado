@@ -49,7 +49,11 @@ import {
   DialogTitle
 } from '@/components/ui/dialog'
 import { getUserMessage } from '@/lib/user-messages'
-import { formatSolicitacaoItem } from '@/lib/solicitacoes-format'
+import {
+  formatSolicitacaoItem,
+  getSolicitacaoCentroCusto,
+  getSolicitacaoSolicitante
+} from '@/lib/solicitacoes-format'
 import { SolicitacaoStatusBadge } from '@/components/solicitacoes/SolicitacaoStatusBadge'
 import {
   SOLICITACAO_PRIORIDADE_OPTIONS,
@@ -60,7 +64,7 @@ import {
   getSolicitacaoPrioridadeOrder,
   getSolicitacaoSituacao
 } from '@/constants/solicitacoes-config'
-import { formatDateBR } from '@/lib/date-utils'
+import { formatDateBR, getLocalDateTime } from '@/lib/date-utils'
 
 const DEFAULT_PAGE_SIZE = 25
 
@@ -68,8 +72,32 @@ function formatDate(value) {
   return formatDateBR(value)
 }
 
+function getSolicitacaoCreatedAt(solicitacao) {
+  return solicitacao?.created_at
+}
+
+function getUpdatedAtDisplay(solicitacao) {
+  const updatedAt = solicitacao?.updated_at
+  if (!updatedAt) return '-'
+
+  const createdAt = getSolicitacaoCreatedAt(solicitacao)
+  if (!createdAt) return formatDate(updatedAt)
+
+  const updatedTime = new Date(updatedAt).getTime()
+  const createdTime = new Date(createdAt).getTime()
+  if (!Number.isFinite(updatedTime) || !Number.isFinite(createdTime)) {
+    return formatDate(updatedAt)
+  }
+
+  const updatedMinute = Math.floor(updatedTime / 60000)
+  const createdMinute = Math.floor(createdTime / 60000)
+  if (updatedMinute === createdMinute) return '-'
+
+  return formatDate(updatedAt)
+}
+
 function getPrevisaoDate(solicitacao) {
-  return solicitacao.previsao_entrega || solicitacao.previsao_desejada
+  return solicitacao.previsao_entrega
 }
 
 function compareText(a, b) {
@@ -87,10 +115,23 @@ function compareSolicitacaoByKey(a, b, key) {
     )
   }
 
+  if (['created_at', 'previsao', 'updated_at'].includes(key)) {
+    const valueByKey = {
+      created_at: getSolicitacaoCreatedAt,
+      previsao: getPrevisaoDate,
+      updated_at: (item) => item.updated_at
+    }
+    const getValue = valueByKey[key]
+    const aDate = getLocalDateTime(getValue(a)) || 0
+    const bDate = getLocalDateTime(getValue(b)) || 0
+
+    return aDate - bDate
+  }
+
   const valueByKey = {
     nome_item: (item) => formatSolicitacaoItem(item),
-    solicitante: (item) => item.solicitante,
-    centro_custo: (item) => item.centro_custo,
+    solicitante: getSolicitacaoSolicitante,
+    centro_custo: getSolicitacaoCentroCusto,
     situacao: (item) => getSolicitacaoSituacao(item).label
   }
 
@@ -105,7 +146,9 @@ const PUBLIC_SOLICITACAO_TABLE_COLUMNS = [
   { key: 'centro_custo', width: 170, minWidth: 110 },
   { key: 'prioridade', width: 112, minWidth: 100 },
   { key: 'situacao', width: 142, minWidth: 110 },
-  { key: 'previsao', width: 110, minWidth: 100 }
+  { key: 'created_at', width: 118, minWidth: 100 },
+  { key: 'previsao', width: 110, minWidth: 100 },
+  { key: 'updated_at', width: 118, minWidth: 100 }
 ]
 
 function DetailStatus({ label, value, options }) {
@@ -189,11 +232,11 @@ function SolicitacaoPublicTable({ solicitacoes, onOpen, sortConfig, onSort }) {
                   <p className="mt-1 line-clamp-2 text-sm break-words [overflow-wrap:anywhere]" title={formatSolicitacaoItem(solicitacao) || '-'}>
                     {formatSolicitacaoItem(solicitacao)}
                   </p>
-                  <p className="mt-1 truncate text-xs text-muted-foreground" title={solicitacao.solicitante || '-'}>
-                    {solicitacao.solicitante || '-'}
+                  <p className="mt-1 truncate text-xs text-muted-foreground" title={getSolicitacaoSolicitante(solicitacao) || '-'}>
+                    {getSolicitacaoSolicitante(solicitacao) || '-'}
                   </p>
-                  <p className="mt-1 truncate text-xs text-muted-foreground" title={solicitacao.centro_custo || '-'}>
-                    {solicitacao.centro_custo || '-'}
+                  <p className="mt-1 truncate text-xs text-muted-foreground" title={getSolicitacaoCentroCusto(solicitacao) || '-'}>
+                    {getSolicitacaoCentroCusto(solicitacao) || '-'}
                   </p>
                 </div>
               </div>
@@ -211,7 +254,13 @@ function SolicitacaoPublicTable({ solicitacoes, onOpen, sortConfig, onSort }) {
               </div>
 
               <p className="mt-3 text-xs text-muted-foreground">
+                Solicitado: {formatDate(getSolicitacaoCreatedAt(solicitacao))}
+              </p>
+              <p className="mt-1 text-xs text-muted-foreground">
                 Previsão: {formatDate(getPrevisaoDate(solicitacao))}
+              </p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Atualizado: {getUpdatedAtDisplay(solicitacao)}
               </p>
             </button>
           )
@@ -276,10 +325,33 @@ function SolicitacaoPublicTable({ solicitacoes, onOpen, sortConfig, onSort }) {
               >
                 <ColumnResizeHandle columnKey="situacao" onResizeStart={startResize} />
               </SortableTableHead>
-              <TableHead className="relative h-12 px-3 pr-4">
-                Previsão
+              <SortableTableHead
+                label="Solicitado"
+                columnKey="created_at"
+                sortConfig={sortConfig}
+                onSort={onSort}
+                className="relative h-12 px-3 pr-4"
+              >
+                <ColumnResizeHandle columnKey="created_at" onResizeStart={startResize} />
+              </SortableTableHead>
+              <SortableTableHead
+                label="Previsão"
+                columnKey="previsao"
+                sortConfig={sortConfig}
+                onSort={onSort}
+                className="relative h-12 px-3 pr-4"
+              >
                 <ColumnResizeHandle columnKey="previsao" onResizeStart={startResize} />
-              </TableHead>
+              </SortableTableHead>
+              <SortableTableHead
+                label="Atualizado"
+                columnKey="updated_at"
+                sortConfig={sortConfig}
+                onSort={onSort}
+                className="relative h-12 px-3 pr-4"
+              >
+                <ColumnResizeHandle columnKey="updated_at" onResizeStart={startResize} />
+              </SortableTableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -303,13 +375,13 @@ function SolicitacaoPublicTable({ solicitacoes, onOpen, sortConfig, onSort }) {
                     </p>
                   </TableCell>
                   <TableCell className="px-3 py-3">
-                    <p className="truncate" title={solicitacao.solicitante || '-'}>
-                      {solicitacao.solicitante || '-'}
+                    <p className="truncate" title={getSolicitacaoSolicitante(solicitacao) || '-'}>
+                      {getSolicitacaoSolicitante(solicitacao) || '-'}
                     </p>
                   </TableCell>
                   <TableCell className="px-3 py-3">
-                    <p className="truncate" title={solicitacao.centro_custo || '-'}>
-                      {solicitacao.centro_custo || '-'}
+                    <p className="truncate" title={getSolicitacaoCentroCusto(solicitacao) || '-'}>
+                      {getSolicitacaoCentroCusto(solicitacao) || '-'}
                     </p>
                   </TableCell>
                   <TableCell className="px-3 py-3">
@@ -330,8 +402,18 @@ function SolicitacaoPublicTable({ solicitacoes, onOpen, sortConfig, onSort }) {
                     )}
                   </TableCell>
                   <TableCell className="px-3 py-3">
+                    <p className="truncate" title={formatDate(getSolicitacaoCreatedAt(solicitacao))}>
+                      {formatDate(getSolicitacaoCreatedAt(solicitacao))}
+                    </p>
+                  </TableCell>
+                  <TableCell className="px-3 py-3">
                     <p className="truncate" title={formatDate(getPrevisaoDate(solicitacao))}>
                       {formatDate(getPrevisaoDate(solicitacao))}
+                    </p>
+                  </TableCell>
+                  <TableCell className="px-3 py-3">
+                    <p className="truncate" title={getUpdatedAtDisplay(solicitacao)}>
+                      {getUpdatedAtDisplay(solicitacao)}
                     </p>
                   </TableCell>
                 </TableRow>
@@ -375,12 +457,13 @@ function SolicitacaoPublicDetailsDialog({ solicitacao, open, onOpenChange }) {
           <StatusGrid solicitacao={solicitacao} />
 
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            <InfoItem label="Solicitante" value={solicitacao.solicitante} />
-            <InfoItem label="Centro de custo" value={solicitacao.centro_custo} />
+            <InfoItem label="Solicitante" value={getSolicitacaoSolicitante(solicitacao)} />
+            <InfoItem label="Centro de custo" value={getSolicitacaoCentroCusto(solicitacao)} />
             <InfoItem label="Quantidade" value={solicitacao.quantidade} />
+            <InfoItem label="Data da solicitação" value={formatDate(getSolicitacaoCreatedAt(solicitacao))} />
             <InfoItem label="Previsão desejada" value={formatDate(solicitacao.previsao_desejada)} />
             <InfoItem label="Previsão de entrega" value={formatDate(solicitacao.previsao_entrega)} />
-            <InfoItem label="Atualizado em" value={formatDate(solicitacao.updated_at)} />
+            <InfoItem label="Atualizado em" value={getUpdatedAtDisplay(solicitacao)} />
           </div>
 
           <InfoItem label="Nome do item" value={solicitacao.nome_item} />
@@ -426,8 +509,8 @@ export default function SolicitarPage() {
           solicitacao.nome_item,
           solicitacao.descricao,
           solicitacao.aplicacoes,
-          solicitacao.solicitante,
-          solicitacao.centro_custo
+          getSolicitacaoSolicitante(solicitacao),
+          getSolicitacaoCentroCusto(solicitacao)
         ]
           .filter(Boolean)
           .some((value) => String(value).toLowerCase().includes(publicSearch))
@@ -562,7 +645,7 @@ export default function SolicitarPage() {
           solicitacao.nome_item,
           solicitacao.descricao,
           solicitacao.aplicacoes,
-          solicitacao.solicitante
+          getSolicitacaoSolicitante(solicitacao)
         ]
           .filter(Boolean)
           .some((value) => String(value).toLowerCase().includes(normalizedSearch))
@@ -719,14 +802,17 @@ export default function SolicitarPage() {
                 <StatusGrid solicitacao={statusResult} />
 
                 <div className="grid gap-1 text-xs text-muted-foreground sm:grid-cols-2 lg:grid-cols-3">
-                  <span className="truncate" title={`Solicitante: ${statusResult.solicitante || '-'}`}>
-                    Solicitante: {statusResult.solicitante || '-'}
+                  <span className="truncate" title={`Solicitante: ${getSolicitacaoSolicitante(statusResult) || '-'}`}>
+                    Solicitante: {getSolicitacaoSolicitante(statusResult) || '-'}
                   </span>
-                  <span className="truncate" title={`Centro: ${statusResult.centro_custo || '-'}`}>
-                    Centro: {statusResult.centro_custo || '-'}
+                  <span className="truncate" title={`Centro: ${getSolicitacaoCentroCusto(statusResult) || '-'}`}>
+                    Centro: {getSolicitacaoCentroCusto(statusResult) || '-'}
                   </span>
                   <span className="truncate" title={`Quantidade: ${statusResult.quantidade || '-'}`}>
                     Quantidade: {statusResult.quantidade || '-'}
+                  </span>
+                  <span className="truncate" title={`Data da solicitação: ${formatDate(getSolicitacaoCreatedAt(statusResult))}`}>
+                    Data da solicitação: {formatDate(getSolicitacaoCreatedAt(statusResult))}
                   </span>
                   <span className="truncate" title={`Previsão desejada: ${formatDate(statusResult.previsao_desejada)}`}>
                     Previsão desejada: {formatDate(statusResult.previsao_desejada)}
@@ -734,8 +820,8 @@ export default function SolicitarPage() {
                   <span className="truncate" title={`Previsão de entrega: ${formatDate(statusResult.previsao_entrega)}`}>
                     Previsão de entrega: {formatDate(statusResult.previsao_entrega)}
                   </span>
-                  <span className="truncate" title={`Atualizado em: ${formatDate(statusResult.updated_at)}`}>
-                    Atualizado em: {formatDate(statusResult.updated_at)}
+                  <span className="truncate" title={`Atualizado em: ${getUpdatedAtDisplay(statusResult)}`}>
+                    Atualizado em: {getUpdatedAtDisplay(statusResult)}
                   </span>
                 </div>
               </div>

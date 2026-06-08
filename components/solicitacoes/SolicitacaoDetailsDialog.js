@@ -32,7 +32,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { defaultSolicitacaoForm } from './SolicitacaoForm'
 import { SolicitacaoStatusBadge } from './SolicitacaoStatusBadge'
 import { getUserMessage } from '@/lib/user-messages'
-import { formatSolicitacaoItem } from '@/lib/solicitacoes-format'
+import {
+  formatCentroCustoLabel,
+  formatSolicitacaoItem,
+  getSolicitacaoCentroCusto,
+  getSolicitacaoSolicitante
+} from '@/lib/solicitacoes-format'
 import {
   SOLICITACAO_PRIORIDADE_OPTIONS,
   SOLICITACAO_STATUS_COTACAO_OPTIONS,
@@ -118,6 +123,30 @@ function formatDate(value) {
   return formatDateBR(value)
 }
 
+function getSolicitacaoCreatedAt(solicitacao) {
+  return solicitacao?.created_at
+}
+
+function getUpdatedAtDisplay(solicitacao) {
+  const updatedAt = solicitacao?.updated_at
+  if (!updatedAt) return '-'
+
+  const createdAt = getSolicitacaoCreatedAt(solicitacao)
+  if (!createdAt) return formatDate(updatedAt)
+
+  const updatedTime = new Date(updatedAt).getTime()
+  const createdTime = new Date(createdAt).getTime()
+  if (!Number.isFinite(updatedTime) || !Number.isFinite(createdTime)) {
+    return formatDate(updatedAt)
+  }
+
+  const updatedMinute = Math.floor(updatedTime / 60000)
+  const createdMinute = Math.floor(createdTime / 60000)
+  if (updatedMinute === createdMinute) return '-'
+
+  return formatDate(updatedAt)
+}
+
 function formatCurrency(value) {
   const number = parseDecimalValue(value)
   if (!number) return '-'
@@ -158,8 +187,7 @@ function StatusItem({ label, value, options }) {
 }
 
 function getCentroCustoLabel(centroCusto) {
-  if (!centroCusto) return ''
-  return [centroCusto.codigo, centroCusto.nome].filter(Boolean).join(' - ')
+  return formatCentroCustoLabel(centroCusto)
 }
 
 function getSolicitanteCentroCusto(solicitante, centrosCusto) {
@@ -181,15 +209,15 @@ function buildFormFromSolicitacao(solicitacao) {
     prioridade: solicitacao?.prioridade || 'media',
     previsao_desejada: toDateInput(solicitacao?.previsao_desejada),
     centro_custo_id: solicitacao?.centro_custo_id || '',
-    centro_custo: solicitacao?.centro_custo || '',
-    centro_custo_nome: solicitacao?.centro_custo || '',
+    centro_custo: getSolicitacaoCentroCusto(solicitacao),
+    centro_custo_nome: getSolicitacaoCentroCusto(solicitacao),
     aplicacoes: solicitacao?.aplicacoes || '',
     link_referencia: solicitacao?.link_referencia || '',
     fornecedor_nome: solicitacao?.fornecedor_nome || '',
     fornecedor_contato: solicitacao?.fornecedor_contato || '',
     solicitante_id: solicitacao?.solicitante_id || '',
-    solicitante: solicitacao?.solicitante || '',
-    solicitante_nome: solicitacao?.solicitante || '',
+    solicitante: getSolicitacaoSolicitante(solicitacao),
+    solicitante_nome: getSolicitacaoSolicitante(solicitacao),
     status_geral: solicitacao?.status_geral || 'nova',
     valor_unitario: formatDecimalInput(solicitacao?.valor_unitario),
     valor_total: formatDecimalInput(solicitacao?.valor_total),
@@ -211,15 +239,11 @@ function buildPayload(form) {
     prioridade: completedForm.prioridade,
     previsao_desejada: completedForm.previsao_desejada || null,
     centro_custo_id: completedForm.centro_custo_id || null,
-    centro_custo: completedForm.centro_custo || null,
-    centro_custo_nome: completedForm.centro_custo_nome || completedForm.centro_custo || null,
     aplicacoes: completedForm.aplicacoes || null,
     link_referencia: completedForm.link_referencia || null,
     fornecedor_nome: completedForm.fornecedor_nome?.trim?.() || null,
     fornecedor_contato: completedForm.fornecedor_contato?.trim?.() || null,
     solicitante_id: completedForm.solicitante_id || null,
-    solicitante: completedForm.solicitante,
-    solicitante_nome: completedForm.solicitante_nome || completedForm.solicitante,
     status_geral: completedForm.status_geral,
     valor_unitario: parseDecimalValue(completedForm.valor_unitario),
     valor_total: parseDecimalValue(completedForm.valor_total),
@@ -549,13 +573,9 @@ export function SolicitacaoDetailsDialog({
               <>
                 <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                   <InfoItem label="Código" value={solicitacao?.codigo} />
-                  <InfoItem label="Solicitante" value={solicitacao?.solicitante} />
-                  <InfoItem label="Centro de custo" value={solicitacao?.centro_custo} />
+                  <InfoItem label="Solicitante" value={getSolicitacaoSolicitante(solicitacao)} />
+                  <InfoItem label="Centro de custo" value={getSolicitacaoCentroCusto(solicitacao)} />
                   <InfoItem label="Quantidade" value={solicitacao?.quantidade} />
-                  <InfoItem label="Data da solicitação" value={formatDate(solicitacao?.data_solicitacao)} />
-                  <InfoItem label="Previsão desejada" value={formatDate(solicitacao?.previsao_desejada)} />
-                  <InfoItem label="Previsão de entrega" value={formatDate(solicitacao?.previsao_entrega)} />
-                  <InfoItem label="Atualizado em" value={formatDate(solicitacao?.updated_at)} />
                 </div>
 
                 <InfoItem label="Nome do item" value={solicitacao?.nome_item} />
@@ -671,6 +691,8 @@ export function SolicitacaoDetailsDialog({
                 </div>
 
                 <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                  <InfoItem label="Data da solicitação" value={formatDate(getSolicitacaoCreatedAt(solicitacao))} />
+                  <InfoItem label="Atualizado em" value={getUpdatedAtDisplay(solicitacao)} />
                   <Field label="Valor unitário">
                     <Input
                       className="min-w-0 truncate"
@@ -745,6 +767,10 @@ export function SolicitacaoDetailsDialog({
                 </div>
 
                 <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                  <InfoItem label="Data da solicitação" value={formatDate(getSolicitacaoCreatedAt(solicitacao))} />
+                  <InfoItem label="Previsão desejada" value={formatDate(solicitacao?.previsao_desejada)} />
+                  <InfoItem label="Previsão de entrega" value={formatDate(solicitacao?.previsao_entrega)} />
+                  <InfoItem label="Atualizado em" value={getUpdatedAtDisplay(solicitacao)} />
                   <InfoItem label="Valor unitário" value={formatCurrency(solicitacao?.valor_unitario)} />
                   <InfoItem label="Valor total" value={formatCurrency(solicitacao?.valor_total)} />
                 </div>

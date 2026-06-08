@@ -20,7 +20,11 @@ import {
 } from '@/constants/solicitacoes-config'
 import { formatDateBR, toDateInputValue } from '@/lib/date-utils'
 import { useAutoScroll } from '@/lib/hooks/useAutoScroll'
-import { formatSolicitacaoItem } from '@/lib/solicitacoes-format'
+import {
+  formatSolicitacaoItem,
+  getSolicitacaoCentroCusto,
+  getSolicitacaoSolicitante
+} from '@/lib/solicitacoes-format'
 
 const SLIDE_SOLICITACAO_TABLE_COLUMNS = [
   { key: 'codigo', width: 92 },
@@ -195,13 +199,13 @@ export function SolicitacoesSlide({ solicitacoes, active, onEnd }) {
                       </p>
                     </TableCell>
                     <TableCell className="px-3 py-3">
-                      <p className="truncate" title={solicitacao.solicitante || '-'}>
-                        {solicitacao.solicitante || '-'}
+                      <p className="truncate" title={getSolicitacaoSolicitante(solicitacao) || '-'}>
+                        {getSolicitacaoSolicitante(solicitacao) || '-'}
                       </p>
                     </TableCell>
                     <TableCell className="px-3 py-3">
-                      <p className="truncate" title={solicitacao.centro_custo || '-'}>
-                        {solicitacao.centro_custo || '-'}
+                      <p className="truncate" title={getSolicitacaoCentroCusto(solicitacao) || '-'}>
+                        {getSolicitacaoCentroCusto(solicitacao) || '-'}
                       </p>
                     </TableCell>
                     <TableCell className="px-3 py-3">

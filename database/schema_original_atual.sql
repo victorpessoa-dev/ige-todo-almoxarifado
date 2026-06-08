@@ -95,8 +95,6 @@ create table if not exists public.solicitacoes_compra (
   data_solicitacao timestamptz not null default now(),
   previsao_desejada date,
   previsao_entrega date,
-  solicitante text not null,
-  centro_custo text,
   aplicacoes text,
   link_referencia text,
   fornecedor_nome text,
@@ -145,32 +143,9 @@ $$ language plpgsql;
 
 create or replace function public.set_solicitacao_compra_codigo()
 returns trigger as $$
-declare
-  solicitante_nome text;
-  centro_custo_nome text;
 begin
   if new.codigo is null or new.codigo = '' then
     new.codigo := lpad(nextval('public.solicitacoes_compra_codigo_seq')::text, 6, '0');
-  end if;
-
-  if new.solicitante_id is not null then
-    select nome into solicitante_nome
-    from public.solicitantes_compra
-    where id = new.solicitante_id;
-
-    if solicitante_nome is not null then
-      new.solicitante := solicitante_nome;
-    end if;
-  end if;
-
-  if new.centro_custo_id is not null then
-    select coalesce(codigo || ' - ' || nome, nome) into centro_custo_nome
-    from public.centros_custo
-    where id = new.centro_custo_id;
-
-    if centro_custo_nome is not null then
-      new.centro_custo := centro_custo_nome;
-    end if;
   end if;
 
   new.updated_at := now();
@@ -210,6 +185,8 @@ for each row execute function public.set_solicitacao_compra_codigo();
 
 drop function if exists public.criar_solicitacao_compra_publica(text, numeric, text, date, uuid, text, text, text, text, uuid);
 drop function if exists public.criar_solicitacao_compra_publica(text, text, numeric, text, date, uuid, text, text, text, text, uuid);
+drop function if exists public.buscar_solicitacao_compra_publica(text);
+drop function if exists public.listar_solicitacoes_compra_publica();
 
 create or replace function public.criar_solicitacao_compra_publica(
   p_nome_item text,
@@ -313,8 +290,7 @@ begin
     status_geral,
     status_cotacao,
     status_pedido,
-    status_transporte,
-    data_solicitacao
+    status_transporte
   ) values (
     trim(p_nome_item),
     nullif(trim(coalesce(p_descricao, '')), ''),
@@ -330,8 +306,7 @@ begin
     'nova',
     'nao_iniciado',
     'nao_digitado',
-    'producao_separacao',
-    now()
+    'producao_separacao'
   )
   returning * into nova_solicitacao;
 
@@ -361,7 +336,7 @@ returns table (
   solicitante text,
   centro_custo text,
   aplicacoes text,
-  data_solicitacao timestamptz,
+  created_at timestamptz,
   updated_at timestamptz
 )
 language sql
@@ -381,12 +356,14 @@ as $$
     s.status_transporte,
     s.previsao_desejada,
     s.previsao_entrega,
-    s.solicitante,
-    s.centro_custo,
+    sc.nome as solicitante,
+    coalesce(cc.codigo || ' - ' || cc.nome, cc.nome) as centro_custo,
     s.aplicacoes,
-    s.data_solicitacao,
+    s.created_at,
     s.updated_at
   from public.solicitacoes_compra s
+  left join public.solicitantes_compra sc on sc.id = s.solicitante_id
+  left join public.centros_custo cc on cc.id = s.centro_custo_id
   where upper(trim(s.codigo)) = upper(trim(p_codigo))
     and s.visivel_publico = 1
   limit 1;
@@ -408,7 +385,7 @@ returns table (
   solicitante text,
   centro_custo text,
   aplicacoes text,
-  data_solicitacao timestamptz,
+  created_at timestamptz,
   updated_at timestamptz
 )
 language sql
@@ -428,12 +405,14 @@ as $$
     s.status_transporte,
     s.previsao_desejada,
     s.previsao_entrega,
-    s.solicitante,
-    s.centro_custo,
+    sc.nome as solicitante,
+    coalesce(cc.codigo || ' - ' || cc.nome, cc.nome) as centro_custo,
     s.aplicacoes,
-    s.data_solicitacao,
+    s.created_at,
     s.updated_at
   from public.solicitacoes_compra s
+  left join public.solicitantes_compra sc on sc.id = s.solicitante_id
+  left join public.centros_custo cc on cc.id = s.centro_custo_id
   where s.visivel_publico = 1
   order by s.created_at desc
   limit 100;
