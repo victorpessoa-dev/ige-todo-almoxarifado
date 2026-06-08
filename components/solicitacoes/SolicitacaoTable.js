@@ -40,6 +40,18 @@ const SOLICITACAO_TABLE_COLUMNS = [
   { key: 'visivel_publico', width: 60, minWidth: 56 }
 ]
 
+const STATUS_DOT_CLASSES = {
+  nova: 'bg-[#0284c7]',
+  aceita: 'bg-[#0d9488]',
+  em_cotacao: 'bg-[#9333ea]',
+  aprovacao: 'bg-[#d97706]',
+  preparando_pedido: 'bg-[#ea580c]',
+  em_transporte: 'bg-[#4f46e5]',
+  entregue: 'bg-[#06b6d4]',
+  concluida: 'bg-[#15803d]',
+  cancelada: 'bg-[#dc2626]'
+}
+
 function formatCurrency(value) {
   const number = Number(value || 0)
   if (!number) return '-'
@@ -57,18 +69,23 @@ function formatDate(value) {
 function getStatusDotClass(status) {
   const option = getSolicitacaoOption(SOLICITACAO_STATUS_GERAL_OPTIONS, status)
 
-  if (option.className.includes('emerald')) return 'bg-emerald-500'
-  if (option.className.includes('green')) return 'bg-green-500'
-  if (option.className.includes('yellow')) return 'bg-yellow-500'
-  if (option.className.includes('red')) return 'bg-red-500'
-  if (option.className.includes('amber')) return 'bg-amber-500'
-  if (option.className.includes('orange')) return 'bg-orange-500'
-  if (option.className.includes('violet')) return 'bg-violet-500'
-  if (option.className.includes('indigo')) return 'bg-indigo-500'
-  if (option.className.includes('blue')) return 'bg-blue-500'
-  if (option.className.includes('slate')) return 'bg-slate-500'
+  return STATUS_DOT_CLASSES[option.value] || STATUS_DOT_CLASSES.nova
+}
 
-  return 'bg-sky-500'
+function StatusDotLegend() {
+  return (
+    <div className="w-full rounded-xl border bg-card/70 p-4 text-xs text-muted-foreground shadow-sm sm:px-5">
+      <div className="flex w-full flex-wrap items-center gap-x-5 gap-y-2">
+        <span className="mr-1 font-semibold text-foreground">Legenda dos status:</span>
+        {SOLICITACAO_STATUS_GERAL_OPTIONS.map((option) => (
+          <span key={option.value} className="inline-flex min-w-0 items-center gap-2">
+            <span className={`h-2.5 w-2.5 shrink-0 rounded-full ${getStatusDotClass(option.value)}`} />
+            <span className="truncate">{option.label}</span>
+          </span>
+        ))}
+      </div>
+    </div>
+  )
 }
 
 function isPublicVisible(value) {
@@ -199,6 +216,8 @@ export function SolicitacaoTable({
 
   return (
     <>
+      <StatusDotLegend />
+
       <div className="grid gap-3 md:hidden">
         {sortedSolicitacoes.length === 0 ? (
           <div className="rounded-xl border border-dashed bg-card p-8 text-center text-sm text-muted-foreground">

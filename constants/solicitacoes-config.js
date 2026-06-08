@@ -24,15 +24,15 @@ export const SOLICITACAO_PRIORIDADE_OPTIONS = [
 ]
 
 export const SOLICITACAO_STATUS_GERAL_OPTIONS = [
-  { value: 'nova', label: 'Nova', className: 'border-sky-200 bg-sky-50 text-sky-700' },
-  { value: 'aceita', label: 'Aceita', className: 'border-yellow-200 bg-yellow-50 text-yellow-700' },
-  { value: 'em_cotacao', label: 'Em cotação', className: 'border-violet-200 bg-violet-50 text-violet-700' },
-  { value: 'aprovacao', label: 'Em aprovação', className: 'border-amber-200 bg-amber-50 text-amber-700' },
-  { value: 'preparando_pedido', label: 'Preparando pedido', className: 'border-blue-200 bg-blue-50 text-blue-700' },
-  { value: 'em_transporte', label: 'Em transporte', className: 'border-indigo-200 bg-indigo-50 text-indigo-700' },
-  { value: 'entregue', label: 'Entregue', className: 'border-emerald-200 bg-emerald-50 text-emerald-700' },
-  { value: 'concluida', label: 'Concluída', className: 'border-green-200 bg-green-50 text-green-700' },
-  { value: 'cancelada', label: 'Cancelada', className: 'border-slate-200 bg-slate-50 text-slate-700' }
+  { value: 'nova', label: 'Nova', className: 'border-[#7dd3fc] bg-[#e0f2fe] text-[#075985]' },
+  { value: 'aceita', label: 'Aceita', className: 'border-[#5eead4] bg-[#ccfbf1] text-[#115e59]' },
+  { value: 'em_cotacao', label: 'Em cotação', className: 'border-[#d8b4fe] bg-[#f3e8ff] text-[#6b21a8]' },
+  { value: 'aprovacao', label: 'Em aprovação', className: 'border-[#fcd34d] bg-[#fef3c7] text-[#92400e]' },
+  { value: 'preparando_pedido', label: 'Preparando pedido', className: 'border-[#fdba74] bg-[#ffedd5] text-[#9a3412]' },
+  { value: 'em_transporte', label: 'Em transporte', className: 'border-[#a5b4fc] bg-[#e0e7ff] text-[#3730a3]' },
+  { value: 'entregue', label: 'Entregue', className: 'border-[#67e8f9] bg-[#cffafe] text-[#155e75]' },
+  { value: 'concluida', label: 'Concluída', className: 'border-[#22c55e] bg-[#dcfce7] text-[#14532d]' },
+  { value: 'cancelada', label: 'Cancelada', className: 'border-[#fca5a5] bg-[#fee2e2] text-[#991b1b]' }
 ]
 
 export const SOLICITACAO_STATUS_COTACAO_OPTIONS = [
