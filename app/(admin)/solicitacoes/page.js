@@ -50,6 +50,10 @@ function formatCurrency(value) {
   })
 }
 
+function getSolicitacaoFilterDate(solicitacao) {
+  return toDateInputValue(solicitacao?.created_at)
+}
+
 export default function SolicitacoesPage() {
   const {
     solicitacoesCompra,
@@ -72,7 +76,9 @@ export default function SolicitacoesPage() {
   const [filters, setFilters] = useState({
     search: '',
     status: 'todos',
-    prioridade: 'todas'
+    prioridade: 'todas',
+    mes: 'todos',
+    ano: 'todos'
   })
   const [selectedSolicitacao, setSelectedSolicitacao] = useState(null)
   const [detailsOpen, setDetailsOpen] = useState(false)
@@ -113,31 +119,52 @@ export default function SolicitacoesPage() {
         filters.prioridade === 'todas' ||
         solicitacao.prioridade === filters.prioridade
 
-      return matchesSearch && matchesStatus && matchesPrioridade
+      const filterDate = getSolicitacaoFilterDate(solicitacao)
+      const [filterYear, filterMonth] = filterDate ? filterDate.split('-') : []
+      const matchesMes =
+        filters.mes === 'todos' ||
+        filterMonth === filters.mes
+      const matchesAno =
+        filters.ano === 'todos' ||
+        filterYear === filters.ano
+
+      return matchesSearch && matchesStatus && matchesPrioridade && matchesMes && matchesAno
     })
   }, [filters, solicitacoesCompra])
 
+  const filterYears = useMemo(() => {
+    const years = solicitacoesCompra
+      .map((solicitacao) => getSolicitacaoFilterDate(solicitacao)?.slice(0, 4))
+      .filter(Boolean)
+
+    return [...new Set(years)].sort((a, b) => Number(b) - Number(a))
+  }, [solicitacoesCompra])
+
   const summary = useMemo(() => {
-    const abertas = solicitacoesCompra.filter(
+    const abertas = filteredSolicitacoes.filter(
       (item) => !['concluida', 'cancelada'].includes(item.status_geral)
     )
-    const atrasadas = solicitacoesCompra.filter(isAtrasada)
-    const urgentes = solicitacoesCompra.filter(
+    const atrasadas = filteredSolicitacoes.filter(isAtrasada)
+    const urgentes = filteredSolicitacoes.filter(
       (item) => item.prioridade === 'urgente' && !['concluida', 'cancelada'].includes(item.status_geral)
     )
     const valorAberto = abertas.reduce(
       (acc, item) => acc + Number(item.valor_total || 0),
       0
     )
+    const valorConcluido = filteredSolicitacoes
+      .filter((item) => item.status_geral === 'concluida')
+      .reduce((acc, item) => acc + Number(item.valor_total || 0), 0)
 
     return {
-      total: solicitacoesCompra.length,
+      total: filteredSolicitacoes.length,
       abertas: abertas.length,
       atrasadas: atrasadas.length,
       urgentes: urgentes.length,
-      valorAberto
+      valorAberto,
+      valorConcluido
     }
-  }, [solicitacoesCompra])
+  }, [filteredSolicitacoes])
 
   const openDetails = (solicitacao) => {
     setSelectedSolicitacao(solicitacao)
@@ -250,15 +277,20 @@ export default function SolicitacoesPage() {
         </div>
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-6">
         <SolicitacaoCard label="Total" value={summary.total} />
         <SolicitacaoCard label="Abertas" value={summary.abertas} />
         <SolicitacaoCard label="Urgentes" value={summary.urgentes} tone="warning" />
         <SolicitacaoCard label="Atrasadas" value={summary.atrasadas} tone="danger" />
         <SolicitacaoCard label="Valor em aberto" value={formatCurrency(summary.valorAberto)} />
+        <SolicitacaoCard label="Gasto concluido" value={formatCurrency(summary.valorConcluido)} tone="success" />
       </div>
 
-      <SolicitacaoFilters filters={filters} setFilters={setFilters} />
+      <SolicitacaoFilters
+        filters={filters}
+        setFilters={setFilters}
+        yearOptions={filterYears}
+      />
 
       {solicitacoesCompra.length === 0 ? (
         <Card className="border-dashed">

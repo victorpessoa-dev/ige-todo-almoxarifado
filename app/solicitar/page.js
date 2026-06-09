@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { useEffect, useMemo, useState } from 'react'
 import Image from 'next/image'
-import { CheckCircle2, LogIn, PackageSearch, Plus, Search, Send } from 'lucide-react'
+import { CheckCircle2, LogIn, PackageSearch, Plus, Search, Send, X } from 'lucide-react'
 import { toast } from 'sonner'
 
 import {
@@ -64,9 +64,23 @@ import {
   getSolicitacaoPrioridadeOrder,
   getSolicitacaoSituacao
 } from '@/constants/solicitacoes-config'
-import { formatDateBR, getLocalDateTime } from '@/lib/date-utils'
+import { formatDateBR, getLocalDateTime, toDateInputValue } from '@/lib/date-utils'
 
 const DEFAULT_PAGE_SIZE = 25
+const MONTH_OPTIONS = [
+  { value: '01', label: 'Janeiro' },
+  { value: '02', label: 'Fevereiro' },
+  { value: '03', label: 'Março' },
+  { value: '04', label: 'Abril' },
+  { value: '05', label: 'Maio' },
+  { value: '06', label: 'Junho' },
+  { value: '07', label: 'Julho' },
+  { value: '08', label: 'Agosto' },
+  { value: '09', label: 'Setembro' },
+  { value: '10', label: 'Outubro' },
+  { value: '11', label: 'Novembro' },
+  { value: '12', label: 'Dezembro' }
+]
 
 function formatDate(value) {
   return formatDateBR(value)
@@ -74,6 +88,10 @@ function formatDate(value) {
 
 function getSolicitacaoCreatedAt(solicitacao) {
   return solicitacao?.created_at
+}
+
+function getSolicitacaoFilterDate(solicitacao) {
+  return toDateInputValue(getSolicitacaoCreatedAt(solicitacao))
 }
 
 function getUpdatedAtDisplay(solicitacao) {
@@ -155,8 +173,8 @@ function DetailStatus({ label, value, options }) {
   const option = getSolicitacaoOption(options, value)
 
   return (
-    <div className="min-w-0 rounded-lg border bg-muted/20 px-3 py-2">
-      <p className="text-xs uppercase tracking-wide text-muted-foreground">
+    <div className="min-w-0 rounded-lg border bg-card px-3 py-2.5 shadow-sm">
+      <p className="truncate text-xs font-medium uppercase tracking-wide text-muted-foreground" title={label}>
         {label}
       </p>
       <p className="mt-1 truncate text-sm font-medium" title={option.label}>{option.label}</p>
@@ -188,8 +206,8 @@ function StatusGrid({ solicitacao }) {
 
 function InfoItem({ label, value }) {
   return (
-    <div className="min-w-0 rounded-lg border bg-muted/20 px-3 py-2">
-      <p className="text-xs uppercase text-muted-foreground">{label}</p>
+    <div className="min-w-0 rounded-lg border bg-card px-3 py-2.5 shadow-sm">
+      <p className="truncate text-xs font-medium uppercase tracking-wide text-muted-foreground" title={label}>{label}</p>
       <p className="mt-1 min-w-0 whitespace-pre-line break-words text-sm font-medium [overflow-wrap:anywhere]">{value || '-'}</p>
     </div>
   )
@@ -487,6 +505,8 @@ export default function SolicitarPage() {
   const [isLoadingSolicitacoes, setIsLoadingSolicitacoes] = useState(true)
   const [codigoBusca, setCodigoBusca] = useState('')
   const [prioridadeFiltro, setPrioridadeFiltro] = useState('todas')
+  const [mesFiltro, setMesFiltro] = useState('todos')
+  const [anoFiltro, setAnoFiltro] = useState('todos')
   const [publicCurrentPage, setPublicCurrentPage] = useState(1)
   const [publicPageSize, setPublicPageSize] = useState(DEFAULT_PAGE_SIZE)
   const [publicSortConfig, setPublicSortConfig] = useState({
@@ -521,7 +541,16 @@ export default function SolicitarPage() {
       ? filteredBySearch
       : filteredBySearch.filter((solicitacao) => solicitacao.prioridade === prioridadeFiltro)
 
-    return [...filtered].sort((a, b) => {
+    const filteredByDate = filtered.filter((solicitacao) => {
+      const filterDate = getSolicitacaoFilterDate(solicitacao)
+      const [filterYear, filterMonth] = filterDate ? filterDate.split('-') : []
+      const matchesMes = mesFiltro === 'todos' || filterMonth === mesFiltro
+      const matchesAno = anoFiltro === 'todos' || filterYear === anoFiltro
+
+      return matchesMes && matchesAno
+    })
+
+    return [...filteredByDate].sort((a, b) => {
       const direction = publicSortConfig.direction === 'asc' ? 1 : -1
       const sortDiff = compareSolicitacaoByKey(a, b, publicSortConfig.key)
       if (sortDiff !== 0) return sortDiff * direction
@@ -530,7 +559,15 @@ export default function SolicitarPage() {
         numeric: true
       })
     })
-  }, [prioridadeFiltro, publicSearch, publicSortConfig, solicitacoesPublicas])
+  }, [anoFiltro, mesFiltro, prioridadeFiltro, publicSearch, publicSortConfig, solicitacoesPublicas])
+
+  const publicFilterYears = useMemo(() => {
+    const years = solicitacoesPublicas
+      .map((solicitacao) => getSolicitacaoFilterDate(solicitacao)?.slice(0, 4))
+      .filter(Boolean)
+
+    return [...new Set(years)].sort((a, b) => Number(b) - Number(a))
+  }, [solicitacoesPublicas])
 
   const publicTotalPages = Math.max(
     1,
@@ -552,6 +589,13 @@ export default function SolicitarPage() {
           ? 'desc'
           : 'asc'
     }))
+  }
+
+  const clearPublicTableFilters = () => {
+    setPrioridadeFiltro('todas')
+    setMesFiltro('todos')
+    setAnoFiltro('todos')
+    setPublicCurrentPage(1)
   }
 
   const loadPublicSolicitacoes = async () => {
@@ -744,8 +788,9 @@ export default function SolicitarPage() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <form onSubmit={handleSearchStatus} className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_180px_auto]">
+            <form onSubmit={handleSearchStatus} className="grid w-full gap-2 rounded-xl border bg-card p-3 shadow-sm sm:grid-cols-[minmax(0,1fr)_auto] sm:gap-3 sm:p-4">
               <Input
+                className="h-10"
                 value={codigoBusca}
                 onChange={(event) => {
                   setCodigoBusca(event.target.value)
@@ -753,6 +798,12 @@ export default function SolicitarPage() {
                 }}
                 placeholder="Busque por código, produto ou solicitante"
               />
+              <Button type="submit" disabled={isSearching} className="h-10 w-full sm:w-auto">
+                Buscar
+              </Button>
+            </form>
+
+            <div className="grid w-full gap-2 rounded-xl border bg-card p-3 shadow-sm sm:grid-cols-2 sm:gap-3 sm:p-4 lg:grid-cols-4">
               <Select
                 value={prioridadeFiltro}
                 onValueChange={(value) => {
@@ -760,7 +811,7 @@ export default function SolicitarPage() {
                   setPublicCurrentPage(1)
                 }}
               >
-                <SelectTrigger aria-label="Filtrar por prioridade" className="w-full">
+                <SelectTrigger aria-label="Filtrar por prioridade" className="h-10 w-full bg-background">
                   <SelectValue placeholder="Prioridade" />
                 </SelectTrigger>
                 <SelectContent>
@@ -772,10 +823,57 @@ export default function SolicitarPage() {
                   ))}
                 </SelectContent>
               </Select>
-              <Button type="submit" disabled={isSearching} className="w-full sm:w-auto">
-                Buscar
+
+              <Select
+                value={mesFiltro}
+                onValueChange={(value) => {
+                  setMesFiltro(value)
+                  setPublicCurrentPage(1)
+                }}
+              >
+                <SelectTrigger aria-label="Filtrar por mês" className="h-10 w-full bg-background">
+                  <SelectValue placeholder="Mês" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todos">Todos os meses</SelectItem>
+                  {MONTH_OPTIONS.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              <Select
+                value={anoFiltro}
+                onValueChange={(value) => {
+                  setAnoFiltro(value)
+                  setPublicCurrentPage(1)
+                }}
+              >
+                <SelectTrigger aria-label="Filtrar por ano" className="h-10 w-full bg-background">
+                  <SelectValue placeholder="Ano" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todos">Todos os anos</SelectItem>
+                  {publicFilterYears.map((year) => (
+                    <SelectItem key={year} value={year}>
+                      {year}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              <Button
+                type="button"
+                variant="outline"
+                className="h-10 w-full bg-background"
+                onClick={clearPublicTableFilters}
+              >
+                <X className="h-4 w-4" />
+                Limpar
               </Button>
-            </form>
+            </div>
 
             {statusResult && (
               <div className="space-y-3 rounded-xl border bg-background p-4">

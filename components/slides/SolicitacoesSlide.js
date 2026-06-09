@@ -13,10 +13,10 @@ import {
 } from '@/components/ui/table'
 import {
   SOLICITACAO_PRIORIDADE_OPTIONS,
-  SOLICITACAO_STATUS_GERAL_OPTIONS,
   getSolicitacaoOption,
   getSolicitacaoPrioridadeOrder,
-  getSolicitacaoSituacao
+  getSolicitacaoSituacao,
+  getSolicitacaoStatusDotClass
 } from '@/constants/solicitacoes-config'
 import { formatDateBR, toDateInputValue } from '@/lib/date-utils'
 import { useAutoScroll } from '@/lib/hooks/useAutoScroll'
@@ -63,20 +63,7 @@ function formatDate(value) {
 }
 
 function getStatusDotClass(status) {
-  const option = getSolicitacaoOption(SOLICITACAO_STATUS_GERAL_OPTIONS, status)
-
-  if (option.className.includes('emerald')) return 'bg-emerald-500'
-  if (option.className.includes('green')) return 'bg-green-500'
-  if (option.className.includes('yellow')) return 'bg-yellow-500'
-  if (option.className.includes('red')) return 'bg-red-500'
-  if (option.className.includes('amber')) return 'bg-amber-500'
-  if (option.className.includes('orange')) return 'bg-orange-500'
-  if (option.className.includes('violet')) return 'bg-violet-500'
-  if (option.className.includes('indigo')) return 'bg-indigo-500'
-  if (option.className.includes('blue')) return 'bg-blue-500'
-  if (option.className.includes('slate')) return 'bg-slate-500'
-
-  return 'bg-sky-500'
+  return getSolicitacaoStatusDotClass(status)
 }
 
 function PrioridadeBadge({ value }) {

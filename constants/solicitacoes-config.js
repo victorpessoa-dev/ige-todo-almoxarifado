@@ -35,6 +35,24 @@ export const SOLICITACAO_STATUS_GERAL_OPTIONS = [
   { value: 'cancelada', label: 'Cancelada', className: 'border-[#fca5a5] bg-[#fee2e2] text-[#991b1b]' }
 ]
 
+export const SOLICITACAO_STATUS_DOT_CLASSES = {
+  nova: 'bg-[#0284c7]',
+  aceita: 'bg-[#0d9488]',
+  em_cotacao: 'bg-[#9333ea]',
+  aprovacao: 'bg-[#d97706]',
+  preparando_pedido: 'bg-[#ea580c]',
+  em_transporte: 'bg-[#4f46e5]',
+  entregue: 'bg-[#06b6d4]',
+  concluida: 'bg-[#15803d]',
+  cancelada: 'bg-[#dc2626]'
+}
+
+export function getSolicitacaoStatusDotClass(status) {
+  const option = getSolicitacaoOption(SOLICITACAO_STATUS_GERAL_OPTIONS, status)
+
+  return SOLICITACAO_STATUS_DOT_CLASSES[option.value] || SOLICITACAO_STATUS_DOT_CLASSES.nova
+}
+
 export const SOLICITACAO_STATUS_COTACAO_OPTIONS = [
   { value: 'nao_iniciado', label: 'Não iniciado' },
   { value: 'cotando', label: 'Cotando' },

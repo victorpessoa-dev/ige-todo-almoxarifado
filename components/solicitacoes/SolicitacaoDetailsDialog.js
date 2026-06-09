@@ -159,8 +159,8 @@ function formatCurrency(value) {
 
 function InfoItem({ label, value }) {
   return (
-    <div className="min-w-0 rounded-lg border bg-muted/20 px-3 py-2">
-      <p className="truncate text-xs uppercase text-muted-foreground" title={label}>{label}</p>
+    <div className="min-w-0 rounded-lg border bg-card px-3 py-2.5 shadow-sm">
+      <p className="truncate text-xs font-medium uppercase tracking-wide text-muted-foreground" title={label}>{label}</p>
       <p className="mt-1 min-w-0 whitespace-pre-line break-words text-sm font-medium [overflow-wrap:anywhere]">{value || '-'}</p>
     </div>
   )
@@ -169,7 +169,7 @@ function InfoItem({ label, value }) {
 function Field({ label, children }) {
   return (
     <div className="grid min-w-0 gap-2">
-      <label className="truncate text-sm font-medium" title={label}>{label}</label>
+      <label className="truncate text-sm font-medium leading-none text-foreground" title={label}>{label}</label>
       {children}
     </div>
   )
@@ -179,8 +179,8 @@ function StatusItem({ label, value, options }) {
   const option = getSolicitacaoOption(options, value)
 
   return (
-    <div className="min-w-0 rounded-lg border bg-muted/20 px-3 py-2">
-      <p className="truncate text-xs uppercase text-muted-foreground" title={label}>{label}</p>
+    <div className="min-w-0 rounded-lg border bg-card px-3 py-2.5 shadow-sm">
+      <p className="truncate text-xs font-medium uppercase tracking-wide text-muted-foreground" title={label}>{label}</p>
       <p className="mt-1 truncate text-sm font-semibold" title={option.label}>{option.label}</p>
     </div>
   )

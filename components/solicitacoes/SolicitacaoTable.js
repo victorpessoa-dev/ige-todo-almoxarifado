@@ -24,9 +24,9 @@ import {
 } from '@/lib/solicitacoes-format'
 import {
   SOLICITACAO_STATUS_GERAL_OPTIONS,
-  getSolicitacaoOption,
   getSolicitacaoPrioridadeOrder,
-  getSolicitacaoSituacao
+  getSolicitacaoSituacao,
+  getSolicitacaoStatusDotClass
 } from '@/constants/solicitacoes-config'
 import { formatDateBR, getLocalDateTime } from '@/lib/date-utils'
 
@@ -45,18 +45,6 @@ const SOLICITACAO_TABLE_COLUMNS = [
   { key: 'updated_at', width: 120, minWidth: 100 },
   { key: 'visivel_publico', width: 60, minWidth: 56 }
 ]
-
-const STATUS_DOT_CLASSES = {
-  nova: 'bg-[#0284c7]',
-  aceita: 'bg-[#0d9488]',
-  em_cotacao: 'bg-[#9333ea]',
-  aprovacao: 'bg-[#d97706]',
-  preparando_pedido: 'bg-[#ea580c]',
-  em_transporte: 'bg-[#4f46e5]',
-  entregue: 'bg-[#06b6d4]',
-  concluida: 'bg-[#15803d]',
-  cancelada: 'bg-[#dc2626]'
-}
 
 function formatCurrency(value) {
   const number = Number(value || 0)
@@ -97,9 +85,7 @@ function getUpdatedAtDisplay(solicitacao) {
 }
 
 function getStatusDotClass(status) {
-  const option = getSolicitacaoOption(SOLICITACAO_STATUS_GERAL_OPTIONS, status)
-
-  return STATUS_DOT_CLASSES[option.value] || STATUS_DOT_CLASSES.nova
+  return getSolicitacaoStatusDotClass(status)
 }
 
 function StatusDotLegend() {

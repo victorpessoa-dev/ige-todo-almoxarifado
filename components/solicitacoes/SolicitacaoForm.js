@@ -51,7 +51,7 @@ export const defaultSolicitacaoForm = {
 function Field({ label, children }) {
   return (
     <div className="grid min-w-0 gap-2">
-      <label className="truncate text-sm font-medium" title={label}>{label}</label>
+      <label className="truncate text-sm font-medium leading-none text-foreground" title={label}>{label}</label>
       {children}
     </div>
   )
@@ -59,8 +59,8 @@ function Field({ label, children }) {
 
 function Section({ title, children }) {
   return (
-    <section className="grid min-w-0 gap-4 rounded-lg border bg-background/50 p-4">
-      <h3 className="truncate text-sm font-semibold text-muted-foreground" title={title}>{title}</h3>
+    <section className="grid min-w-0 gap-4 rounded-lg border bg-card p-4 shadow-sm">
+      <h3 className="truncate text-xs font-semibold uppercase tracking-wide text-muted-foreground" title={title}>{title}</h3>
       {children}
     </section>
   )
