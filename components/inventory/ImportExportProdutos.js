@@ -49,23 +49,77 @@ export const catalogThemeClasses = {
   }
 }
 
+function normalizeImportedNumber(value) {
+  if (value === null || value === undefined || String(value).trim() === '') {
+    return 0
+  }
+
+  const normalized = Number(String(value).replace(',', '.'))
+  return Number.isFinite(normalized) ? normalized : 0
+}
+
+function normalizeImportedStockLimits(item) {
+  const estoque = normalizeImportedNumber(item?.estoque)
+  const min = normalizeImportedNumber(item?.min)
+  const rawMax = normalizeImportedNumber(item?.max)
+  const max = rawMax < min ? min : rawMax
+
+  return { estoque, min, max }
+}
+
+function formatImportError(error) {
+  if (!error) return 'Erro desconhecido.'
+
+  const parts = [
+    error.message,
+    error.details,
+    error.hint,
+    error.code ? `Codigo: ${error.code}` : ''
+  ].filter(Boolean)
+
+  return parts.length > 0 ? parts.join(' ') : 'Erro desconhecido.'
+}
+
+function makeProductImportPayload(item, userId) {
+  const { estoque, min, max } = normalizeImportedStockLimits(item)
+
+  return {
+    user_id: userId,
+    cod: String(item.code || '').trim(),
+    nome: String(item.nome || '').trim(),
+    ...(item.categoria ? { categoria: item.categoria } : {}),
+    ...(item.aplicacao ? { aplicacao: item.aplicacao } : {}),
+    ...(item.medidas ? { medidas: item.medidas } : {}),
+    ...(item.marcas ? { marcas: item.marcas } : {}),
+    ...(item.img_url ? { img_url: item.img_url } : {}),
+    estoque,
+    max,
+    min,
+    cod_barra: String(item.code || '').trim()
+  }
+}
+
 function normalizeImportedProducts(rows) {
   return rows.reduce((acc, item, index) => {
-    if (!item?.cod || !item?.nome) return acc
+    const cod = String(item?.cod ?? '').trim()
+    const nome = String(item?.nome ?? '').trim()
+    const { estoque, min, max } = normalizeImportedStockLimits(item)
+
+    if (!cod || !nome) return acc
 
     acc.push({
-      id: `${item.cod}-${index}`,
-      originalCode: String(item.cod).trim(),
-      code: String(item.cod).trim(),
-      nome: String(item.nome).trim(),
+      id: `${cod}-${index}`,
+      originalCode: cod,
+      code: cod,
+      nome,
       categoria: String(item.categoria || '').trim(),
       aplicacao: String(item.aplicacao || '').trim(),
       medidas: String(item.medidas || '').trim(),
       marcas: String(item.marcas || '').trim(),
       img_url: String(item.img_url || '').trim(),
-      estoque: Number(item.estoque || 0),
-      max: Number(item.max || 0),
-      min: Number(item.min || 0),
+      estoque,
+      max,
+      min,
       action: 'create'
     })
 
@@ -585,11 +639,11 @@ export default function ImportExportProdutos() {
       const buffer = await file.arrayBuffer()
       const workbook = XLSX.read(buffer, { type: 'array' })
       const sheet = workbook.Sheets[workbook.SheetNames[0]]
-      const json = XLSX.utils.sheet_to_json(sheet)
+      const json = XLSX.utils.sheet_to_json(sheet, { defval: '' })
       const imported = normalizeImportedProducts(json)
 
       if (imported.length === 0) {
-        toast.error('Nenhum produto valido foi encontrado no arquivo.')
+        toast.error('Nenhum produto valido foi encontrado. Apenas cod e nome sao obrigatorios.')
         resetImportState()
         return
       }
@@ -660,27 +714,28 @@ export default function ImportExportProdutos() {
               estoque: Number(item.duplicateProduct.estoque || 0) + Number(item.estoque || 0)
             })
             .eq('id', item.duplicateProduct.id)
+            .select('id')
+            .single()
 
-          if (error) throw error
+          if (error) {
+            throw new Error(
+              `Falha ao somar estoque do produto ${item.originalCode}: ${formatImportError(error)}`
+            )
+          }
           continue
         }
 
-        const { error } = await supabase.from('produtos').insert({
-          user_id: user.id,
-          cod: item.code,
-          nome: item.nome,
-          categoria: item.categoria || null,
-          aplicacao: item.aplicacao || null,
-          medidas: item.medidas || null,
-          marcas: item.marcas || null,
-          img_url: item.img_url || null,
-          estoque: item.estoque,
-          max: item.max,
-          min: item.min,
-          cod_barra: item.code
-        })
+        const { error } = await supabase
+          .from('produtos')
+          .insert(makeProductImportPayload(item, user.id))
+          .select('id')
+          .single()
 
-        if (error) throw error
+        if (error) {
+          throw new Error(
+            `Falha ao criar produto ${item.code}: ${formatImportError(error)}`
+          )
+        }
       }
 
       await loadData()
