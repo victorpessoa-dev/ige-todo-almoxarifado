@@ -16,9 +16,11 @@ import {
   getSolicitacaoOption,
   getSolicitacaoPrioridadeOrder,
   getSolicitacaoSituacao,
-  getSolicitacaoStatusDotClass
+  getSolicitacaoStatusDotClass,
+  isSolicitacaoAtrasada,
+  isSolicitacaoEncerrada
 } from '@/constants/solicitacoes-config'
-import { formatDateBR, toDateInputValue } from '@/lib/date-utils'
+import { formatDateBR } from '@/lib/date-utils'
 import { useAutoScroll } from '@/lib/hooks/useAutoScroll'
 import {
   formatSolicitacaoItem,
@@ -43,19 +45,6 @@ const SLIDE_SOLICITACAO_TABLE_WIDTH = SLIDE_SOLICITACAO_TABLE_COLUMNS.reduce(
 
 function getColumnWidthPercent(width) {
   return `${(width / SLIDE_SOLICITACAO_TABLE_WIDTH) * 100}%`
-}
-
-function isAtrasada(solicitacao) {
-  const dateValue = solicitacao.previsao_entrega || solicitacao.previsao_desejada
-  if (!dateValue) return false
-
-  if (['concluida', 'cancelada', 'entregue'].includes(solicitacao.status_geral)) {
-    return false
-  }
-
-  const today = toDateInputValue(new Date())
-  const targetDate = toDateInputValue(dateValue)
-  return !!targetDate && targetDate < today
 }
 
 function formatDate(value) {
@@ -107,10 +96,10 @@ export function SolicitacoesSlide({ solicitacoes, active, onEnd }) {
   const ref = useRef(null)
   const abertas = useMemo(() => {
     return solicitacoes
-      .filter((item) => !['concluida', 'cancelada'].includes(item.status_geral))
+      .filter((item) => !isSolicitacaoEncerrada(item))
       .sort((a, b) => {
-        const aAtrasada = isAtrasada(a) ? 1 : 0
-        const bAtrasada = isAtrasada(b) ? 1 : 0
+        const aAtrasada = isSolicitacaoAtrasada(a) ? 1 : 0
+        const bAtrasada = isSolicitacaoAtrasada(b) ? 1 : 0
         if (aAtrasada !== bAtrasada) return bAtrasada - aAtrasada
 
         const priorityDiff =
@@ -168,7 +157,7 @@ export function SolicitacoesSlide({ solicitacoes, active, onEnd }) {
             </TableHeader>
             <TableBody>
               {abertas.map((solicitacao) => {
-                const previsao = formatDate(solicitacao.previsao_entrega || solicitacao.previsao_desejada)
+                const previsao = formatDate(solicitacao.previsao_entrega)
 
                 return (
                   <TableRow key={solicitacao.id} className="hover:bg-muted/30">

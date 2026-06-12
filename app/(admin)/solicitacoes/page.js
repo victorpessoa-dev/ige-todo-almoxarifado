@@ -25,21 +25,11 @@ import {
   getSolicitacaoCentroCusto,
   getSolicitacaoSolicitante
 } from '@/lib/solicitacoes-format'
-import { getSolicitacaoStatusDefaults } from '@/constants/solicitacoes-config'
-
-function isAtrasada(solicitacao) {
-  const dateValue = solicitacao.previsao_entrega || solicitacao.previsao_desejada
-  if (!dateValue) return false
-
-  const status = solicitacao.status_geral
-  if (status === 'concluida' || status === 'cancelada' || status === 'entregue') {
-    return false
-  }
-
-  const today = toDateInputValue(new Date())
-  const targetDate = toDateInputValue(dateValue)
-  return !!targetDate && targetDate < today
-}
+import {
+  getSolicitacaoStatusDefaults,
+  isSolicitacaoAtrasada,
+  isSolicitacaoEncerrada
+} from '@/constants/solicitacoes-config'
 
 function formatCurrency(value) {
   const number = Number(value || 0)
@@ -142,11 +132,11 @@ export default function SolicitacoesPage() {
 
   const summary = useMemo(() => {
     const abertas = filteredSolicitacoes.filter(
-      (item) => !['concluida', 'cancelada'].includes(item.status_geral)
+      (item) => !isSolicitacaoEncerrada(item)
     )
-    const atrasadas = filteredSolicitacoes.filter(isAtrasada)
+    const atrasadas = filteredSolicitacoes.filter(isSolicitacaoAtrasada)
     const urgentes = filteredSolicitacoes.filter(
-      (item) => item.prioridade === 'urgente' && !['concluida', 'cancelada'].includes(item.status_geral)
+      (item) => item.prioridade === 'urgente' && !isSolicitacaoEncerrada(item)
     )
     const valorAberto = abertas.reduce(
       (acc, item) => acc + Number(item.valor_total || 0),

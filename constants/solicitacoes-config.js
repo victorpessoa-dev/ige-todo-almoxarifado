@@ -124,6 +124,46 @@ export function getSolicitacaoStatusDefaults(statusGeral) {
   return {}
 }
 
+export function isSolicitacaoEncerrada(solicitacao = {}) {
+  return (
+    solicitacao.status_geral === 'entregue' ||
+    solicitacao.status_geral === 'concluida' ||
+    solicitacao.status_geral === 'cancelada' ||
+    solicitacao.status_cotacao === 'cancelada' ||
+    solicitacao.status_pedido === 'pedido_encerrado' ||
+    solicitacao.status_pedido === 'pedido_cancelado' ||
+    solicitacao.status_transporte === 'entregue' ||
+    solicitacao.status_transporte === 'entregue_conferido' ||
+    solicitacao.status_transporte === 'cancelada'
+  )
+}
+
+export function isSolicitacaoAdiada(solicitacao = {}) {
+  return (
+    solicitacao.status_cotacao === 'adiada' ||
+    solicitacao.status_pedido === 'pedido_adiado' ||
+    solicitacao.status_transporte === 'adiada'
+  )
+}
+
+export function isSolicitacaoAtrasada(solicitacao = {}) {
+  if (isSolicitacaoEncerrada(solicitacao) || isSolicitacaoAdiada(solicitacao)) {
+    return false
+  }
+
+  if (solicitacao.status_transporte === 'entrega_atrasada') {
+    return true
+  }
+
+  const dateValue = solicitacao.previsao_entrega
+  if (!dateValue) return false
+
+  const today = toDateInputValue(new Date())
+  const targetDate = toDateInputValue(dateValue)
+
+  return !!targetDate && targetDate < today
+}
+
 export function getSolicitacaoSituacao(solicitacao = {}) {
   const geral = solicitacao.status_geral
   const cotacao = solicitacao.status_cotacao
@@ -135,8 +175,28 @@ export function getSolicitacaoSituacao(solicitacao = {}) {
     .trim()
   const previsaoEntrega = solicitacao.previsao_entrega
 
+  if (geral === 'cancelada') {
+    return {
+      label: 'CANCELADA',
+      className: 'border-[#fca5a5] bg-[#fee2e2] text-[#991b1b]'
+    }
+  }
+
+  if (geral === 'concluida' || entrega === 'entregue_conferido') {
+    return {
+      label: 'ENTREGUE E CONFERIDO!',
+      className: 'border-[#22c55e] bg-[#dcfce7] text-[#14532d]'
+    }
+  }
+
+  if (geral === 'entregue' || entrega === 'entregue') {
+    return {
+      label: 'ENTREGUE',
+      className: 'border-[#67e8f9] bg-[#cffafe] text-[#155e75]'
+    }
+  }
+
   if (
-    geral === 'cancelada' ||
     cotacao === 'cancelada' ||
     pedido === 'pedido_cancelado' ||
     entrega === 'cancelada'
@@ -144,6 +204,20 @@ export function getSolicitacaoSituacao(solicitacao = {}) {
     return {
       label: 'CANCELADA',
       className: 'border-[#fca5a5] bg-[#fee2e2] text-[#991b1b]'
+    }
+  }
+
+  if (isSolicitacaoAdiada(solicitacao)) {
+    return {
+      label: 'PEDIDO ADIADO!',
+      className: 'border-[#fcd34d] bg-[#fef3c7] text-[#92400e]'
+    }
+  }
+
+  if (isSolicitacaoAtrasada(solicitacao)) {
+    return {
+      label: 'ATRASADA!',
+      className: 'border-[#f87171] bg-[#fee2e2] text-[#991b1b]'
     }
   }
 
@@ -158,13 +232,6 @@ export function getSolicitacaoSituacao(solicitacao = {}) {
     return {
       label: 'COTAÇÃO NÃO INICIADA!',
       className: 'border-[#7dd3fc] bg-[#e0f2fe] text-[#075985]'
-    }
-  }
-
-  if (cotacao === 'adiada' || pedido === 'pedido_adiado' || entrega === 'adiada') {
-    return {
-      label: 'PEDIDO ADIADO!',
-      className: 'border-[#fcd34d] bg-[#fef3c7] text-[#92400e]'
     }
   }
 
@@ -224,20 +291,6 @@ export function getSolicitacaoSituacao(solicitacao = {}) {
     return {
       label: 'NO PRAZO!',
       className: 'border-[#86efac] bg-[#dcfce7] text-[#166534]'
-    }
-  }
-
-  if (entrega === 'entregue_conferido') {
-    return {
-      label: 'ENTREGUE E CONFERIDO!',
-      className: 'border-[#22c55e] bg-[#dcfce7] text-[#14532d]'
-    }
-  }
-
-  if (today > deliveryDate) {
-    return {
-      label: 'ATRASADA!',
-      className: 'border-[#f87171] bg-[#fee2e2] text-[#991b1b]'
     }
   }
 

@@ -26,7 +26,8 @@ import {
   SOLICITACAO_STATUS_GERAL_OPTIONS,
   getSolicitacaoPrioridadeOrder,
   getSolicitacaoSituacao,
-  getSolicitacaoStatusDotClass
+  getSolicitacaoStatusDotClass,
+  isSolicitacaoEncerrada
 } from '@/constants/solicitacoes-config'
 import { formatDateBR, getLocalDateTime } from '@/lib/date-utils'
 
@@ -108,6 +109,10 @@ function isPublicVisible(value) {
   return value === true || value === 1 || value === '1'
 }
 
+function getSolicitacaoDisplayOrder(solicitacao) {
+  return isSolicitacaoEncerrada(solicitacao) ? 1 : 0
+}
+
 function PublicVisibilityToggle({ checked, disabled, onChange }) {
   const Icon = checked ? Eye : EyeOff
 
@@ -185,6 +190,13 @@ export function SolicitacaoTable({
 
   const sortedSolicitacoes = useMemo(() => {
     return [...solicitacoes].sort((a, b) => {
+      const aDisplayOrder = getSolicitacaoDisplayOrder(a)
+      const bDisplayOrder = getSolicitacaoDisplayOrder(b)
+
+      if (aDisplayOrder !== bDisplayOrder) {
+        return aDisplayOrder - bDisplayOrder
+      }
+
       const aValue =
         sortConfig.key === 'situacao'
           ? getSolicitacaoSituacao(a).label
