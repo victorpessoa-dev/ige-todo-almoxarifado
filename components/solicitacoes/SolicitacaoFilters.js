@@ -3,14 +3,8 @@
 import { X } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
+import { CheckboxFilter } from '@/components/ui/checkbox-filter'
 import { Input } from '@/components/ui/input'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue
-} from '@/components/ui/select'
 import {
   SOLICITACAO_PRIORIDADE_OPTIONS,
   SOLICITACAO_STATUS_GERAL_OPTIONS
@@ -39,10 +33,10 @@ export function SolicitacaoFilters({ filters, setFilters, yearOptions = [] }) {
   const clearFilters = () => {
     setFilters({
       search: '',
-      status: 'todos',
-      prioridade: 'todas',
-      mes: 'todos',
-      ano: 'todos'
+      status: [],
+      prioridade: [],
+      mes: [],
+      ano: []
     })
   }
 
@@ -56,76 +50,37 @@ export function SolicitacaoFilters({ filters, setFilters, yearOptions = [] }) {
       />
 
       <div className="grid w-full gap-2 rounded-xl border bg-card p-3 shadow-sm sm:grid-cols-2 sm:gap-3 sm:p-4 lg:grid-cols-4">
-        <Select
+        <CheckboxFilter
+          label="status"
+          allLabel="Todos os status"
+          options={SOLICITACAO_STATUS_GERAL_OPTIONS}
           value={filters.status}
-          onValueChange={(value) => updateFilter('status', value)}
-        >
-          <SelectTrigger className="h-10 w-full bg-background">
-            <SelectValue placeholder="Status" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="todos">Todos os status</SelectItem>
-            <SelectItem value="exceto_concluidas">Exceto concluídas</SelectItem>
-            <SelectItem value="exceto_canceladas">Exceto canceladas</SelectItem>
-            <SelectItem value="exceto_concluidas_canceladas">Exceto concluídas e canceladas</SelectItem>
-            {SOLICITACAO_STATUS_GERAL_OPTIONS.map((option) => (
-              <SelectItem key={option.value} value={option.value}>
-                {option.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+          onChange={(value) => updateFilter('status', value)}
+        />
 
-        <Select
+        <CheckboxFilter
+          label="prioridade"
+          allLabel="Todas as prioridades"
+          options={SOLICITACAO_PRIORIDADE_OPTIONS}
           value={filters.prioridade}
-          onValueChange={(value) => updateFilter('prioridade', value)}
-        >
-          <SelectTrigger className="h-10 w-full bg-background">
-            <SelectValue placeholder="Prioridade" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="todas">Todas prioridades</SelectItem>
-            {SOLICITACAO_PRIORIDADE_OPTIONS.map((option) => (
-              <SelectItem key={option.value} value={option.value}>
-                {option.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+          onChange={(value) => updateFilter('prioridade', value)}
+        />
 
-        <Select
+        <CheckboxFilter
+          label="mês"
+          allLabel="Todos os meses"
+          options={MONTH_OPTIONS}
           value={filters.mes}
-          onValueChange={(value) => updateFilter('mes', value)}
-        >
-          <SelectTrigger className="h-10 w-full bg-background">
-            <SelectValue placeholder="Mês" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="todos">Todos os meses</SelectItem>
-            {MONTH_OPTIONS.map((option) => (
-              <SelectItem key={option.value} value={option.value}>
-                {option.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+          onChange={(value) => updateFilter('mes', value)}
+        />
 
-        <Select
+        <CheckboxFilter
+          label="ano"
+          allLabel="Todos os anos"
+          options={yearOptions.map((year) => ({ value: year, label: year }))}
           value={filters.ano}
-          onValueChange={(value) => updateFilter('ano', value)}
-        >
-          <SelectTrigger className="h-10 w-full bg-background">
-            <SelectValue placeholder="Ano" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="todos">Todos os anos</SelectItem>
-            {yearOptions.map((year) => (
-              <SelectItem key={year} value={year}>
-                {year}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+          onChange={(value) => updateFilter('ano', value)}
+        />
 
         <Button
           type="button"

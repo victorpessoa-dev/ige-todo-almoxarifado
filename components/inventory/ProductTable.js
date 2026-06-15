@@ -1,9 +1,17 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Checkbox } from '@/components/ui/checkbox'
+import { CheckboxFilter } from '@/components/ui/checkbox-filter'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle
+} from '@/components/ui/dialog'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -20,13 +28,6 @@ import {
   TableHeader,
   TableRow
 } from '@/components/ui/table'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue
-} from '@/components/ui/select'
 import {
   CheckCheck,
   MoreHorizontal,
@@ -45,7 +46,6 @@ import {
 import SortableTableHead from '@/components/ui/sortable-table-head'
 
 const DEFAULT_PAGE_SIZE = 25
-const ALL_STATUS_VALUE = 'todos'
 const STATUS_ORDER = {
   baixo: 0,
   normal: 1,
@@ -109,7 +109,10 @@ export default function ProductTable({
     key: null,
     direction: 'asc'
   })
-  const [statusFilter, setStatusFilter] = useState(ALL_STATUS_VALUE)
+  const [statusFilters, setStatusFilters] = useState([])
+  const [actionProduct, setActionProduct] = useState(null)
+  const [actionDialogOpen, setActionDialogOpen] = useState(false)
+  const actionTimerRef = useRef(null)
   const {
     getColumnStyle,
     startResize,
@@ -130,10 +133,12 @@ export default function ProductTable({
   }
 
   const filteredProdutos = useMemo(() => {
-    if (statusFilter === ALL_STATUS_VALUE) return produtos
+    if (statusFilters.length === 0) return produtos
 
-    return produtos.filter((produto) => getStatus(produto).value === statusFilter)
-  }, [produtos, statusFilter])
+    return produtos.filter((produto) =>
+      statusFilters.includes(getStatus(produto).value)
+    )
+  }, [produtos, statusFilters])
 
   const sortedProdutos = useMemo(() => {
     if (!sortConfig.key) return filteredProdutos
@@ -182,6 +187,68 @@ export default function ProductTable({
     paginatedProdutos.every((produto) => selectedIds.includes(produto.id))
 
   const hasSelection = selectedIds.length > 0
+
+  useEffect(() => {
+    return () => {
+      if (actionTimerRef.current) {
+        window.clearTimeout(actionTimerRef.current)
+      }
+    }
+  }, [])
+
+  const getCanSolicitarCompra = (produto) => {
+    if (!produto) return false
+
+    const quantidadeCompra =
+      Number(produto.max || 0) - Number(produto.estoque || 0)
+
+    return (
+      Number(produto.estoque || 0) <= Number(produto.min || 0) &&
+      quantidadeCompra > 0
+    )
+  }
+
+  const runProductAction = (action) => {
+    if (!actionProduct || !action) return
+
+    const produto = actionProduct
+    setActionDialogOpen(false)
+
+    if (actionTimerRef.current) {
+      window.clearTimeout(actionTimerRef.current)
+    }
+
+    actionTimerRef.current = window.setTimeout(() => {
+      actionTimerRef.current = null
+      setActionProduct(null)
+      action(produto)
+    }, 220)
+  }
+
+  const openActionDialog = (produto) => {
+    if (actionTimerRef.current) {
+      window.clearTimeout(actionTimerRef.current)
+      actionTimerRef.current = null
+    }
+
+    setActionProduct(produto)
+    setActionDialogOpen(true)
+  }
+
+  const handleActionDialogOpenChange = (open) => {
+    setActionDialogOpen(open)
+
+    if (open) return
+
+    if (actionTimerRef.current) {
+      window.clearTimeout(actionTimerRef.current)
+    }
+
+    actionTimerRef.current = window.setTimeout(() => {
+      actionTimerRef.current = null
+      setActionProduct(null)
+    }, 220)
+  }
 
   const renderActionMenu = (produto, canSolicitarCompra) => (
     <DropdownMenu>
@@ -260,28 +327,26 @@ export default function ProductTable({
           <div className="space-y-1">
             <CardTitle>Produtos</CardTitle>
             <p className="text-sm text-muted-foreground">
-              Clique na linha para selecionar e use acoes em lote quando precisar.
+              Clique no produto para abrir as ações. Use as caixas para selecionar.
             </p>
           </div>
 
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-            <Select
-              value={statusFilter}
-              onValueChange={(value) => {
-                setStatusFilter(value)
+            <CheckboxFilter
+              label="status"
+              allLabel="Todos os status"
+              options={[
+                { value: 'baixo', label: 'Baixo' },
+                { value: 'normal', label: 'Normal' },
+                { value: 'cheio', label: 'Cheio' }
+              ]}
+              value={statusFilters}
+              onChange={(value) => {
+                setStatusFilters(value)
                 setCurrentPage(1)
               }}
-            >
-              <SelectTrigger className="w-full sm:w-[150px]" size="sm" aria-label="Filtrar por status">
-                <SelectValue placeholder="Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value={ALL_STATUS_VALUE}>Todos status</SelectItem>
-                <SelectItem value="baixo">Baixo</SelectItem>
-                <SelectItem value="normal">Normal</SelectItem>
-                <SelectItem value="cheio">Cheio</SelectItem>
-              </SelectContent>
-            </Select>
+              className="sm:w-[180px]"
+            />
             {headerActions}
             <Badge variant="outline" className="w-fit rounded-full px-3 py-1 text-xs">
               {sortedProdutos.length} itens
@@ -332,22 +397,21 @@ export default function ProductTable({
                 tabIndex={0}
                 data-state={isSelected ? 'selected' : undefined}
                 className="rounded-xl border bg-card p-3 text-left shadow-sm transition hover:border-primary/40 data-[state=selected]:border-primary data-[state=selected]:bg-primary/5"
-                onClick={() => onToggleSelect?.(produto.id)}
+                onClick={() => openActionDialog(produto)}
                 onKeyDown={(event) => {
                   if (event.key === 'Enter' || event.key === ' ') {
                     event.preventDefault()
-                    onToggleSelect?.(produto.id)
+                    openActionDialog(produto)
                   }
                 }}
               >
                 <div className="flex items-start gap-3">
-                  <input
-                    type="checkbox"
+                  <Checkbox
                     checked={isSelected}
-                    onChange={() => onToggleSelect?.(produto.id)}
+                    onCheckedChange={() => onToggleSelect?.(produto.id)}
                     onClick={(event) => event.stopPropagation()}
                     aria-label={`Selecionar ${produto.nome}`}
-                    className="mt-1 h-4 w-4 shrink-0 cursor-pointer accent-primary"
+                    className="mt-1 cursor-pointer"
                   />
 
                   <div className="min-w-0 flex-1">
@@ -391,14 +455,13 @@ export default function ProductTable({
           <TableHeader>
             <TableRow className="hover:bg-transparent">
               <TableHead className="relative pr-4">
-                <input
-                  type="checkbox"
+                <Checkbox
                   checked={allSelected}
-                  onChange={(event) =>
-                    onToggleSelectAll?.(event.target.checked, paginatedProdutos)
+                  onCheckedChange={(checked) =>
+                    onToggleSelectAll?.(checked === true, paginatedProdutos)
                   }
                   aria-label="Selecionar produtos desta página"
-                  className="h-4 w-4 cursor-pointer accent-primary"
+                  className="cursor-pointer"
                 />
                 <ColumnResizeHandle columnKey="select" onResizeStart={startResize} />
               </TableHead>
@@ -486,16 +549,15 @@ export default function ProductTable({
                   key={produto.id}
                   data-state={isSelected ? 'selected' : undefined}
                   className="cursor-pointer"
-                  onClick={() => onToggleSelect?.(produto.id)}
+                  onClick={() => openActionDialog(produto)}
                 >
                   <TableCell>
-                    <input
-                      type="checkbox"
+                    <Checkbox
                       checked={isSelected}
-                      onChange={() => onToggleSelect?.(produto.id)}
+                      onCheckedChange={() => onToggleSelect?.(produto.id)}
                       onClick={(event) => event.stopPropagation()}
                       aria-label={`Selecionar ${produto.nome}`}
-                      className="h-4 w-4 cursor-pointer accent-primary"
+                      className="cursor-pointer"
                     />
                   </TableCell>
 
@@ -554,6 +616,83 @@ export default function ProductTable({
           setCurrentPage(1)
         }}
       />
+
+      <Dialog
+        open={actionDialogOpen}
+        onOpenChange={handleActionDialogOpenChange}
+      >
+        <DialogContent className="w-[95vw] max-w-[460px] p-4 sm:p-6">
+          <DialogHeader>
+            <DialogTitle className="truncate" title={actionProduct?.nome || ''}>
+              {actionProduct?.nome || 'Ações do produto'}
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="grid gap-2 sm:grid-cols-2">
+            <Button
+              variant="outline"
+              onClick={() =>
+                runProductAction((produto) =>
+                  openMovimentoDialog(produto, 'entrada', 1)
+                )
+              }
+            >
+              <TrendingUp className="h-4 w-4" />
+              Entrada
+            </Button>
+
+            <Button
+              variant="outline"
+              disabled={Number(actionProduct?.estoque || 0) === 0}
+              onClick={() =>
+                runProductAction((produto) =>
+                  openMovimentoDialog(produto, 'saida', 1)
+                )
+              }
+            >
+              <TrendingDown className="h-4 w-4" />
+              Saída
+            </Button>
+
+            <Button
+              variant="outline"
+              onClick={() =>
+                runProductAction((produto) =>
+                  setPrintDialog({ open: true, produto })
+                )
+              }
+            >
+              <Printer className="h-4 w-4" />
+              Imprimir etiqueta
+            </Button>
+
+            <Button
+              variant="outline"
+              disabled={!getCanSolicitarCompra(actionProduct)}
+              onClick={() => runProductAction(onSolicitarCompra)}
+            >
+              <ShoppingCart className="h-4 w-4" />
+              Solicitar compra
+            </Button>
+
+            <Button
+              variant="outline"
+              onClick={() => runProductAction(handleEdit)}
+            >
+              <Pencil className="h-4 w-4" />
+              Editar
+            </Button>
+
+            <Button
+              variant="destructive"
+              onClick={() => runProductAction(deleteProduto)}
+            >
+              <Trash2 className="h-4 w-4" />
+              Excluir
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </Card>
   )
 }

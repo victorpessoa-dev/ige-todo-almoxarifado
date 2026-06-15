@@ -65,10 +65,10 @@ export default function SolicitacoesPage() {
 
   const [filters, setFilters] = useState({
     search: '',
-    status: 'todos',
-    prioridade: 'todas',
-    mes: 'todos',
-    ano: 'todos'
+    status: [],
+    prioridade: [],
+    mes: [],
+    ano: []
   })
   const [selectedSolicitacao, setSelectedSolicitacao] = useState(null)
   const [detailsOpen, setDetailsOpen] = useState(false)
@@ -94,29 +94,22 @@ export default function SolicitacoesPage() {
           .filter(Boolean)
           .some((value) => String(value).toLowerCase().includes(search))
 
-      const hiddenStatus = {
-        exceto_concluidas: ['concluida'],
-        exceto_canceladas: ['cancelada'],
-        exceto_concluidas_canceladas: ['concluida', 'cancelada']
-      }[filters.status] || []
       const matchesStatus =
-        filters.status === 'todos' ||
-        (hiddenStatus.length > 0
-          ? !hiddenStatus.includes(solicitacao.status_geral)
-          : solicitacao.status_geral === filters.status)
+        filters.status.length === 0 ||
+        filters.status.includes(solicitacao.status_geral)
 
       const matchesPrioridade =
-        filters.prioridade === 'todas' ||
-        solicitacao.prioridade === filters.prioridade
+        filters.prioridade.length === 0 ||
+        filters.prioridade.includes(solicitacao.prioridade)
 
       const filterDate = getSolicitacaoFilterDate(solicitacao)
       const [filterYear, filterMonth] = filterDate ? filterDate.split('-') : []
       const matchesMes =
-        filters.mes === 'todos' ||
-        filterMonth === filters.mes
+        filters.mes.length === 0 ||
+        filters.mes.includes(filterMonth)
       const matchesAno =
-        filters.ano === 'todos' ||
-        filterYear === filters.ano
+        filters.ano.length === 0 ||
+        filters.ano.includes(filterYear)
 
       return matchesSearch && matchesStatus && matchesPrioridade && matchesMes && matchesAno
     })

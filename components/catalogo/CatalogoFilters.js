@@ -1,14 +1,8 @@
 import { RotateCcw, Search } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
+import { CheckboxFilter } from '@/components/ui/checkbox-filter'
 import { Input } from '@/components/ui/input'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue
-} from '@/components/ui/select'
 
 export default function CatalogoFilters({
   search,
@@ -33,45 +27,27 @@ export default function CatalogoFilters({
         />
       </div>
 
-      <Select value={selectedCategory} onValueChange={onCategoryChange}>
-        <SelectTrigger className="w-full min-w-0 overflow-hidden">
-          <SelectValue placeholder="Categoria" />
-        </SelectTrigger>
-        <SelectContent className="max-w-[calc(100vw-2rem)]">
-          <SelectItem value="todas">
-            <span className="block max-w-[min(28rem,calc(100vw-4rem))] truncate" title="Todas as categorias">
-              Todas as categorias
-            </span>
-          </SelectItem>
-          {categoryOptions.map((categoria) => (
-            <SelectItem key={categoria} value={categoria}>
-              <span className="block max-w-[min(28rem,calc(100vw-4rem))] truncate" title={categoria}>
-                {categoria}
-              </span>
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+      <CheckboxFilter
+        label="categoria"
+        allLabel="Todas as categorias"
+        options={categoryOptions.map((categoria) => ({
+          value: categoria,
+          label: categoria
+        }))}
+        value={selectedCategory}
+        onChange={onCategoryChange}
+      />
 
-      <Select value={selectedBrand} onValueChange={onBrandChange}>
-        <SelectTrigger className="w-full min-w-0 overflow-hidden">
-          <SelectValue placeholder="Marca" />
-        </SelectTrigger>
-        <SelectContent className="max-w-[calc(100vw-2rem)]">
-          <SelectItem value="todas">
-            <span className="block max-w-[min(28rem,calc(100vw-4rem))] truncate" title="Todas as marcas">
-              Todas as marcas
-            </span>
-          </SelectItem>
-          {brandOptions.map((marca) => (
-            <SelectItem key={marca} value={marca}>
-              <span className="block max-w-[min(28rem,calc(100vw-4rem))] truncate" title={marca}>
-                {marca}
-              </span>
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+      <CheckboxFilter
+        label="marca"
+        allLabel="Todas as marcas"
+        options={brandOptions.map((marca) => ({
+          value: marca,
+          label: marca
+        }))}
+        value={selectedBrand}
+        onChange={onBrandChange}
+      />
 
       <Button type="button" variant="outline" onClick={onClear} className="w-full md:w-auto">
         <RotateCcw className="mr-2 h-4 w-4" />

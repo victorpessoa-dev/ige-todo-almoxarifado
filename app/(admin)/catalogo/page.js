@@ -22,8 +22,8 @@ import { Spinner } from '@/components/ui/spinner'
 export default function CatalogoPage() {
   const { produtos, isLoaded, isLoading } = useData()
   const [search, setSearch] = useState('')
-  const [selectedCategory, setSelectedCategory] = useState('todas')
-  const [selectedBrand, setSelectedBrand] = useState('todas')
+  const [selectedCategory, setSelectedCategory] = useState([])
+  const [selectedBrand, setSelectedBrand] = useState([])
   const showLoading = isLoading && !isLoaded && produtos.length === 0
 
   const categoryOptions = useMemo(() => {
@@ -97,8 +97,8 @@ export default function CatalogoPage() {
 
   const clearFilters = () => {
     setSearch('')
-    setSelectedCategory('todas')
-    setSelectedBrand('todas')
+    setSelectedCategory([])
+    setSelectedBrand([])
   }
 
   if (showLoading) {

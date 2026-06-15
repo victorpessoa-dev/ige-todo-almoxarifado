@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react'
 import { supabase } from '@/lib/supabaseClient'
 import { useData } from '@/contexts/data-context'
 import { Button } from '@/components/ui/button'
+import { CheckboxFilter } from '@/components/ui/checkbox-filter'
 import { Input } from '@/components/ui/input'
 import {
   Dialog,
@@ -102,7 +103,7 @@ export default function InventarioPage() {
   const [barcodeInput, setBarcodeInput] = useState('')
   const [barcodeProduct, setBarcodeProduct] = useState(null)
   const [scanQuantity, setScanQuantity] = useState(1)
-  const [selectedCategory, setSelectedCategory] = useState('todas')
+  const [selectedCategories, setSelectedCategories] = useState([])
   const { register, handleSubmit, reset, setValue, watch } = useForm()
 
   const categoryOptions = useMemo(() => {
@@ -121,12 +122,13 @@ export default function InventarioPage() {
   }, [produtos])
 
   const filteredProducts = useMemo(() => {
-    if (selectedCategory === 'todas') return produtos
+    if (selectedCategories.length === 0) return produtos
 
     return produtos.filter(
-      (produto) => normalizeCategory(getInventoryCategory(produto)) === selectedCategory
+      (produto) =>
+        selectedCategories.includes(normalizeCategory(getInventoryCategory(produto)))
     )
-  }, [produtos, selectedCategory])
+  }, [produtos, selectedCategories])
 
   const selectedProducts = produtos.filter((produto) =>
     selectedProductIds.includes(produto.id)
@@ -517,25 +519,20 @@ export default function InventarioPage() {
             }}
             onSolicitarCompra={openCompraDialog}
             headerActions={
-              <Select
-                value={selectedCategory}
-                onValueChange={(value) => {
-                  setSelectedCategory(value)
+              <CheckboxFilter
+                label="categoria"
+                allLabel="Todas as categorias"
+                options={categoryOptions.map((categoria) => ({
+                  value: normalizeCategory(categoria),
+                  label: categoria
+                }))}
+                value={selectedCategories}
+                onChange={(value) => {
+                  setSelectedCategories(value)
                   clearSelection()
                 }}
-              >
-                <SelectTrigger className="w-full sm:w-[240px]">
-                  <SelectValue placeholder="Categoria" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="todas">Todas as categorias</SelectItem>
-                  {categoryOptions.map((categoria) => (
-                    <SelectItem key={categoria} value={normalizeCategory(categoria)}>
-                      {categoria}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                className="sm:w-[240px]"
+              />
             }
             deleteProduto={(produto) =>
               setDeleteDialog({ open: true, produto })

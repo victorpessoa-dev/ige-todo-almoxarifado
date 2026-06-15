@@ -20,6 +20,7 @@ import {
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import { CheckboxFilter } from '@/components/ui/checkbox-filter'
 import { LoadingState } from '@/components/ui/spinner'
 import {
   Select,
@@ -504,9 +505,9 @@ export default function SolicitarPage() {
   const [isLoadingLists, setIsLoadingLists] = useState(true)
   const [isLoadingSolicitacoes, setIsLoadingSolicitacoes] = useState(true)
   const [codigoBusca, setCodigoBusca] = useState('')
-  const [prioridadeFiltro, setPrioridadeFiltro] = useState('todas')
-  const [mesFiltro, setMesFiltro] = useState('todos')
-  const [anoFiltro, setAnoFiltro] = useState('todos')
+  const [prioridadeFiltro, setPrioridadeFiltro] = useState([])
+  const [mesFiltro, setMesFiltro] = useState([])
+  const [anoFiltro, setAnoFiltro] = useState([])
   const [publicCurrentPage, setPublicCurrentPage] = useState(1)
   const [publicPageSize, setPublicPageSize] = useState(DEFAULT_PAGE_SIZE)
   const [publicSortConfig, setPublicSortConfig] = useState({
@@ -537,15 +538,17 @@ export default function SolicitarPage() {
       )
       : solicitacoesPublicas
 
-    const filtered = prioridadeFiltro === 'todas'
+    const filtered = prioridadeFiltro.length === 0
       ? filteredBySearch
-      : filteredBySearch.filter((solicitacao) => solicitacao.prioridade === prioridadeFiltro)
+      : filteredBySearch.filter((solicitacao) =>
+        prioridadeFiltro.includes(solicitacao.prioridade)
+      )
 
     const filteredByDate = filtered.filter((solicitacao) => {
       const filterDate = getSolicitacaoFilterDate(solicitacao)
       const [filterYear, filterMonth] = filterDate ? filterDate.split('-') : []
-      const matchesMes = mesFiltro === 'todos' || filterMonth === mesFiltro
-      const matchesAno = anoFiltro === 'todos' || filterYear === anoFiltro
+      const matchesMes = mesFiltro.length === 0 || mesFiltro.includes(filterMonth)
+      const matchesAno = anoFiltro.length === 0 || anoFiltro.includes(filterYear)
 
       return matchesMes && matchesAno
     })
@@ -592,9 +595,9 @@ export default function SolicitarPage() {
   }
 
   const clearPublicTableFilters = () => {
-    setPrioridadeFiltro('todas')
-    setMesFiltro('todos')
-    setAnoFiltro('todos')
+    setPrioridadeFiltro([])
+    setMesFiltro([])
+    setAnoFiltro([])
     setPublicCurrentPage(1)
   }
 
@@ -804,65 +807,41 @@ export default function SolicitarPage() {
             </form>
 
             <div className="grid w-full gap-2 rounded-xl border bg-card p-3 shadow-sm sm:grid-cols-2 sm:gap-3 sm:p-4 lg:grid-cols-4">
-              <Select
+              <CheckboxFilter
+                label="prioridade"
+                allLabel="Todas as prioridades"
+                options={SOLICITACAO_PRIORIDADE_OPTIONS}
                 value={prioridadeFiltro}
-                onValueChange={(value) => {
+                onChange={(value) => {
                   setPrioridadeFiltro(value)
                   setPublicCurrentPage(1)
                 }}
-              >
-                <SelectTrigger aria-label="Filtrar por prioridade" className="h-10 w-full bg-background">
-                  <SelectValue placeholder="Prioridade" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="todas">Todas prioridades</SelectItem>
-                  {SOLICITACAO_PRIORIDADE_OPTIONS.map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              />
 
-              <Select
+              <CheckboxFilter
+                label="mês"
+                allLabel="Todos os meses"
+                options={MONTH_OPTIONS}
                 value={mesFiltro}
-                onValueChange={(value) => {
+                onChange={(value) => {
                   setMesFiltro(value)
                   setPublicCurrentPage(1)
                 }}
-              >
-                <SelectTrigger aria-label="Filtrar por mês" className="h-10 w-full bg-background">
-                  <SelectValue placeholder="Mês" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="todos">Todos os meses</SelectItem>
-                  {MONTH_OPTIONS.map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              />
 
-              <Select
+              <CheckboxFilter
+                label="ano"
+                allLabel="Todos os anos"
+                options={publicFilterYears.map((year) => ({
+                  value: year,
+                  label: year
+                }))}
                 value={anoFiltro}
-                onValueChange={(value) => {
+                onChange={(value) => {
                   setAnoFiltro(value)
                   setPublicCurrentPage(1)
                 }}
-              >
-                <SelectTrigger aria-label="Filtrar por ano" className="h-10 w-full bg-background">
-                  <SelectValue placeholder="Ano" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="todos">Todos os anos</SelectItem>
-                  {publicFilterYears.map((year) => (
-                    <SelectItem key={year} value={year}>
-                      {year}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              />
 
               <Button
                 type="button"

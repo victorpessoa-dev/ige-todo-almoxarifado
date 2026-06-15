@@ -19,6 +19,7 @@ import { getUserMessage } from '@/lib/user-messages'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Checkbox } from '@/components/ui/checkbox'
+import { CheckboxFilter } from '@/components/ui/checkbox-filter'
 import { Input } from '@/components/ui/input'
 import {
   Select,
@@ -47,8 +48,6 @@ const PERIOD_OPTIONS = [
 
 const MAX_TURNOVER_ANALYSIS_PRODUCTS = 5
 const DEFAULT_PAGE_SIZE = 25
-const ALL_CATEGORIES_VALUE = 'todas'
-
 function normalizeCategory(value) {
   return String(value || '')
     .trim()
@@ -207,7 +206,7 @@ export default function AnaliseGiroPage() {
   const [isAnalyzingTurnover, setIsAnalyzingTurnover] = useState(false)
   const [selectedPeriod, setSelectedPeriod] = useState('30')
   const [search, setSearch] = useState('')
-  const [selectedCategory, setSelectedCategory] = useState(ALL_CATEGORIES_VALUE)
+  const [selectedCategories, setSelectedCategories] = useState([])
   const [currentPage, setCurrentPage] = useState(1)
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE)
   const [selectedAnalysisProductIds, setSelectedAnalysisProductIds] = useState([])
@@ -259,8 +258,6 @@ export default function AnaliseGiroPage() {
 
   const filteredItems = useMemo(() => {
     const normalizedSearch = search.trim().toLowerCase()
-    const normalizedSelectedCategory = normalizeCategory(selectedCategory)
-
     return turnoverStats.filter((item) => {
       const matchesSearch =
         !normalizedSearch ||
@@ -268,12 +265,12 @@ export default function AnaliseGiroPage() {
         String(item.cod || '').toLowerCase().includes(normalizedSearch)
 
       const matchesCategory =
-        selectedCategory === ALL_CATEGORIES_VALUE ||
-        normalizeCategory(item.category) === normalizedSelectedCategory
+        selectedCategories.length === 0 ||
+        selectedCategories.includes(normalizeCategory(item.category))
 
       return matchesSearch && matchesCategory
     })
-  }, [search, selectedCategory, turnoverStats])
+  }, [search, selectedCategories, turnoverStats])
 
   const totalPages = Math.max(1, Math.ceil(filteredItems.length / pageSize))
   const safeCurrentPage = Math.min(currentPage, totalPages)
@@ -474,27 +471,20 @@ export default function AnaliseGiroPage() {
               <CardTitle className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                 <span>Produtos</span>
                 <div className="flex w-full flex-col gap-2 sm:flex-row lg:w-auto">
-                  <Select
-                    value={selectedCategory}
-                    onValueChange={(value) => {
-                      setSelectedCategory(value)
+                  <CheckboxFilter
+                    label="categoria"
+                    allLabel="Todas as categorias"
+                    options={categoryOptions.map((category) => ({
+                      value: normalizeCategory(category),
+                      label: category
+                    }))}
+                    value={selectedCategories}
+                    onChange={(value) => {
+                      setSelectedCategories(value)
                       setCurrentPage(1)
                     }}
-                  >
-                    <SelectTrigger className="w-full sm:w-[220px]">
-                      <SelectValue placeholder="Categoria" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value={ALL_CATEGORIES_VALUE}>
-                        Todas as categorias
-                      </SelectItem>
-                      {categoryOptions.map((category) => (
-                        <SelectItem key={category} value={category}>
-                          {category}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                    className="sm:w-[220px]"
+                  />
                 <Input
                   value={search}
                   onChange={(event) => {
