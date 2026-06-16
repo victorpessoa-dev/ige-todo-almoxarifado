@@ -58,6 +58,7 @@ import {
 import { SolicitacaoStatusBadge } from '@/components/solicitacoes/SolicitacaoStatusBadge'
 import {
   SOLICITACAO_PRIORIDADE_OPTIONS,
+  SOLICITACAO_STATUS_GERAL_OPTIONS,
   SOLICITACAO_STATUS_COTACAO_OPTIONS,
   SOLICITACAO_STATUS_PEDIDO_OPTIONS,
   SOLICITACAO_STATUS_TRANSPORTE_OPTIONS,
@@ -505,6 +506,7 @@ export default function SolicitarPage() {
   const [isLoadingLists, setIsLoadingLists] = useState(true)
   const [isLoadingSolicitacoes, setIsLoadingSolicitacoes] = useState(true)
   const [codigoBusca, setCodigoBusca] = useState('')
+  const [statusFiltro, setStatusFiltro] = useState([])
   const [prioridadeFiltro, setPrioridadeFiltro] = useState([])
   const [mesFiltro, setMesFiltro] = useState([])
   const [anoFiltro, setAnoFiltro] = useState([])
@@ -538,9 +540,18 @@ export default function SolicitarPage() {
       )
       : solicitacoesPublicas
 
-    const filtered = prioridadeFiltro.length === 0
-      ? filteredBySearch
+    const filteredByStatus = statusFiltro.length === 0
+      ? filteredBySearch.filter((solicitacao) => {
+          // Se nenhum status for selecionado, esconde concluída e cancelada
+          return solicitacao.status_geral !== 'concluida' && solicitacao.status_geral !== 'cancelada'
+        })
       : filteredBySearch.filter((solicitacao) =>
+          statusFiltro.includes(solicitacao.status_geral)
+        )
+
+    const filtered = prioridadeFiltro.length === 0
+      ? filteredByStatus
+      : filteredByStatus.filter((solicitacao) =>
         prioridadeFiltro.includes(solicitacao.prioridade)
       )
 
@@ -562,7 +573,7 @@ export default function SolicitarPage() {
         numeric: true
       })
     })
-  }, [anoFiltro, mesFiltro, prioridadeFiltro, publicSearch, publicSortConfig, solicitacoesPublicas])
+  }, [anoFiltro, mesFiltro, prioridadeFiltro, publicSearch, publicSortConfig, solicitacoesPublicas, statusFiltro])
 
   const publicFilterYears = useMemo(() => {
     const years = solicitacoesPublicas
@@ -595,6 +606,7 @@ export default function SolicitarPage() {
   }
 
   const clearPublicTableFilters = () => {
+    setStatusFiltro([])
     setPrioridadeFiltro([])
     setMesFiltro([])
     setAnoFiltro([])
@@ -806,7 +818,18 @@ export default function SolicitarPage() {
               </Button>
             </form>
 
-            <div className="grid w-full gap-2 rounded-xl border bg-card p-3 shadow-sm sm:grid-cols-2 sm:gap-3 sm:p-4 lg:grid-cols-4">
+            <div className="grid w-full gap-2 rounded-xl border bg-card p-3 shadow-sm sm:grid-cols-2 sm:gap-3 sm:p-4 lg:grid-cols-5">
+              <CheckboxFilter
+                label="status"
+                allLabel="Todos os status"
+                options={SOLICITACAO_STATUS_GERAL_OPTIONS}
+                value={statusFiltro}
+                onChange={(value) => {
+                  setStatusFiltro(value)
+                  setPublicCurrentPage(1)
+                }}
+              />
+
               <CheckboxFilter
                 label="prioridade"
                 allLabel="Todas as prioridades"

@@ -95,8 +95,9 @@ export default function SolicitacoesPage() {
           .some((value) => String(value).toLowerCase().includes(search))
 
       const matchesStatus =
-        filters.status.length === 0 ||
-        filters.status.includes(solicitacao.status_geral)
+        filters.status.length === 0
+          ? solicitacao.status_geral !== 'concluida' && solicitacao.status_geral !== 'cancelada'
+          : filters.status.includes(solicitacao.status_geral)
 
       const matchesPrioridade =
         filters.prioridade.length === 0 ||
