@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import {
   Bar,
   BarChart,
@@ -15,7 +15,7 @@ import { BarChart3, Sparkles } from 'lucide-react'
 import { toast } from 'sonner'
 
 import { useData } from '@/contexts/data-context'
-import { getUserMessage } from '@/lib/user-messages'
+import { getUserMessage } from '@/lib/messaging/user-messages'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -230,11 +230,15 @@ export default function AnaliseGiroPage() {
 
   const selectedAnalysisItems = useMemo(() => {
     if (selectedAnalysisProductIds.length > 0) {
-      return selectedAnalysisProductIds
+      const validSelectedItems = selectedAnalysisProductIds
         .map((productId) =>
           turnoverStats.find((item) => item.productId === productId)
         )
         .filter(Boolean)
+
+      if (validSelectedItems.length > 0) {
+        return validSelectedItems
+      }
     }
 
     return turnoverStats.slice(0, MAX_TURNOVER_ANALYSIS_PRODUCTS)
@@ -279,14 +283,6 @@ export default function AnaliseGiroPage() {
     const start = (safeCurrentPage - 1) * pageSize
     return filteredItems.slice(start, start + pageSize)
   }, [filteredItems, pageSize, safeCurrentPage])
-
-  useEffect(() => {
-    setSelectedAnalysisProductIds((prev) =>
-      prev.filter((productId) =>
-        turnoverStats.some((item) => item.productId === productId)
-      )
-    )
-  }, [turnoverStats])
 
   const summary = useMemo(() => {
     return {

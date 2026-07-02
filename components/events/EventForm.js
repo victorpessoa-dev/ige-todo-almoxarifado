@@ -11,8 +11,14 @@ import {
 } from '@/components/ui/select'
 import { Button } from '@/components/ui/button'
 import { PRIORIDADE_OPTIONS, STATUS_OPTIONS } from '@/constants/task-config'
-import { toDateInputValue } from '@/lib/date-utils'
+import { toDateInputValue } from '@/lib/date/date-utils'
 
+/**
+ * Formulario compartilhado de tarefas e lembretes.
+ *
+ * Usa o tipo do evento para exibir apenas os campos relevantes, preservando o
+ * mesmo componente em dialogs de criacao e edicao.
+ */
 export default function EventForm({
   form,
   setForm,
@@ -23,20 +29,21 @@ export default function EventForm({
 }) {
   const isTarefa = (typeLocked || form.type) === 'tarefa'
   const isLembrete = (typeLocked || form.type) === 'lembrete'
+  const fieldPrefix = typeLocked || form.type || 'evento'
 
   return (
     <form onSubmit={onSubmit} className="grid gap-4">
 
       {!typeLocked && (
         <div className="grid gap-2">
-          <label className="text-sm font-medium">Tipo</label>
+          <label id={`${fieldPrefix}-tipo-label`} className="text-sm font-medium">Tipo</label>
           <Select
             value={form.type}
             onValueChange={(value) =>
               setForm({ ...form, type: value })
             }
           >
-            <SelectTrigger>
+            <SelectTrigger aria-labelledby={`${fieldPrefix}-tipo-label`}>
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -47,15 +54,15 @@ export default function EventForm({
         </div>
       )}
 
-      {/* título */}
       <div className="grid gap-2">
-        <label className="text-sm font-medium">Título</label>
+        <label htmlFor={`${fieldPrefix}-titulo`} className="text-sm font-medium">Titulo</label>
         <Input
+          id={`${fieldPrefix}-titulo`}
           value={form.titulo}
           onChange={(e) =>
             setForm({ ...form, titulo: e.target.value })
           }
-          placeholder="Digite o título"
+          placeholder="Digite o titulo"
           required
         />
       </div>
@@ -63,8 +70,9 @@ export default function EventForm({
       {isTarefa ? (
         <>
           <div className="grid gap-2">
-            <label className="text-sm font-medium">Descrição</label>
+            <label htmlFor={`${fieldPrefix}-descricao`} className="text-sm font-medium">Descricao</label>
             <Textarea
+              id={`${fieldPrefix}-descricao`}
               value={form.descricao}
               onChange={(e) =>
                 setForm({ ...form, descricao: e.target.value })
@@ -74,8 +82,9 @@ export default function EventForm({
           </div>
 
           <div className="grid gap-2">
-            <label className="text-sm font-medium">Responsável</label>
+            <label htmlFor={`${fieldPrefix}-responsavel`} className="text-sm font-medium">Responsavel</label>
             <Input
+              id={`${fieldPrefix}-responsavel`}
               value={form.responsavel}
               onChange={(e) =>
                 setForm({ ...form, responsavel: e.target.value })
@@ -86,8 +95,9 @@ export default function EventForm({
       ) : (
         <>
           <div className="grid gap-2">
-            <label className="text-sm font-medium">Conteúdo</label>
+            <label htmlFor={`${fieldPrefix}-conteudo`} className="text-sm font-medium">Conteudo</label>
             <Textarea
+              id={`${fieldPrefix}-conteudo`}
               value={form.conteudo}
               onChange={(e) =>
                 setForm({ ...form, conteudo: e.target.value })
@@ -97,8 +107,9 @@ export default function EventForm({
           </div>
 
           <div className="grid gap-2">
-            <label className="text-sm font-medium">Destinatário</label>
+            <label htmlFor={`${fieldPrefix}-destinatario`} className="text-sm font-medium">Destinatario</label>
             <Input
+              id={`${fieldPrefix}-destinatario`}
               value={form.destinatario}
               onChange={(e) =>
                 setForm({ ...form, destinatario: e.target.value })
@@ -110,8 +121,9 @@ export default function EventForm({
 
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="grid gap-2">
-          <label className="text-sm font-medium">Data</label>
+          <label htmlFor={`${fieldPrefix}-data`} className="text-sm font-medium">Data</label>
           <Input
+            id={`${fieldPrefix}-data`}
             type="date"
             value={toDateInputValue(form.data)}
             onChange={(e) =>
@@ -121,14 +133,14 @@ export default function EventForm({
         </div>
 
         <div className="grid gap-2">
-          <label className="text-sm font-medium">Prioridade</label>
+          <label id={`${fieldPrefix}-prioridade-label`} className="text-sm font-medium">Prioridade</label>
           <Select
             value={form.prioridade}
             onValueChange={(v) =>
               setForm({ ...form, prioridade: v })
             }
           >
-            <SelectTrigger>
+            <SelectTrigger aria-labelledby={`${fieldPrefix}-prioridade-label`}>
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -143,14 +155,14 @@ export default function EventForm({
       </div>
 
       <div className="grid gap-2">
-        <label className="text-sm font-medium">Status</label>
+        <label id={`${fieldPrefix}-status-label`} className="text-sm font-medium">Status</label>
         <Select
           value={form.status}
           onValueChange={(v) =>
             setForm({ ...form, status: v })
           }
         >
-          <SelectTrigger>
+          <SelectTrigger aria-labelledby={`${fieldPrefix}-status-label`}>
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -171,7 +183,7 @@ export default function EventForm({
         )}
 
         <Button type="submit">
-          {isEditing ? 'Salvar alterações' : 'Criar'}
+          {isEditing ? 'Salvar alteracoes' : 'Criar'}
         </Button>
       </div>
     </form>

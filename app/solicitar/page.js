@@ -16,7 +16,7 @@ import {
   listPublicCentrosCusto,
   listPublicSolicitacoesStatus,
   listPublicSolicitantesCompra
-} from '@/lib/solicitacoes-service'
+} from '@/lib/services/solicitacoes-service'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -49,12 +49,16 @@ import {
   DialogHeader,
   DialogTitle
 } from '@/components/ui/dialog'
-import { getUserMessage } from '@/lib/user-messages'
+import { getUserMessage } from '@/lib/messaging/user-messages'
+import {
+  getSolicitacaoFilterYears,
+  matchesSolicitacaoDateFilters
+} from '@/lib/solicitacoes/filters'
 import {
   formatSolicitacaoItem,
   getSolicitacaoCentroCusto,
   getSolicitacaoSolicitante
-} from '@/lib/solicitacoes-format'
+} from '@/lib/solicitacoes/format'
 import { SolicitacaoStatusBadge } from '@/components/solicitacoes/SolicitacaoStatusBadge'
 import {
   SOLICITACAO_PRIORIDADE_OPTIONS,
@@ -66,7 +70,7 @@ import {
   getSolicitacaoPrioridadeOrder,
   getSolicitacaoSituacao
 } from '@/constants/solicitacoes-config'
-import { formatDateBR, getLocalDateTime, toDateInputValue } from '@/lib/date-utils'
+import { formatDateBR, getLocalDateTime } from '@/lib/date/date-utils'
 
 const DEFAULT_PAGE_SIZE = 25
 const MONTH_OPTIONS = [
@@ -90,10 +94,6 @@ function formatDate(value) {
 
 function getSolicitacaoCreatedAt(solicitacao) {
   return solicitacao?.created_at
-}
-
-function getSolicitacaoFilterDate(solicitacao) {
-  return toDateInputValue(getSolicitacaoCreatedAt(solicitacao))
 }
 
 function getUpdatedAtDisplay(solicitacao) {
@@ -555,14 +555,12 @@ export default function SolicitarPage() {
         prioridadeFiltro.includes(solicitacao.prioridade)
       )
 
-    const filteredByDate = filtered.filter((solicitacao) => {
-      const filterDate = getSolicitacaoFilterDate(solicitacao)
-      const [filterYear, filterMonth] = filterDate ? filterDate.split('-') : []
-      const matchesMes = mesFiltro.length === 0 || mesFiltro.includes(filterMonth)
-      const matchesAno = anoFiltro.length === 0 || anoFiltro.includes(filterYear)
-
-      return matchesMes && matchesAno
-    })
+    const filteredByDate = filtered.filter((solicitacao) =>
+      matchesSolicitacaoDateFilters(solicitacao, {
+        meses: mesFiltro,
+        anos: anoFiltro
+      })
+    )
 
     return [...filteredByDate].sort((a, b) => {
       const direction = publicSortConfig.direction === 'asc' ? 1 : -1
@@ -575,13 +573,10 @@ export default function SolicitarPage() {
     })
   }, [anoFiltro, mesFiltro, prioridadeFiltro, publicSearch, publicSortConfig, solicitacoesPublicas, statusFiltro])
 
-  const publicFilterYears = useMemo(() => {
-    const years = solicitacoesPublicas
-      .map((solicitacao) => getSolicitacaoFilterDate(solicitacao)?.slice(0, 4))
-      .filter(Boolean)
-
-    return [...new Set(years)].sort((a, b) => Number(b) - Number(a))
-  }, [solicitacoesPublicas])
+  const publicFilterYears = useMemo(
+    () => getSolicitacaoFilterYears(solicitacoesPublicas),
+    [solicitacoesPublicas]
+  )
 
   const publicTotalPages = Math.max(
     1,
@@ -729,7 +724,7 @@ export default function SolicitarPage() {
         <div className="flex flex-col gap-4 rounded-2xl border bg-card p-4 shadow-sm lg:flex-row lg:items-center lg:justify-between">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
             <Image
-              src="/ige-supergesso.png"
+              src="/ige-supergesso.svg"
               alt="IGE Supergesso"
               width={150}
               height={90}

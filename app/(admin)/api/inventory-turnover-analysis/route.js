@@ -1,12 +1,33 @@
 import { callAI } from '@/lib/server/ai-providers'
+import { checkRateLimit, createRateLimitResponse } from '@/lib/server/rate-limit'
 
+/**
+ * Endpoint de analise de giro de estoque.
+ *
+ * Combina dados recentes de movimentacao com sugestoes de IA e mantem um
+ * fallback local para nao deixar a tela sem resposta quando a integracao falha.
+ */
 const MAX_TURNOVER_ANALYSIS_PRODUCTS = 5
 const MAX_TEXT_LENGTH = 140
 
+/**
+ * Cria respostas padronizadas para falhas esperadas de validacao.
+ *
+ * @param {string} message Mensagem segura para exibicao na interface.
+ * @param {number} status Codigo HTTP da resposta.
+ * @returns {Response}
+ */
 function createUserError(message, status = 400) {
   return Response.json({ error: message }, { status })
 }
 
+/**
+ * Limpa textos antes de inclui-los no prompt da IA.
+ *
+ * @param {unknown} value Valor recebido do cliente.
+ * @param {number} maxLength Limite maximo de caracteres.
+ * @returns {string}
+ */
 function cleanText(value, maxLength = MAX_TEXT_LENGTH) {
   return String(value || '')
     .replace(/[\u0000-\u001F\u007F]/g, ' ')
@@ -15,11 +36,24 @@ function cleanText(value, maxLength = MAX_TEXT_LENGTH) {
     .slice(0, maxLength)
 }
 
+/**
+ * Converte valores numericos recebidos do cliente com fallback seguro.
+ *
+ * @param {unknown} value Valor a normalizar.
+ * @param {number|null} fallback Valor usado quando a conversao falha.
+ * @returns {number|null}
+ */
 function cleanNumber(value, fallback = 0) {
   const number = Number(value)
   return Number.isFinite(number) ? number : fallback
 }
 
+/**
+ * Normaliza o produto usado na analise para limitar tamanho e tipos do prompt.
+ *
+ * @param {Object} product Produto calculado na interface.
+ * @returns {Object}
+ */
 function normalizeProduct(product = {}) {
   return {
     productId: cleanText(product.productId, 80),
@@ -38,6 +72,12 @@ function normalizeProduct(product = {}) {
   }
 }
 
+/**
+ * Gera uma recomendacao local quando a IA esta indisponivel.
+ *
+ * A regra privilegia estabilidade operacional: sugere reposicao para estoque
+ * baixo e evita compra de itens sem saida recente.
+ */
 function buildLocalTurnoverAnalysis(products) {
   const totalOut = products.reduce((acc, product) => acc + Number(product.saida30 || 0), 0)
   const totalIn = products.reduce((acc, product) => acc + Number(product.entrada30 || 0), 0)
@@ -50,15 +90,15 @@ function buildLocalTurnoverAnalysis(products) {
 
   const summaryParts = [
     `Foram avaliados ${products.length} produto(s).`,
-    `No período, houve ${totalOut} saída(s) e ${totalIn} entrada(s).`
+    `No periodo, houve ${totalOut} saida(s) e ${totalIn} entrada(s).`
   ]
 
   if (lowStockItems.length > 0) {
-    summaryParts.push(`${lowStockItems.length} produto(s) estão no mínimo ou abaixo dele.`)
+    summaryParts.push(`${lowStockItems.length} produto(s) estao no minimo ou abaixo dele.`)
   }
 
   if (stoppedItems.length > 0) {
-    summaryParts.push(`${stoppedItems.length} produto(s) merecem atenção por baixa ou nenhuma saída recente.`)
+    summaryParts.push(`${stoppedItems.length} produto(s) merecem atencao por baixa ou nenhuma saida recente.`)
   }
 
   return {
@@ -74,30 +114,30 @@ function buildLocalTurnoverAnalysis(products) {
 
       let minSuggestion = currentMin
       let maxSuggestion = currentMax
-      let recommendation = 'Manter os parâmetros atuais e acompanhar o próximo período.'
-      let reason = 'O giro recente não indica necessidade clara de ajuste.'
+      let recommendation = 'Manter os parametros atuais e acompanhar o proximo periodo.'
+      let reason = 'O giro recente nao indica necessidade clara de ajuste.'
 
       if (saida30 > 0 || avgMonthlyOut > 0) {
         minSuggestion = Math.max(1, Math.ceil(avgMonthlyOut * 0.5))
         maxSuggestion = Math.max(minSuggestion + 1, Math.ceil(avgMonthlyOut * 1.5))
-        recommendation = 'Ajustar mínimo e máximo com base na média mensal de saída.'
-        reason = `Média mensal aproximada de saída: ${avgMonthlyOut}.`
+        recommendation = 'Ajustar minimo e maximo com base na media mensal de saida.'
+        reason = `Media mensal aproximada de saida: ${avgMonthlyOut}.`
       }
 
       if (currentStock <= currentMin) {
         maxSuggestion = Math.max(maxSuggestion, currentMax, currentStock + Math.ceil(avgMonthlyOut || 1))
         recommendation = 'Priorizar reposicao deste produto.'
-        reason = `Estoque atual (${currentStock}) está no mínimo ou abaixo do mínimo (${currentMin}).`
+        reason = `Estoque atual (${currentStock}) esta no minimo ou abaixo do minimo (${currentMin}).`
       }
 
       if ((daysWithoutSales == null || daysWithoutSales >= 60) && saida30 === 0) {
         minSuggestion = 0
         maxSuggestion = Math.max(1, Math.min(currentMax || 1, currentStock || 1))
-        recommendation = 'Evitar compra até voltar a ter saída.'
+        recommendation = 'Evitar compra ate voltar a ter saida.'
         reason =
           daysWithoutSales == null
-            ? 'Não há registro de saída para este produto.'
-            : `Produto está há ${daysWithoutSales} dias sem saída.`
+            ? 'Nao ha registro de saida para este produto.'
+            : `Produto esta ha ${daysWithoutSales} dias sem saida.`
       }
 
       return {
@@ -113,10 +153,26 @@ function buildLocalTurnoverAnalysis(products) {
   }
 }
 
+/**
+ * Analisa produtos selecionados e retorna recomendacoes de minimo/maximo.
+ *
+ * O limite de itens mantem o prompt pequeno e previsivel para uma analise
+ * pontual, feita sob demanda pelo usuario.
+ */
 export async function POST(req) {
   let products = []
 
   try {
+    const rateLimit = checkRateLimit(req, {
+      keyPrefix: 'api:inventory-turnover-analysis',
+      limit: 15,
+      windowMs: 60_000
+    })
+
+    if (!rateLimit.allowed) {
+      return createRateLimitResponse(rateLimit.retryAfter)
+    }
+
     const body = await req.json()
 
     products = Array.isArray(body?.products)
@@ -124,17 +180,17 @@ export async function POST(req) {
       : []
 
     if (products.length === 0) {
-      return createUserError('Sem dados para análise.')
+      return createUserError('Sem dados para analise.')
     }
 
     const prompt = `
       Analise o giro de estoque.
 
       Considere:
-      - saídas e entradas no período selecionado
-      - estoque atual vs mínimo/máximo
-      - média mensal de saída
-      - dias sem saída
+      - saidas e entradas no periodo selecionado
+      - estoque atual vs minimo/maximo
+      - media mensal de saida
+      - dias sem saida
 
       Retorne somente JSON valido:
       {
@@ -162,7 +218,7 @@ export async function POST(req) {
     })
 
     return Response.json({
-      summary: data?.summary || 'Análise concluída.',
+      summary: data?.summary || 'Analise concluida.',
       source: 'ai',
       recommendations: Array.isArray(data?.recommendations)
         ? data.recommendations
@@ -175,6 +231,6 @@ export async function POST(req) {
       return Response.json(buildLocalTurnoverAnalysis(products))
     }
 
-    return createUserError('Não foi possível analisar o giro agora.', 500)
+    return createUserError('Nao foi possivel analisar o giro agora.', 500)
   }
 }

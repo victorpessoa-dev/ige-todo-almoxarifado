@@ -21,7 +21,7 @@ import {
   formatSolicitacaoItem,
   getSolicitacaoCentroCusto,
   getSolicitacaoSolicitante
-} from '@/lib/solicitacoes-format'
+} from '@/lib/solicitacoes/format'
 import {
   SOLICITACAO_STATUS_GERAL_OPTIONS,
   getSolicitacaoPrioridadeOrder,
@@ -29,7 +29,7 @@ import {
   getSolicitacaoStatusDotClass,
   isSolicitacaoEncerrada
 } from '@/constants/solicitacoes-config'
-import { formatDateBR, getLocalDateTime } from '@/lib/date-utils'
+import { formatDateBR, getLocalDateTime } from '@/lib/date/date-utils'
 
 const DEFAULT_PAGE_SIZE = 25
 
@@ -46,6 +46,13 @@ const SOLICITACAO_TABLE_COLUMNS = [
   { key: 'updated_at', width: 120, minWidth: 100 },
   { key: 'visivel_publico', width: 60, minWidth: 56 }
 ]
+
+/**
+ * Tabela administrativa de solicitacoes de compra.
+ *
+ * Reune ordenacao, paginacao, redimensionamento de colunas e controle de
+ * visibilidade publica sem alterar a origem dos dados.
+ */
 
 function formatCurrency(value) {
   const number = Number(value || 0)
@@ -80,6 +87,8 @@ function getUpdatedAtDisplay(solicitacao) {
 
   const updatedMinute = Math.floor(updatedTime / 60000)
   const createdMinute = Math.floor(createdTime / 60000)
+  // Oculta "atualizado em" quando criacao e ultima edicao ocorreram no mesmo
+  // minuto, evitando ruido visual para registros recem-criados.
   if (updatedMinute === createdMinute) return '-'
 
   return formatDate(updatedAt)
@@ -109,10 +118,21 @@ function isPublicVisible(value) {
   return value === true || value === 1 || value === '1'
 }
 
+/**
+ * Mantem solicitacoes encerradas ao final da ordenacao visual.
+ *
+ * A regra prioriza itens que ainda exigem acao operacional.
+ */
 function getSolicitacaoDisplayOrder(solicitacao) {
   return isSolicitacaoEncerrada(solicitacao) ? 1 : 0
 }
 
+/**
+ * Botao de alternancia da exposicao no painel publico.
+ *
+ * O clique nao propaga para a linha para evitar abrir os detalhes ao alternar
+ * apenas a visibilidade.
+ */
 function PublicVisibilityToggle({ checked, disabled, onChange }) {
   const Icon = checked ? Eye : EyeOff
 

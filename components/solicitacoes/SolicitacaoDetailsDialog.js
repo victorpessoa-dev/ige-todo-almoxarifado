@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -31,13 +31,13 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { defaultSolicitacaoForm } from './SolicitacaoForm'
 import { SolicitacaoStatusBadge } from './SolicitacaoStatusBadge'
-import { getUserMessage } from '@/lib/user-messages'
+import { getUserMessage } from '@/lib/messaging/user-messages'
 import {
   formatCentroCustoLabel,
   formatSolicitacaoItem,
   getSolicitacaoCentroCusto,
   getSolicitacaoSolicitante
-} from '@/lib/solicitacoes-format'
+} from '@/lib/solicitacoes/format'
 import {
   SOLICITACAO_PRIORIDADE_OPTIONS,
   SOLICITACAO_STATUS_COTACAO_OPTIONS,
@@ -48,7 +48,14 @@ import {
   getSolicitacaoOption,
   getSolicitacaoSituacao
 } from '@/constants/solicitacoes-config'
-import { formatDateBR, getTodayDateInputValue, toDateInputValue } from '@/lib/date-utils'
+import { formatDateBR, getTodayDateInputValue, toDateInputValue } from '@/lib/date/date-utils'
+
+/**
+ * Dialog de detalhes e edicao de solicitacoes de compra.
+ *
+ * Exibe o historico operacional da solicitacao e permite atualizar status,
+ * valores, previsao e vinculos sem sair da listagem administrativa.
+ */
 
 function toDateInput(value) {
   return toDateInputValue(value)
@@ -142,6 +149,7 @@ function getUpdatedAtDisplay(solicitacao) {
 
   const updatedMinute = Math.floor(updatedTime / 60000)
   const createdMinute = Math.floor(createdTime / 60000)
+  // Evita exibir uma atualizacao artificial quando o registro acabou de ser criado.
   if (updatedMinute === createdMinute) return '-'
 
   return formatDate(updatedAt)
@@ -229,6 +237,12 @@ function buildFormFromSolicitacao(solicitacao) {
   }
 }
 
+/**
+ * Monta o payload de atualizacao a partir do formulario editavel.
+ *
+ * Campos opcionais vazios sao enviados como null para manter consistencia com
+ * o modelo do banco e evitar strings vazias em relatorios.
+ */
 function buildPayload(form) {
   const completedForm = completeMoneyFields(form)
 
@@ -266,17 +280,10 @@ export function SolicitacaoDetailsDialog({
   solicitantes,
   centrosCusto
 }) {
-  const [form, setForm] = useState(defaultSolicitacaoForm)
+  const [form, setForm] = useState(() => buildFormFromSolicitacao(solicitacao))
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
-
-  useEffect(() => {
-    if (solicitacao) {
-      setForm(buildFormFromSolicitacao(solicitacao))
-      setIsEditing(false)
-    }
-  }, [solicitacao])
 
   const updateField = (field, value) => {
     setForm((prev) => {
@@ -287,6 +294,8 @@ export function SolicitacaoDetailsDialog({
       }
 
       if (field === 'status_geral' && value === 'concluida' && !nextForm.previsao_entrega) {
+        // Ao concluir sem previsao preenchida, usamos a data atual como marco
+        // operacional de fechamento da solicitacao.
         nextForm.previsao_entrega = getTodayDateInputValue()
       }
 
@@ -297,6 +306,8 @@ export function SolicitacaoDetailsDialog({
 
         const centroCusto = getSolicitanteCentroCusto(solicitante, centrosCusto)
         if (centroCusto) {
+          // O centro de custo cadastrado no solicitante prevalece para reduzir
+          // erro manual no preenchimento administrativo.
           const label = getCentroCustoLabel(centroCusto)
           nextForm.centro_custo_id = centroCusto.id
           nextForm.centro_custo = label
@@ -395,7 +406,14 @@ export function SolicitacaoDetailsDialog({
                   </Button>
                 </>
               ) : (
-                <Button type="button" className="col-span-2 sm:col-span-1" onClick={() => setIsEditing(true)}>
+                <Button
+                  type="button"
+                  className="col-span-2 sm:col-span-1"
+                  onClick={() => {
+                    setForm(buildFormFromSolicitacao(solicitacao))
+                    setIsEditing(true)
+                  }}
+                >
                   Editar
                 </Button>
               )}

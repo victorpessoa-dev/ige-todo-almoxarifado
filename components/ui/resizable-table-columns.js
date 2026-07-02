@@ -113,6 +113,7 @@ export function ColumnResizeHandle({ columnKey, onResizeStart }) {
       role="separator"
       aria-orientation="vertical"
       aria-label="Redimensionar coluna"
+      tabIndex={0}
       className="absolute inset-y-0 right-0 z-10 w-2 cursor-col-resize select-none touch-none after:absolute after:right-0 after:top-1/2 after:h-5 after:w-px after:-translate-y-1/2 after:bg-border hover:after:bg-primary"
       onMouseDown={(event) => onResizeStart(columnKey, event)}
     />

@@ -42,7 +42,7 @@ import {
   SelectTrigger,
   SelectValue
 } from '@/components/ui/select'
-import { getUserMessage } from '@/lib/user-messages'
+import { getUserMessage } from '@/lib/messaging/user-messages'
 
 const defaultSolicitante = {
   nome: '',
@@ -55,6 +55,13 @@ const defaultCentroCusto = {
   codigo: '',
   ativo: true
 }
+
+/**
+ * Dialog de manutencao de solicitantes e centros de custo.
+ *
+ * Esses cadastros alimentam a tela publica de solicitacao; por isso a flag
+ * "ativo" controla disponibilidade sem apagar historico ja usado.
+ */
 
 function Field({ label, children }) {
   return (

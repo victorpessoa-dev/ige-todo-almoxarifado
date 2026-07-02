@@ -1,13 +1,33 @@
 import { callAI } from '@/lib/server/ai-providers'
+import { checkRateLimit, createRateLimitResponse } from '@/lib/server/rate-limit'
 
+/**
+ * Endpoint de apoio a contagem por imagem.
+ *
+ * Recebe imagens em base64, valida tamanho/formato e delega a interpretacao
+ * para o provedor de IA sem persistir os arquivos enviados.
+ */
 const MAX_IMAGES = 3
 const MAX_TOTAL_SIZE = 10 * 1024 * 1024
 const ALLOWED_IMAGE_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp'])
 
+/**
+ * Cria respostas padronizadas para erros esperados do usuario.
+ *
+ * @param {string} message Mensagem segura para exibicao na interface.
+ * @param {number} status Codigo HTTP da resposta.
+ * @returns {Response}
+ */
 function createUserError(message, status = 400) {
   return Response.json({ error: message }, { status })
 }
 
+/**
+ * Valida uma imagem enviada como data URL base64.
+ *
+ * O endpoint aceita apenas formatos usados pela interface e rejeita payloads
+ * com caracteres inesperados para reduzir risco de abuso e custo de IA.
+ */
 function validateBase64Image(image) {
   if (typeof image !== 'string') {
     return { valid: false }
@@ -33,13 +53,29 @@ function validateBase64Image(image) {
   return { valid: true }
 }
 
+/**
+ * Analisa imagens de estoque e retorna uma lista consolidada de produtos.
+ *
+ * O rate limit protege a rota contra uso excessivo, ja que cada chamada pode
+ * acionar um provedor externo com custo e latencia maiores.
+ */
 export async function POST(req) {
   try {
+    const rateLimit = checkRateLimit(req, {
+      keyPrefix: 'api:analyze',
+      limit: 12,
+      windowMs: 60_000
+    })
+
+    if (!rateLimit.allowed) {
+      return createRateLimitResponse(rateLimit.retryAfter)
+    }
+
     const body = await req.json()
     const { images } = body
 
     if (!images || !Array.isArray(images)) {
-      return createUserError('Envie imagens válidas.')
+      return createUserError('Envie imagens validas.')
     }
 
     if (images.length === 0) {
@@ -47,16 +83,18 @@ export async function POST(req) {
     }
 
     if (images.length > MAX_IMAGES) {
-      return createUserError(`Máximo de ${MAX_IMAGES} imagens.`)
+      return createUserError(`Maximo de ${MAX_IMAGES} imagens.`)
     }
 
     let totalSize = 0
 
+    // Valida cada imagem antes de montar o prompt para evitar enviar dados
+    // invalidos ou muito grandes ao provedor de IA.
     for (let i = 0; i < images.length; i++) {
       const validation = validateBase64Image(images[i])
 
       if (!validation.valid) {
-        return createUserError(`Imagem ${i + 1} inválida.`)
+        return createUserError(`Imagem ${i + 1} invalida.`)
       }
 
       totalSize += images[i].length
@@ -96,7 +134,7 @@ export async function POST(req) {
     console.error('Erro analyze:', error)
 
     return createUserError(
-      'Não foi possível analisar as imagens agora.',
+      'Nao foi possivel analisar as imagens agora.',
       500
     )
   }

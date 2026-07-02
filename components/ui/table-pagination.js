@@ -24,7 +24,10 @@ export default function TablePagination({
   const lastItem = Math.min(totalItems, page * pageSize)
 
   return (
-    <div className="flex flex-col gap-3 border-t px-3 py-3 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between sm:px-4">
+    <nav
+      className="flex flex-col gap-3 border-t px-3 py-3 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between sm:px-4"
+      aria-label={`Paginacao de ${itemLabel}`}
+    >
       <span>
         Mostrando {firstItem}-{lastItem} de {totalItems} {itemLabel}
       </span>
@@ -35,7 +38,10 @@ export default function TablePagination({
             value={String(pageSize)}
             onValueChange={(value) => onPageSizeChange(Number(value))}
           >
-            <SelectTrigger className="col-span-3 h-9 w-full sm:w-[116px]">
+            <SelectTrigger
+              className="col-span-3 h-9 w-full sm:w-[116px]"
+              aria-label={`Itens por pagina de ${itemLabel}`}
+            >
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -55,6 +61,7 @@ export default function TablePagination({
           onClick={() => onPageChange(page - 1)}
           disabled={page <= 1}
           className="w-full sm:w-auto"
+          aria-label="Pagina anterior"
         >
           Anterior
         </Button>
@@ -68,10 +75,11 @@ export default function TablePagination({
           onClick={() => onPageChange(page + 1)}
           disabled={page >= totalPages}
           className="w-full sm:w-auto"
+          aria-label="Proxima pagina"
         >
           Próxima
         </Button>
       </div>
-    </div>
+    </nav>
   )
 }

@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { BrowserCodeReader, BrowserMultiFormatOneDReader } from '@zxing/browser'
 import { BarcodeFormat, DecodeHintType } from '@zxing/library'
 
@@ -21,6 +21,12 @@ const SCANNER_RETRY_DELAY = 320
 const SCANNER_SUCCESS_DELAY = 900
 const RECENT_SCAN_LOCK_MS = 1400
 
+/**
+ * Ajusta o canvas usado internamente pelo ZXing para priorizar a faixa central.
+ *
+ * As etiquetas do almoxarifado costumam aparecer pequenas no video; reduzir a
+ * area de decodificacao melhora desempenho e diminui leituras fora do alvo.
+ */
 function installScannerCanvasOptimizer() {
   if (BrowserCodeReader.__inventoryScannerCanvasOptimizerInstalled) return
 
@@ -75,6 +81,12 @@ function installScannerCanvasOptimizer() {
   BrowserCodeReader.__inventoryScannerCanvasOptimizerInstalled = true
 }
 
+/**
+ * Define os formatos de codigo de barras aceitos no estoque.
+ *
+ * Restringir formatos reduz o trabalho do decoder e evita leituras ambiguuas
+ * em imagens com muitos textos numericos.
+ */
 function createScannerHints() {
   const hints = new Map()
 
@@ -93,6 +105,12 @@ function createScannerHints() {
   return hints
 }
 
+/**
+ * Normaliza textos para comparar sugestoes da IA com produtos cadastrados.
+ *
+ * @param {string} value Texto original.
+ * @returns {string}
+ */
 function normalizeText(value = '') {
   return String(value)
     .normalize('NFD')
@@ -101,6 +119,25 @@ function normalizeText(value = '') {
     .trim()
 }
 
+/**
+ * Identifica dispositivos moveis para ajustar a experiencia da camera.
+ *
+ * @returns {boolean}
+ */
+function detectMobileDevice() {
+  if (typeof navigator === 'undefined') return false
+
+  return /Android|iPhone|iPad|iPod|IEMobile|Opera Mini|BlackBerry|webOS/i.test(
+    navigator.userAgent || ''
+  )
+}
+
+/**
+ * Card de leitura de codigo de barras do inventario.
+ *
+ * Combina entrada manual, camera, zoom e assistencia por imagem sem alterar o
+ * fluxo principal de movimentacao de estoque.
+ */
 export default function BarcodeScannerCard({
   barcodeInput,
   barcodeProduct,
@@ -128,7 +165,7 @@ export default function BarcodeScannerCard({
   const [modo, setModo] = useState('saida')
   const [cameraError, setCameraError] = useState('')
   const [isStartingCamera, setIsStartingCamera] = useState(false)
-  const [isMobileDevice, setIsMobileDevice] = useState(false)
+  const [isMobileDevice] = useState(() => detectMobileDevice())
   const [productSearch, setProductSearch] = useState('')
   const [isAiHelping, setIsAiHelping] = useState(false)
   const [zoomValue, setZoomValue] = useState(1)
@@ -161,41 +198,7 @@ export default function BarcodeScannerCard({
       .slice(0, 8)
   }, [productSearch, produtos])
 
-  useEffect(() => {
-    installScannerCanvasOptimizer()
-
-    codeReaderRef.current = new BrowserMultiFormatOneDReader(createScannerHints(), {
-      delayBetweenScanAttempts: SCANNER_RETRY_DELAY,
-      delayBetweenScanSuccess: SCANNER_SUCCESS_DELAY,
-      tryPlayVideoTimeout: 5000
-    })
-    const userAgent = navigator.userAgent || ''
-    const mobileMatch =
-      /Android|iPhone|iPad|iPod|IEMobile|Opera Mini|BlackBerry|webOS/i.test(
-        userAgent
-      )
-
-    setIsMobileDevice(mobileMatch)
-
-    return () => {
-      if (scanResetTimeoutRef.current) {
-        clearTimeout(scanResetTimeoutRef.current)
-      }
-
-      stopCamera()
-      audioContextRef.current?.close?.().catch?.(() => {})
-    }
-  }, [])
-
-  useEffect(() => {
-    productByCodeRef.current = productByCode
-  }, [productByCode])
-
-  useEffect(() => {
-    modoRef.current = modo
-  }, [modo])
-
-  const stopCamera = () => {
+  const stopCamera = useCallback(() => {
     setIsCameraOpen(false)
     setIsStartingCamera(false)
     setScanSuccess(false)
@@ -219,10 +222,36 @@ export default function BarcodeScannerCard({
     setIsZoomSupported(false)
 
     if (videoRef.current?.srcObject) {
-      videoRef.current.srcObject.getTracks().forEach((t) => t.stop())
+      videoRef.current.srcObject.getTracks().forEach((track) => track.stop())
       videoRef.current.srcObject = null
     }
-  }
+  }, [])
+
+  useEffect(() => {
+    installScannerCanvasOptimizer()
+
+    codeReaderRef.current = new BrowserMultiFormatOneDReader(createScannerHints(), {
+      delayBetweenScanAttempts: SCANNER_RETRY_DELAY,
+      delayBetweenScanSuccess: SCANNER_SUCCESS_DELAY,
+      tryPlayVideoTimeout: 5000
+    })
+    return () => {
+      if (scanResetTimeoutRef.current) {
+        clearTimeout(scanResetTimeoutRef.current)
+      }
+
+      stopCamera()
+      audioContextRef.current?.close?.().catch?.(() => {})
+    }
+  }, [stopCamera])
+
+  useEffect(() => {
+    productByCodeRef.current = productByCode
+  }, [productByCode])
+
+  useEffect(() => {
+    modoRef.current = modo
+  }, [modo])
 
   const clampZoom = (value, range = zoomRange) => {
     const parsedValue = Number(value)

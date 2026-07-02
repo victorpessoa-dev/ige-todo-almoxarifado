@@ -3,9 +3,9 @@
 import { useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
 
-import { filterAndSortCatalogProducts, makeCatalogFrameHtml } from '@/lib/catalogo-html'
-import { listPublicCatalogProducts } from '@/lib/catalogo-service'
-import { getUserMessage } from '@/lib/user-messages'
+import { filterAndSortCatalogProducts, makeCatalogFrameHtml } from '@/lib/catalogo/catalogo-html'
+import { listPublicCatalogProducts } from '@/lib/services/catalogo-service'
+import { getUserMessage } from '@/lib/messaging/user-messages'
 
 export default function CatalogoPublicoPage() {
   const [produtos, setProdutos] = useState([])

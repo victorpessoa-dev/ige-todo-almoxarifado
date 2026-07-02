@@ -20,13 +20,13 @@ import {
   isSolicitacaoAtrasada,
   isSolicitacaoEncerrada
 } from '@/constants/solicitacoes-config'
-import { formatDateBR } from '@/lib/date-utils'
+import { formatDateBR } from '@/lib/date/date-utils'
 import { useAutoScroll } from '@/lib/hooks/useAutoScroll'
 import {
   formatSolicitacaoItem,
   getSolicitacaoCentroCusto,
   getSolicitacaoSolicitante
-} from '@/lib/solicitacoes-format'
+} from '@/lib/solicitacoes/format'
 
 const SLIDE_SOLICITACAO_TABLE_COLUMNS = [
   { key: 'codigo', width: 92 },

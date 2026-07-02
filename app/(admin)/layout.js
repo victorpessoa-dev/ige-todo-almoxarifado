@@ -5,14 +5,14 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { useAuth } from '@/contexts/auth-context'
-import { useData } from '@/contexts/data-context'
-import { Sidebar } from '@/components/sidebar'
+import { DataProvider, useData } from '@/contexts/data-context'
+import { Sidebar } from '@/components/layout/Sidebar'
 import { LoadingState } from '@/components/ui/spinner'
 import { Menu } from 'lucide-react'
 import Image from 'next/image'
-import { formatSolicitacaoItem } from '@/lib/solicitacoes-format'
+import { formatSolicitacaoItem } from '@/lib/solicitacoes/format'
 
-export default function AdminLayout({ children }) {
+function AdminShell({ children }) {
   const { isAuthenticated, isLoading } = useAuth()
   const { solicitacoesCompra = [] } = useData()
   const router = useRouter()
@@ -125,7 +125,7 @@ export default function AdminLayout({ children }) {
 
           <Link href="/solicitacoes" aria-label="Ir para solicitacoes">
             <Image
-              src="/ige-supergesso.png"
+              src="/ige-supergesso.svg"
               alt="Logo"
               width={100}
               height={75}
@@ -144,3 +144,10 @@ export default function AdminLayout({ children }) {
   )
 }
 
+export default function AdminLayout({ children }) {
+  return (
+    <DataProvider>
+      <AdminShell>{children}</AdminShell>
+    </DataProvider>
+  )
+}

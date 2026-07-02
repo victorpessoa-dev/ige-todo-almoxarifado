@@ -18,13 +18,17 @@ import {
   defaultSolicitacaoForm
 } from '@/components/solicitacoes/SolicitacaoForm'
 import { SolicitacaoTable } from '@/components/solicitacoes/SolicitacaoTable'
-import { getUserMessage } from '@/lib/user-messages'
-import { downloadSolicitacoesExcel } from '@/lib/excel'
-import { getTodayDateInputValue, toDateInputValue } from '@/lib/date-utils'
+import { getUserMessage } from '@/lib/messaging/user-messages'
+import { downloadSolicitacoesExcel } from '@/lib/export/excel'
+import { getTodayDateInputValue } from '@/lib/date/date-utils'
+import {
+  getSolicitacaoFilterYears,
+  matchesSolicitacaoDateFilters
+} from '@/lib/solicitacoes/filters'
 import {
   getSolicitacaoCentroCusto,
   getSolicitacaoSolicitante
-} from '@/lib/solicitacoes-format'
+} from '@/lib/solicitacoes/format'
 import {
   getSolicitacaoStatusDefaults,
   isSolicitacaoAtrasada,
@@ -38,10 +42,6 @@ function formatCurrency(value) {
     style: 'currency',
     currency: 'BRL'
   })
-}
-
-function getSolicitacaoFilterDate(solicitacao) {
-  return toDateInputValue(solicitacao?.created_at)
 }
 
 export default function SolicitacoesPage() {
@@ -103,26 +103,19 @@ export default function SolicitacoesPage() {
         filters.prioridade.length === 0 ||
         filters.prioridade.includes(solicitacao.prioridade)
 
-      const filterDate = getSolicitacaoFilterDate(solicitacao)
-      const [filterYear, filterMonth] = filterDate ? filterDate.split('-') : []
-      const matchesMes =
-        filters.mes.length === 0 ||
-        filters.mes.includes(filterMonth)
-      const matchesAno =
-        filters.ano.length === 0 ||
-        filters.ano.includes(filterYear)
+      const matchesDate = matchesSolicitacaoDateFilters(solicitacao, {
+        meses: filters.mes,
+        anos: filters.ano
+      })
 
-      return matchesSearch && matchesStatus && matchesPrioridade && matchesMes && matchesAno
+      return matchesSearch && matchesStatus && matchesPrioridade && matchesDate
     })
   }, [filters, solicitacoesCompra])
 
-  const filterYears = useMemo(() => {
-    const years = solicitacoesCompra
-      .map((solicitacao) => getSolicitacaoFilterDate(solicitacao)?.slice(0, 4))
-      .filter(Boolean)
-
-    return [...new Set(years)].sort((a, b) => Number(b) - Number(a))
-  }, [solicitacoesCompra])
+  const filterYears = useMemo(
+    () => getSolicitacaoFilterYears(solicitacoesCompra),
+    [solicitacoesCompra]
+  )
 
   const summary = useMemo(() => {
     const abertas = filteredSolicitacoes.filter(
@@ -153,6 +146,14 @@ export default function SolicitacoesPage() {
   const openDetails = (solicitacao) => {
     setSelectedSolicitacao(solicitacao)
     setDetailsOpen(true)
+  }
+
+  const handleDetailsOpenChange = (open) => {
+    setDetailsOpen(open)
+
+    if (!open) {
+      setSelectedSolicitacao(null)
+    }
   }
 
   const handleEntradaEstoque = async (solicitacao) => {
@@ -294,9 +295,10 @@ export default function SolicitacoesPage() {
       )}
 
       <SolicitacaoDetailsDialog
+        key={selectedSolicitacao?.id || 'empty'}
         solicitacao={selectedSolicitacao}
         open={detailsOpen}
-        onOpenChange={setDetailsOpen}
+        onOpenChange={handleDetailsOpenChange}
         onUpdate={updateSolicitacao}
         onDelete={deleteSolicitacao}
         onEntradaEstoque={handleEntradaEstoque}
