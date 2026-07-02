@@ -125,6 +125,8 @@ export default function PrintDialogContent({ produto, onCancel }) {
 
       {image && (
         <div className="border p-4 rounded bg-white flex justify-center">
+          {/* Generated label data URL is rendered as-is for print/download fidelity. */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={image} alt="Etiqueta" />
         </div>
       )}

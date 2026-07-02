@@ -155,6 +155,14 @@ export default function SolicitacoesPage() {
     setDetailsOpen(true)
   }
 
+  const handleDetailsOpenChange = (open) => {
+    setDetailsOpen(open)
+
+    if (!open) {
+      setSelectedSolicitacao(null)
+    }
+  }
+
   const handleEntradaEstoque = async (solicitacao) => {
     if (!solicitacao?.produto_id) {
       toast.error('Vincule um produto do inventario antes de gerar a entrada.')
@@ -294,9 +302,10 @@ export default function SolicitacoesPage() {
       )}
 
       <SolicitacaoDetailsDialog
+        key={selectedSolicitacao?.id || 'empty'}
         solicitacao={selectedSolicitacao}
         open={detailsOpen}
-        onOpenChange={setDetailsOpen}
+        onOpenChange={handleDetailsOpenChange}
         onUpdate={updateSolicitacao}
         onDelete={deleteSolicitacao}
         onEntradaEstoque={handleEntradaEstoque}

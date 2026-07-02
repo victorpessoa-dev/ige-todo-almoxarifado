@@ -236,11 +236,11 @@ begin
   end if;
 
   if length(trim(coalesce(p_descricao, ''))) > 500 then
-    raise exception 'DescriÃ§Ã£o acima do limite de 500 caracteres.';
+    raise exception 'Descricao acima do limite de 500 caracteres.';
   end if;
 
   if length(trim(coalesce(p_aplicacoes, ''))) > 1000 then
-    raise exception 'AplicaÃ§Ãµes acima do limite de 1000 caracteres.';
+    raise exception 'Aplicacoes acima do limite de 1000 caracteres.';
   end if;
 
   if length(trim(coalesce(p_link_referencia, ''))) > 500 then
@@ -258,7 +258,7 @@ begin
   if nullif(trim(coalesce(p_link_referencia, '')), '') is not null
     and trim(p_link_referencia) !~* '^https?://'
   then
-    raise exception 'Link de referÃªncia invalido.';
+    raise exception 'Link de referencia invalido.';
   end if;
 
   if not exists (
@@ -471,8 +471,12 @@ grant usage on schema public to anon, authenticated;
 
 grant select on public.solicitantes_compra to anon, authenticated;
 grant select on public.centros_custo to anon, authenticated;
-grant insert on public.solicitacoes_compra to anon, authenticated;
-grant usage, select on sequence public.solicitacoes_compra_codigo_seq to anon, authenticated;
+revoke insert on public.solicitacoes_compra from public;
+revoke insert on public.solicitacoes_compra from anon;
+revoke usage, select on sequence public.solicitacoes_compra_codigo_seq from public;
+revoke usage, select on sequence public.solicitacoes_compra_codigo_seq from anon;
+grant insert on public.solicitacoes_compra to authenticated;
+grant usage, select on sequence public.solicitacoes_compra_codigo_seq to authenticated;
 
 alter table public.tarefas enable row level security;
 alter table public.lembretes enable row level security;
@@ -525,9 +529,10 @@ on public.centros_custo for all to authenticated
 using (true) with check (true);
 
 drop policy if exists "Public can create purchase requests" on public.solicitacoes_compra;
-create policy "Public can create purchase requests"
+drop policy if exists "Authenticated users can create purchase requests" on public.solicitacoes_compra;
+create policy "Authenticated users can create purchase requests"
 on public.solicitacoes_compra for insert
-to anon, authenticated
+to authenticated
 with check (true);
 
 drop policy if exists "Authenticated users can manage purchase requests" on public.solicitacoes_compra;

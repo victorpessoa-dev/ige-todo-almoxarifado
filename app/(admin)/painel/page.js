@@ -112,12 +112,12 @@ export default function PainelPage() {
   const safeCurrentSlide = Math.min(currentSlide, slideCount - 1)
 
   const nextSlide = useCallback(() => {
-    setCurrentSlide((prev) => (prev + 1) % slideCount)
+    setCurrentSlide((prev) => (Math.min(prev, slideCount - 1) + 1) % slideCount)
     setCycleKey((prev) => prev + 1)
   }, [slideCount])
 
   const prevSlide = useCallback(() => {
-    setCurrentSlide((prev) => (prev - 1 + slideCount) % slideCount)
+    setCurrentSlide((prev) => (Math.min(prev, slideCount - 1) - 1 + slideCount) % slideCount)
     setCycleKey((prev) => prev + 1)
   }, [slideCount])
 
@@ -213,10 +213,6 @@ export default function PainelPage() {
     setCurrentSlide(index)
     setCycleKey((prev) => prev + 1)
   }
-
-  useEffect(() => {
-    setCurrentSlide((prev) => Math.min(prev, slideCount - 1))
-  }, [slideCount])
 
   useEffect(() => {
     const handleKeyDown = (e) => {

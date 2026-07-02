@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { BrowserCodeReader, BrowserMultiFormatOneDReader } from '@zxing/browser'
 import { BarcodeFormat, DecodeHintType } from '@zxing/library'
 
@@ -101,6 +101,14 @@ function normalizeText(value = '') {
     .trim()
 }
 
+function detectMobileDevice() {
+  if (typeof navigator === 'undefined') return false
+
+  return /Android|iPhone|iPad|iPod|IEMobile|Opera Mini|BlackBerry|webOS/i.test(
+    navigator.userAgent || ''
+  )
+}
+
 export default function BarcodeScannerCard({
   barcodeInput,
   barcodeProduct,
@@ -128,7 +136,7 @@ export default function BarcodeScannerCard({
   const [modo, setModo] = useState('saida')
   const [cameraError, setCameraError] = useState('')
   const [isStartingCamera, setIsStartingCamera] = useState(false)
-  const [isMobileDevice, setIsMobileDevice] = useState(false)
+  const [isMobileDevice] = useState(() => detectMobileDevice())
   const [productSearch, setProductSearch] = useState('')
   const [isAiHelping, setIsAiHelping] = useState(false)
   const [zoomValue, setZoomValue] = useState(1)
@@ -161,41 +169,7 @@ export default function BarcodeScannerCard({
       .slice(0, 8)
   }, [productSearch, produtos])
 
-  useEffect(() => {
-    installScannerCanvasOptimizer()
-
-    codeReaderRef.current = new BrowserMultiFormatOneDReader(createScannerHints(), {
-      delayBetweenScanAttempts: SCANNER_RETRY_DELAY,
-      delayBetweenScanSuccess: SCANNER_SUCCESS_DELAY,
-      tryPlayVideoTimeout: 5000
-    })
-    const userAgent = navigator.userAgent || ''
-    const mobileMatch =
-      /Android|iPhone|iPad|iPod|IEMobile|Opera Mini|BlackBerry|webOS/i.test(
-        userAgent
-      )
-
-    setIsMobileDevice(mobileMatch)
-
-    return () => {
-      if (scanResetTimeoutRef.current) {
-        clearTimeout(scanResetTimeoutRef.current)
-      }
-
-      stopCamera()
-      audioContextRef.current?.close?.().catch?.(() => {})
-    }
-  }, [])
-
-  useEffect(() => {
-    productByCodeRef.current = productByCode
-  }, [productByCode])
-
-  useEffect(() => {
-    modoRef.current = modo
-  }, [modo])
-
-  const stopCamera = () => {
+  const stopCamera = useCallback(() => {
     setIsCameraOpen(false)
     setIsStartingCamera(false)
     setScanSuccess(false)
@@ -219,10 +193,36 @@ export default function BarcodeScannerCard({
     setIsZoomSupported(false)
 
     if (videoRef.current?.srcObject) {
-      videoRef.current.srcObject.getTracks().forEach((t) => t.stop())
+      videoRef.current.srcObject.getTracks().forEach((track) => track.stop())
       videoRef.current.srcObject = null
     }
-  }
+  }, [])
+
+  useEffect(() => {
+    installScannerCanvasOptimizer()
+
+    codeReaderRef.current = new BrowserMultiFormatOneDReader(createScannerHints(), {
+      delayBetweenScanAttempts: SCANNER_RETRY_DELAY,
+      delayBetweenScanSuccess: SCANNER_SUCCESS_DELAY,
+      tryPlayVideoTimeout: 5000
+    })
+    return () => {
+      if (scanResetTimeoutRef.current) {
+        clearTimeout(scanResetTimeoutRef.current)
+      }
+
+      stopCamera()
+      audioContextRef.current?.close?.().catch?.(() => {})
+    }
+  }, [stopCamera])
+
+  useEffect(() => {
+    productByCodeRef.current = productByCode
+  }, [productByCode])
+
+  useEffect(() => {
+    modoRef.current = modo
+  }, [modo])
 
   const clampZoom = (value, range = zoomRange) => {
     const parsedValue = Number(value)

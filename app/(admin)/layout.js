@@ -5,14 +5,14 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { useAuth } from '@/contexts/auth-context'
-import { useData } from '@/contexts/data-context'
+import { DataProvider, useData } from '@/contexts/data-context'
 import { Sidebar } from '@/components/sidebar'
 import { LoadingState } from '@/components/ui/spinner'
 import { Menu } from 'lucide-react'
 import Image from 'next/image'
 import { formatSolicitacaoItem } from '@/lib/solicitacoes-format'
 
-export default function AdminLayout({ children }) {
+function AdminShell({ children }) {
   const { isAuthenticated, isLoading } = useAuth()
   const { solicitacoesCompra = [] } = useData()
   const router = useRouter()
@@ -144,3 +144,10 @@ export default function AdminLayout({ children }) {
   )
 }
 
+export default function AdminLayout({ children }) {
+  return (
+    <DataProvider>
+      <AdminShell>{children}</AdminShell>
+    </DataProvider>
+  )
+}

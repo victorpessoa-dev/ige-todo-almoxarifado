@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react'
 import { supabase } from '@/lib/supabaseClient'
+import { logger } from '@/lib/logger'
 import {
   createCentroCusto,
   createSolicitacaoCompra,
@@ -265,13 +266,13 @@ export function DataProvider({ children }) {
       if (produtosError) throw produtosError
       if (movimentacoesError) throw movimentacoesError
       if (solicitacoesResult.error) {
-        console.warn('Erro ao carregar solicitacoes:', solicitacoesResult.error)
+        logger.warn('Erro ao carregar solicitacoes:', solicitacoesResult.error)
       }
       if (solicitantesResult.error) {
-        console.warn('Erro ao carregar solicitantes:', solicitantesResult.error)
+        logger.warn('Erro ao carregar solicitantes:', solicitantesResult.error)
       }
       if (centrosCustoResult.error) {
-        console.warn('Erro ao carregar centros de custo:', centrosCustoResult.error)
+        logger.warn('Erro ao carregar centros de custo:', centrosCustoResult.error)
       }
 
       if (isMounted.current) {
@@ -295,7 +296,7 @@ export function DataProvider({ children }) {
         setIsLoaded(true)
       }
     } catch (err) {
-      console.error('Erro ao carregar dados:', err)
+      logger.error('Erro ao carregar dados:', err)
       if (isMounted.current) {
         setError('Não foi possível carregar os dados agora.')
       }
@@ -380,7 +381,7 @@ export function DataProvider({ children }) {
     try {
       await withRetry(operation)
     } catch (deleteError) {
-      console.error('Erro ao deletar tarefa:', deleteError)
+      logger.error('Erro ao deletar tarefa:', deleteError)
       if (isMounted.current) {
         setTarefas(previousTarefas)
       }
@@ -461,7 +462,7 @@ export function DataProvider({ children }) {
     try {
       await withRetry(operation)
     } catch (deleteError) {
-      console.error('Erro ao deletar lembrete:', deleteError)
+      logger.error('Erro ao deletar lembrete:', deleteError)
       if (isMounted.current) {
         setLembretes(previousLembretes)
       }
@@ -574,7 +575,7 @@ export function DataProvider({ children }) {
     try {
       await withRetry(operation)
     } catch (deleteError) {
-      console.error('Erro ao deletar produto:', deleteError)
+      logger.error('Erro ao deletar produto:', deleteError)
       if (isMounted.current) {
         setProdutos(previousProdutos)
         produtosRef.current = previousProdutos
@@ -745,7 +746,7 @@ export function DataProvider({ children }) {
     try {
       await withRetry(() => deleteSolicitacaoCompra(id))
     } catch (deleteError) {
-      console.error('Erro ao deletar solicitacao:', deleteError)
+      logger.error('Erro ao deletar solicitacao:', deleteError)
       if (isMounted.current) {
         setSolicitacoesCompra(previousSolicitacoes)
       }
@@ -798,7 +799,9 @@ export function DataProvider({ children }) {
   }
 
   useEffect(() => {
-    loadData()
+    queueMicrotask(() => {
+      loadData()
+    })
 
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
@@ -819,7 +822,7 @@ export function DataProvider({ children }) {
         .on('postgres_changes', { event: '*', schema: 'public', table }, handler)
         .subscribe((status) => {
           if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
-            console.log('Realtime connection issue, reloading data...')
+            logger.warn('Realtime connection issue, reloading data')
             loadData()
           }
         })

@@ -3,6 +3,7 @@
 import { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react'
 import { supabase } from '@/lib/supabaseClient'
 import { getUserMessage } from '@/lib/user-messages'
+import { logger } from '@/lib/logger'
 
 const AuthContext = createContext(undefined)
 
@@ -36,7 +37,7 @@ export function AuthProvider({ children }) {
         } = await supabase.auth.getSession()
 
         if (error) {
-          console.error('Erro ao obter sessao:', error)
+          logger.error('Erro ao obter sessao:', error)
           if (!cancelled && isMounted.current) {
             setAuthError('Não foi possível validar seu acesso agora.')
           }
@@ -47,7 +48,7 @@ export function AuthProvider({ children }) {
           setUser(session?.user ?? null)
         }
       } catch (error) {
-        console.error('Erro inesperado ao inicializar sessao:', error)
+        logger.error('Erro inesperado ao inicializar sessao:', error)
         if (!cancelled && isMounted.current) {
           setAuthError('Não foi possível validar seu acesso agora.')
         }
@@ -66,10 +67,7 @@ export function AuthProvider({ children }) {
       if (!cancelled && isMounted.current) {
         setUser(session?.user ?? null)
         setAuthError(null)
-
-        if (process.env.NODE_ENV === 'development') {
-          console.log('Auth event:', event)
-        }
+        logger.info('Auth event:', event)
       }
     })
 
@@ -95,7 +93,7 @@ export function AuthProvider({ children }) {
       })
 
       if (error) {
-        console.error('Erro no login:', error)
+        logger.error('Erro no login:', error)
 
         const errorMessage = getUserMessage(
           error,
@@ -115,7 +113,7 @@ export function AuthProvider({ children }) {
         error: 'Não foi possível entrar agora. Tente novamente.'
       }
     } catch (error) {
-      console.error('Erro inesperado no login:', error)
+      logger.error('Erro inesperado no login:', error)
       const errorMessage = getUserMessage(
         error,
         'Não foi possível entrar agora. Tente novamente.'
@@ -130,7 +128,7 @@ export function AuthProvider({ children }) {
       const { error } = await supabase.auth.signOut()
 
       if (error) {
-        console.error('Erro ao fazer logout:', error)
+        logger.error('Erro ao fazer logout:', error)
         setUser(null)
         return { success: false, error: 'Não foi possível sair agora.' }
       }
@@ -139,7 +137,7 @@ export function AuthProvider({ children }) {
       setAuthError(null)
       return { success: true }
     } catch (error) {
-      console.error('Erro inesperado no logout:', error)
+      logger.error('Erro inesperado no logout:', error)
       setUser(null)
       setAuthError(null)
       return { success: false, error: 'Não foi possível sair agora.' }
@@ -154,7 +152,7 @@ export function AuthProvider({ children }) {
       } = await supabase.auth.getSession()
 
       if (error) {
-        console.error('Erro ao atualizar sessao:', error)
+        logger.error('Erro ao atualizar sessao:', error)
         return {
           success: false,
           error: 'Não foi possível atualizar seu acesso agora.'
@@ -168,7 +166,7 @@ export function AuthProvider({ children }) {
 
       return { success: false, error: 'Sua sessão não está mais disponível.' }
     } catch (error) {
-      console.error('Erro inesperado ao atualizar sessao:', error)
+      logger.error('Erro inesperado ao atualizar sessao:', error)
       return {
         success: false,
         error: 'Não foi possível atualizar seu acesso agora.'

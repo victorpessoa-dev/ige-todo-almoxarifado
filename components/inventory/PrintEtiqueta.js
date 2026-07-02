@@ -86,6 +86,8 @@ export default function PrintEtiqueta({ produto }) {
       {/* imagem gerada */}
       {image && (
         <>
+          {/* Generated label data URL is rendered as-is for print/download fidelity. */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={image} alt="Etiqueta" className="border" />
 
           <a

@@ -203,6 +203,7 @@ export default function InventarioPage() {
     try {
       const solicitacao = await addSolicitacao({
         nome_item: `${produto.cod ? `${produto.cod} - ` : ''}${produto.nome}`,
+        descricao: `Reposicao de estoque baixo para ${produto.nome}.`,
         quantidade: compraDialog.quantidade,
         prioridade: 'media',
         centro_custo_id: compraForm.centro_custo_id,

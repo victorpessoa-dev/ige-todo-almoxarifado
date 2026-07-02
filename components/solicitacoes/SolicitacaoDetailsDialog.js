@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -266,17 +266,10 @@ export function SolicitacaoDetailsDialog({
   solicitantes,
   centrosCusto
 }) {
-  const [form, setForm] = useState(defaultSolicitacaoForm)
+  const [form, setForm] = useState(() => buildFormFromSolicitacao(solicitacao))
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
-
-  useEffect(() => {
-    if (solicitacao) {
-      setForm(buildFormFromSolicitacao(solicitacao))
-      setIsEditing(false)
-    }
-  }, [solicitacao])
 
   const updateField = (field, value) => {
     setForm((prev) => {
@@ -395,7 +388,14 @@ export function SolicitacaoDetailsDialog({
                   </Button>
                 </>
               ) : (
-                <Button type="button" className="col-span-2 sm:col-span-1" onClick={() => setIsEditing(true)}>
+                <Button
+                  type="button"
+                  className="col-span-2 sm:col-span-1"
+                  onClick={() => {
+                    setForm(buildFormFromSolicitacao(solicitacao))
+                    setIsEditing(true)
+                  }}
+                >
                   Editar
                 </Button>
               )}

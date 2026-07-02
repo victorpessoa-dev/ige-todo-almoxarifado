@@ -1,4 +1,5 @@
 import { callAI } from '@/lib/server/ai-providers'
+import { checkRateLimit, createRateLimitResponse } from '@/lib/server/rate-limit'
 
 const MAX_IMAGE_SIZE = 5 * 1024 * 1024
 const MAX_CATALOG_ITEMS = 300
@@ -27,20 +28,31 @@ function cleanText(value, maxLength = MAX_TEXT_LENGTH) {
 
 export async function POST(req) {
   try {
-    const body = await req.json()
+    const rateLimit = checkRateLimit(req, {
+      keyPrefix: 'api:inventory-scan-assist',
+      limit: 20,
+      windowMs: 60_000
+    })
 
+    if (!rateLimit.allowed) {
+      return createRateLimitResponse(rateLimit.retryAfter)
+    }
+
+    const body = await req.json()
     const image = body?.image
-    const produtos = Array.isArray(body?.produtos) ? body.produtos.slice(0, MAX_CATALOG_ITEMS) : []
+    const produtos = Array.isArray(body?.produtos)
+      ? body.produtos.slice(0, MAX_CATALOG_ITEMS)
+      : []
 
     if (!image || typeof image !== 'string' || !image.startsWith('data:image/')) {
-      return createUserError('Envie uma imagem válida.')
+      return createUserError('Envie uma imagem valida.')
     }
 
     const [meta, base64] = image.split(',')
     const mimeType = meta.match(/^data:(.*?);base64$/)?.[1]
 
     if (!ALLOWED_IMAGE_TYPES.has(mimeType) || !base64 || /[^a-zA-Z0-9+/=]/.test(base64)) {
-      return createUserError('Envie uma imagem vÃ¡lida.')
+      return createUserError('Envie uma imagem valida.')
     }
 
     if ((base64.length * 3) / 4 > MAX_IMAGE_SIZE) {
@@ -48,28 +60,28 @@ export async function POST(req) {
     }
 
     const catalogText = produtos
-      .map((p) => {
-        const codes = [p.cod, p.cod_barra]
+      .map((produto) => {
+        const codes = [produto.cod, produto.cod_barra]
           .filter(Boolean)
           .map((code) => cleanText(code, 64))
           .filter(Boolean)
 
-        return `codigos: ${[...new Set(codes)].join(', ')} | nome: ${cleanText(p.nome)}`
+        return `codigos: ${[...new Set(codes)].join(', ')} | nome: ${cleanText(produto.nome)}`
       })
       .join('\n')
 
     const prompt = `
       Analise a imagem do scanner de estoque e tente identificar o codigo ou o nome do produto.
-      A imagem pode conter uma etiqueta pequena, então leia números pequenos com cuidado.
+      A imagem pode conter uma etiqueta pequena, entao leia numeros pequenos com cuidado.
 
       Prioridade:
-      1 - Código numérico visível na etiqueta ou código de barras
+      1 - Codigo numerico visivel na etiqueta ou codigo de barras
       2 - Nome do produto
 
       Regras:
-      - Não invente código.
+      - Nao invente codigo.
       - Se houver duvida, deixe o campo vazio e reduza a confianca.
-      - Use o catálogo apenas para confirmar nomes/códigos próximos.
+      - Use o catalogo apenas para confirmar nomes/codigos proximos.
       - Retorne somente JSON valido.
 
       Responda:
@@ -97,8 +109,8 @@ export async function POST(req) {
 
     if (code) {
       match =
-        produtos.find((p) => String(p.cod_barra || '') === code) ||
-        produtos.find((p) => String(p.cod || '') === code) ||
+        produtos.find((produto) => String(produto.cod_barra || '') === code) ||
+        produtos.find((produto) => String(produto.cod || '') === code) ||
         null
     }
 
@@ -106,9 +118,9 @@ export async function POST(req) {
       const normalized = normalizeText(productName)
 
       match =
-        produtos.find((p) => normalizeText(p.nome) === normalized) ||
-        produtos.find((p) => {
-          const productNameNormalized = normalizeText(p.nome)
+        produtos.find((produto) => normalizeText(produto.nome) === normalized) ||
+        produtos.find((produto) => {
+          const productNameNormalized = normalizeText(produto.nome)
           return (
             normalized.length >= 4 &&
             (productNameNormalized.includes(normalized) ||
@@ -130,7 +142,7 @@ export async function POST(req) {
     console.error('Erro scanner:', error)
 
     return createUserError(
-      'Não foi possível analisar a imagem agora.',
+      'Nao foi possivel analisar a imagem agora.',
       500
     )
   }

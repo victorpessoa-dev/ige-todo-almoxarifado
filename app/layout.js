@@ -1,7 +1,6 @@
 // app/layout.js
 import './globals.css'
 import { AuthProvider } from '@/contexts/auth-context'
-import { DataProvider } from '@/contexts/data-context'
 import { PwaRegister } from '@/components/pwa/PwaRegister'
 import { Toaster } from 'sonner'
 
@@ -34,11 +33,9 @@ export default function RootLayout({ children }) {
     <html lang="pt-BR">
       <body className="overflow-x-hidden bg-background text-foreground font-sans antialiased dark">
         <AuthProvider>
-          <DataProvider>
-            <PwaRegister />
-            <Toaster />
-            {children}
-          </DataProvider>
+          <PwaRegister />
+          <Toaster />
+          {children}
         </AuthProvider>
       </body>
     </html>

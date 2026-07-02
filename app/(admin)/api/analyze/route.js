@@ -1,4 +1,5 @@
 import { callAI } from '@/lib/server/ai-providers'
+import { checkRateLimit, createRateLimitResponse } from '@/lib/server/rate-limit'
 
 const MAX_IMAGES = 3
 const MAX_TOTAL_SIZE = 10 * 1024 * 1024
@@ -35,11 +36,21 @@ function validateBase64Image(image) {
 
 export async function POST(req) {
   try {
+    const rateLimit = checkRateLimit(req, {
+      keyPrefix: 'api:analyze',
+      limit: 12,
+      windowMs: 60_000
+    })
+
+    if (!rateLimit.allowed) {
+      return createRateLimitResponse(rateLimit.retryAfter)
+    }
+
     const body = await req.json()
     const { images } = body
 
     if (!images || !Array.isArray(images)) {
-      return createUserError('Envie imagens válidas.')
+      return createUserError('Envie imagens validas.')
     }
 
     if (images.length === 0) {
@@ -47,7 +58,7 @@ export async function POST(req) {
     }
 
     if (images.length > MAX_IMAGES) {
-      return createUserError(`Máximo de ${MAX_IMAGES} imagens.`)
+      return createUserError(`Maximo de ${MAX_IMAGES} imagens.`)
     }
 
     let totalSize = 0
@@ -56,7 +67,7 @@ export async function POST(req) {
       const validation = validateBase64Image(images[i])
 
       if (!validation.valid) {
-        return createUserError(`Imagem ${i + 1} inválida.`)
+        return createUserError(`Imagem ${i + 1} invalida.`)
       }
 
       totalSize += images[i].length
@@ -96,7 +107,7 @@ export async function POST(req) {
     console.error('Erro analyze:', error)
 
     return createUserError(
-      'Não foi possível analisar as imagens agora.',
+      'Nao foi possivel analisar as imagens agora.',
       500
     )
   }
