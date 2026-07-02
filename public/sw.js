@@ -4,9 +4,7 @@ const PRECACHE_URLS = [
   '/solicitar',
   '/login',
   '/manifest.json',
-  '/ige-supergesso.png',
-  '/icons/icon-192.png',
-  '/icons/icon-512.png'
+  '/ige-supergesso.svg'
 ]
 
 self.addEventListener('install', (event) => {

@@ -12,7 +12,7 @@ import {
   getUniqueBrandNames,
   makeCatalogFrameHtml,
   normalizeCatalogText
-} from '@/lib/catalogo-html'
+} from '@/lib/catalogo/catalogo-html'
 import CatalogoFilters from '@/components/catalogo/CatalogoFilters'
 import CatalogoHeader from '@/components/catalogo/CatalogoHeader'
 import CatalogoPreview from '@/components/catalogo/CatalogoPreview'

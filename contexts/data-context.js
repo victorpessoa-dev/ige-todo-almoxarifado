@@ -1,8 +1,8 @@
 'use client'
 
 import { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react'
-import { supabase } from '@/lib/supabaseClient'
-import { logger } from '@/lib/logger'
+import { supabase } from '@/lib/supabase/client'
+import { logger } from '@/lib/logging/logger'
 import {
   createCentroCusto,
   createSolicitacaoCompra,
@@ -16,8 +16,8 @@ import {
   updateCentroCusto,
   updateSolicitacaoCompra,
   updateSolicitanteCompra
-} from '@/lib/solicitacoes-service'
-import { toDateInputValue } from '@/lib/date-utils'
+} from '@/lib/services/solicitacoes-service'
+import { toDateInputValue } from '@/lib/date/date-utils'
 
 const DataContext = createContext()
 

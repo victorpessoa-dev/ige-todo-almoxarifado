@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import JsBarcode from 'jsbarcode'
 import { useEffect, useRef, useState } from 'react'
@@ -29,7 +29,7 @@ export default function PrintEtiqueta({ produto }) {
 
     // carregar logo
     const img = new Image()
-    img.src = '/ige-supergesso.png'
+    img.src = '/ige-supergesso.svg'
 
     img.onload = () => {
       ctx.save()

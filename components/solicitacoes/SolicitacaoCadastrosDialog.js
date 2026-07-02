@@ -42,7 +42,7 @@ import {
   SelectTrigger,
   SelectValue
 } from '@/components/ui/select'
-import { getUserMessage } from '@/lib/user-messages'
+import { getUserMessage } from '@/lib/messaging/user-messages'
 
 const defaultSolicitante = {
   nome: '',

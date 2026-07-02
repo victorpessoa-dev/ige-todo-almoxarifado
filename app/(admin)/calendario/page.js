@@ -1,4 +1,4 @@
-﻿'use client'
+'use client'
 
 import { useMemo, useState } from 'react'
 import FullCalendar from '@fullcalendar/react'
@@ -8,8 +8,8 @@ import interactionPlugin from '@fullcalendar/interaction'
 import ptBrLocale from '@fullcalendar/core/locales/pt-br'
 import { CalendarDays } from 'lucide-react'
 import { toast } from 'sonner'
-import { getUserMessage } from '@/lib/user-messages'
-import { toDateInputValue } from '@/lib/date-utils'
+import { getUserMessage } from '@/lib/messaging/user-messages'
+import { toDateInputValue } from '@/lib/date/date-utils'
 
 import { useData } from '@/contexts/data-context'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'

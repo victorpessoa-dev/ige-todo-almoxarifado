@@ -1,7 +1,7 @@
 'use client'
 
 import { useMemo, useState } from 'react'
-import { supabase } from '@/lib/supabaseClient'
+import { supabase } from '@/lib/supabase/client'
 import { useData } from '@/contexts/data-context'
 import { Button } from '@/components/ui/button'
 import { CheckboxFilter } from '@/components/ui/checkbox-filter'
@@ -31,7 +31,7 @@ import ProductFormFields from '@/components/inventory/ProductFormFields'
 import MovementFormFields from '@/components/inventory/MovementFormFields'
 import PrintDialogContent from '@/components/inventory/PrintDialogContent'
 import PrintEtiqueta from '@/components/inventory/PrintEtiqueta'
-import { getUserMessage } from '@/lib/user-messages'
+import { getUserMessage } from '@/lib/messaging/user-messages'
 
 function normalizeCategory(value) {
   return String(value || '')

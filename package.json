@@ -6,7 +6,10 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "test": "node tests/audit/audit-contracts.test.mjs",
+    "audit:supabase:public": "node scripts/audit/supabase-public-audit.mjs",
+    "audit:app:smoke": "node tests/audit/app-smoke.test.mjs"
   },
   "dependencies": {
     "@fullcalendar/core": "^6.1.20",

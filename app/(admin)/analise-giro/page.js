@@ -15,7 +15,7 @@ import { BarChart3, Sparkles } from 'lucide-react'
 import { toast } from 'sonner'
 
 import { useData } from '@/contexts/data-context'
-import { getUserMessage } from '@/lib/user-messages'
+import { getUserMessage } from '@/lib/messaging/user-messages'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Checkbox } from '@/components/ui/checkbox'

@@ -1,9 +1,9 @@
 'use client'
 
 import { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react'
-import { supabase } from '@/lib/supabaseClient'
-import { getUserMessage } from '@/lib/user-messages'
-import { logger } from '@/lib/logger'
+import { supabase } from '@/lib/supabase/client'
+import { getUserMessage } from '@/lib/messaging/user-messages'
+import { logger } from '@/lib/logging/logger'
 
 const AuthContext = createContext(undefined)
 

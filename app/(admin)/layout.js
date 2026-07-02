@@ -6,11 +6,11 @@ import { usePathname, useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { useAuth } from '@/contexts/auth-context'
 import { DataProvider, useData } from '@/contexts/data-context'
-import { Sidebar } from '@/components/sidebar'
+import { Sidebar } from '@/components/layout/Sidebar'
 import { LoadingState } from '@/components/ui/spinner'
 import { Menu } from 'lucide-react'
 import Image from 'next/image'
-import { formatSolicitacaoItem } from '@/lib/solicitacoes-format'
+import { formatSolicitacaoItem } from '@/lib/solicitacoes/format'
 
 function AdminShell({ children }) {
   const { isAuthenticated, isLoading } = useAuth()
@@ -125,7 +125,7 @@ function AdminShell({ children }) {
 
           <Link href="/solicitacoes" aria-label="Ir para solicitacoes">
             <Image
-              src="/ige-supergesso.png"
+              src="/ige-supergesso.svg"
               alt="Logo"
               width={100}
               height={75}

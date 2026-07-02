@@ -9,7 +9,7 @@ export default function HomePage() {
     <main className="flex min-h-screen items-center justify-center bg-muted/30 px-4 py-8">
       <section className="flex w-full max-w-lg flex-col items-center gap-6 rounded-2xl border bg-card p-6 text-center shadow-sm sm:p-8">
         <Image
-          src="/ige-supergesso.png"
+          src="/ige-supergesso.svg"
           alt="IGE Supergesso"
           width={190}
           height={115}

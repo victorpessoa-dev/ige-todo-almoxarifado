@@ -20,7 +20,7 @@ import {
   SOLICITACAO_STATUS_TRANSPORTE_OPTIONS,
   getSolicitacaoStatusDefaults
 } from '@/constants/solicitacoes-config'
-import { getTodayDateInputValue } from '@/lib/date-utils'
+import { getTodayDateInputValue } from '@/lib/date/date-utils'
 
 export const defaultSolicitacaoForm = {
   nome_item: '',

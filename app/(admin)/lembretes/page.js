@@ -12,8 +12,8 @@ import { LoadingState } from '@/components/ui/spinner'
 import { toast } from 'sonner'
 import { Plus, Pencil, Trash2, CheckCircle2, Circle, Clock, ChevronDown, ChevronUp, StickyNote, Calendar } from 'lucide-react'
 import EventForm from '@/components/events/EventForm'
-import { getUserMessage } from '@/lib/user-messages'
-import { formatDateBR, toDateInputValue } from '@/lib/date-utils'
+import { getUserMessage } from '@/lib/messaging/user-messages'
+import { formatDateBR, toDateInputValue } from '@/lib/date/date-utils'
 
 function groupByDate(items) {
   const groups = {}

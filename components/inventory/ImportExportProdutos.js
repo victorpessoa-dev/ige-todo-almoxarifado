@@ -5,8 +5,8 @@ import * as XLSX from 'xlsx'
 import { toast } from 'sonner'
 
 import { useData } from '@/contexts/data-context'
-import { supabase } from '@/lib/supabaseClient'
-import { getUserMessage } from '@/lib/user-messages'
+import { supabase } from '@/lib/supabase/client'
+import { getUserMessage } from '@/lib/messaging/user-messages'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {

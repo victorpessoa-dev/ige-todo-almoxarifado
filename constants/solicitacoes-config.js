@@ -1,4 +1,4 @@
-import { toDateInputValue } from '@/lib/date-utils'
+import { toDateInputValue } from '@/lib/date/date-utils'
 
 export const SOLICITACAO_PRIORIDADE_OPTIONS = [
   {

@@ -50,7 +50,7 @@ export function Sidebar({ onNavigate }) {
       <div className="px-4 py-8">
         <Link href="/solicitacoes" onClick={handleClick} className="block lg:hidden">
           <Image
-            src="/ige-supergesso.png"
+            src="/ige-supergesso.svg"
             alt="Logo"
             width={200}
             height={120}
@@ -59,7 +59,7 @@ export function Sidebar({ onNavigate }) {
         </Link>
         <Link href="/painel" onClick={handleClick} className="hidden lg:block">
           <Image
-            src="/ige-supergesso.png"
+            src="/ige-supergesso.svg"
             alt="Logo"
             width={200}
             height={120}

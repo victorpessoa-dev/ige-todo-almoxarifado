@@ -11,13 +11,19 @@ export default function SortableTableHead({
   children
 }) {
   const isActive = sortConfig.key === columnKey
+  const ariaSort = isActive
+    ? sortConfig.direction === 'asc'
+      ? 'ascending'
+      : 'descending'
+    : 'none'
 
   return (
-    <TableHead className={className}>
+    <TableHead className={className} aria-sort={ariaSort}>
       <button
         type="button"
         onClick={() => onSort(columnKey)}
         className="flex items-center gap-1.5 text-muted-foreground transition hover:text-foreground"
+        aria-label={`Ordenar por ${label}`}
       >
         <span>{label}</span>
         {isActive ? (

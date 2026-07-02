@@ -31,13 +31,13 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { defaultSolicitacaoForm } from './SolicitacaoForm'
 import { SolicitacaoStatusBadge } from './SolicitacaoStatusBadge'
-import { getUserMessage } from '@/lib/user-messages'
+import { getUserMessage } from '@/lib/messaging/user-messages'
 import {
   formatCentroCustoLabel,
   formatSolicitacaoItem,
   getSolicitacaoCentroCusto,
   getSolicitacaoSolicitante
-} from '@/lib/solicitacoes-format'
+} from '@/lib/solicitacoes/format'
 import {
   SOLICITACAO_PRIORIDADE_OPTIONS,
   SOLICITACAO_STATUS_COTACAO_OPTIONS,
@@ -48,7 +48,7 @@ import {
   getSolicitacaoOption,
   getSolicitacaoSituacao
 } from '@/constants/solicitacoes-config'
-import { formatDateBR, getTodayDateInputValue, toDateInputValue } from '@/lib/date-utils'
+import { formatDateBR, getTodayDateInputValue, toDateInputValue } from '@/lib/date/date-utils'
 
 function toDateInput(value) {
   return toDateInputValue(value)

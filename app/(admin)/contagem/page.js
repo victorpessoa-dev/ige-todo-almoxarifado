@@ -19,8 +19,8 @@ import {
 import { CameraCapture } from '@/components/contagem/CameraCapture'
 import { ImageGallery } from '@/components/contagem/ImageGallery'
 import { ProductList } from '@/components/contagem/ProductList'
-import { downloadExcel } from '@/lib/excel'
-import { getUserMessage } from '@/lib/user-messages'
+import { downloadExcel } from '@/lib/export/excel'
+import { getUserMessage } from '@/lib/messaging/user-messages'
 
 const MAX_IMAGES = 3
 

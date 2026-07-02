@@ -21,7 +21,7 @@ import {
   formatSolicitacaoItem,
   getSolicitacaoCentroCusto,
   getSolicitacaoSolicitante
-} from '@/lib/solicitacoes-format'
+} from '@/lib/solicitacoes/format'
 import {
   SOLICITACAO_STATUS_GERAL_OPTIONS,
   getSolicitacaoPrioridadeOrder,
@@ -29,7 +29,7 @@ import {
   getSolicitacaoStatusDotClass,
   isSolicitacaoEncerrada
 } from '@/constants/solicitacoes-config'
-import { formatDateBR, getLocalDateTime } from '@/lib/date-utils'
+import { formatDateBR, getLocalDateTime } from '@/lib/date/date-utils'
 
 const DEFAULT_PAGE_SIZE = 25
 
