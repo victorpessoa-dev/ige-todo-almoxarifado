@@ -1,3 +1,9 @@
+/**
+ * Contexto de autenticacao.
+ *
+ * Centraliza sessao Supabase, login, logout e mensagens de erro seguras para
+ * a interface administrativa.
+ */
 'use client'
 
 import { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react'
@@ -7,6 +13,9 @@ import { logger } from '@/lib/logging/logger'
 
 const AuthContext = createContext(undefined)
 
+/**
+ * Provedor de sessao administrativa.
+ */
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -27,6 +36,9 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     let cancelled = false
 
+    /**
+     * Carrega a sessao inicial sem atualizar estado apos desmontagem.
+     */
     const initializeSession = async () => {
       try {
         setAuthError(null)
@@ -79,6 +91,9 @@ export function AuthProvider({ children }) {
     }
   }, [])
 
+  /**
+   * Autentica usuario interno pelo Supabase Auth.
+   */
   const login = useCallback(async (email, password) => {
     if (!email?.trim() || !password) {
       return { success: false, error: 'Informe email e senha para entrar.' }
@@ -123,6 +138,9 @@ export function AuthProvider({ children }) {
     }
   }, [])
 
+  /**
+   * Encerra sessao e limpa estado local mesmo quando o Supabase falha.
+   */
   const logout = useCallback(async () => {
     try {
       const { error } = await supabase.auth.signOut()
@@ -144,6 +162,9 @@ export function AuthProvider({ children }) {
     }
   }, [])
 
+  /**
+   * Revalida a sessao atual antes de operacoes sensiveis.
+   */
   const refreshSession = useCallback(async () => {
     try {
       const {
@@ -192,6 +213,9 @@ export function AuthProvider({ children }) {
   )
 }
 
+/**
+ * Hook de acesso ao contexto de autenticacao.
+ */
 export function useAuth() {
   const context = useContext(AuthContext)
   if (!context) {

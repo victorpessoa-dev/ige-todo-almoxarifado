@@ -16,6 +16,12 @@ import {
   DialogTitle
 } from '@/components/ui/dialog'
 
+/**
+ * Tela auxiliar de importacao, exportacao e geracao de catalogos do estoque.
+ *
+ * Este arquivo concentra a transformacao de dados para formatos externos
+ * mantendo a tela de inventario livre de regras de arquivo, HTML e PDF.
+ */
 export const catalogThemeClasses = {
   classico: {
     label: 'Classico',
@@ -49,6 +55,12 @@ export const catalogThemeClasses = {
   }
 }
 
+/**
+ * Normaliza numeros vindos de planilhas, aceitando virgula decimal.
+ *
+ * @param {unknown} value Valor importado.
+ * @returns {number}
+ */
 function normalizeImportedNumber(value) {
   if (value === null || value === undefined || String(value).trim() === '') {
     return 0
@@ -58,6 +70,12 @@ function normalizeImportedNumber(value) {
   return Number.isFinite(normalized) ? normalized : 0
 }
 
+/**
+ * Garante limites de estoque consistentes durante a importacao.
+ *
+ * O maximo nunca fica menor que o minimo para evitar cadastros incoerentes
+ * vindos de planilhas editadas manualmente.
+ */
 function normalizeImportedStockLimits(item) {
   const estoque = normalizeImportedNumber(item?.estoque)
   const min = normalizeImportedNumber(item?.min)
@@ -67,6 +85,12 @@ function normalizeImportedStockLimits(item) {
   return { estoque, min, max }
 }
 
+/**
+ * Monta uma mensagem tecnica legivel para erros de importacao do Supabase.
+ *
+ * @param {Object} error Erro retornado pela operacao.
+ * @returns {string}
+ */
 function formatImportError(error) {
   if (!error) return 'Erro desconhecido.'
 
@@ -80,6 +104,13 @@ function formatImportError(error) {
   return parts.length > 0 ? parts.join(' ') : 'Erro desconhecido.'
 }
 
+/**
+ * Converte uma linha validada da planilha no payload de produto.
+ *
+ * @param {Object} item Produto normalizado da importacao.
+ * @param {string} userId Usuario dono do cadastro.
+ * @returns {Object}
+ */
 function makeProductImportPayload(item, userId) {
   const { estoque, min, max } = normalizeImportedStockLimits(item)
 
@@ -99,6 +130,12 @@ function makeProductImportPayload(item, userId) {
   }
 }
 
+/**
+ * Filtra linhas incompletas e prepara produtos importados para revisao.
+ *
+ * Linhas sem codigo ou nome sao ignoradas porque nao geram um cadastro
+ * operacionalmente rastreavel.
+ */
 function normalizeImportedProducts(rows) {
   return rows.reduce((acc, item, index) => {
     const cod = String(item?.cod ?? '').trim()
@@ -127,6 +164,12 @@ function normalizeImportedProducts(rows) {
   }, [])
 }
 
+/**
+ * Calcula a situacao de estoque usada nos catalogos exportados.
+ *
+ * @param {Object} produto Produto do inventario.
+ * @returns {{label: string, className: string, suggestion: number}}
+ */
 function getStockStatus(produto) {
   const estoque = Number(produto.estoque || 0)
   const min = Number(produto.min || 0)
@@ -155,6 +198,12 @@ function getStockStatus(produto) {
   }
 }
 
+/**
+ * Escapa valores inseridos no HTML exportado.
+ *
+ * @param {unknown} value Valor original.
+ * @returns {string}
+ */
 function escapeHtml(value) {
   return String(value ?? '')
     .replaceAll('&', '&amp;')
@@ -164,6 +213,13 @@ function escapeHtml(value) {
     .replaceAll("'", '&#39;')
 }
 
+/**
+ * Seleciona e ordena produtos antes da montagem do catalogo.
+ *
+ * @param {Object[]} produtos Produtos disponiveis.
+ * @param {Object} options Opcoes de filtragem.
+ * @returns {Object[]}
+ */
 function getCatalogProducts(produtos, options = {}) {
   return produtos
     .filter((produto) => {
@@ -174,6 +230,12 @@ function getCatalogProducts(produtos, options = {}) {
     .sort((a, b) => String(a.nome || '').localeCompare(String(b.nome || ''), 'pt-BR'))
 }
 
+/**
+ * Normaliza os campos exibidos no catalogo para evitar valores vazios.
+ *
+ * @param {Object} produto Produto do inventario.
+ * @returns {Object}
+ */
 function getCatalogProductDetails(produto) {
   return {
     produto: produto.nome || '-',
@@ -188,6 +250,12 @@ function getCatalogProductDetails(produto) {
   }
 }
 
+/**
+ * Gera o HTML independente usado para visualizar ou imprimir catalogos.
+ *
+ * O HTML inclui estilos inline para que o arquivo exportado nao dependa do
+ * ambiente do Next.js depois de aberto fora da aplicacao.
+ */
 function makeCatalogHtml(produtos, options) {
   const theme = catalogThemeClasses[options.theme] || catalogThemeClasses.classico
   const date = new Date().toLocaleDateString('pt-BR')
@@ -331,6 +399,12 @@ function makeCatalogHtml(produtos, options) {
 </html>`
 }
 
+/**
+ * Converte cor hexadecimal para valores RGB aceitos pelo PDF.
+ *
+ * @param {string} hex Cor no formato hexadecimal.
+ * @returns {number[]}
+ */
 function hexToRgb(hex) {
   const normalized = hex.replace('#', '')
 
@@ -341,6 +415,12 @@ function hexToRgb(hex) {
   ]
 }
 
+/**
+ * Sanitiza texto antes de inseri-lo em comandos PDF.
+ *
+ * A geracao manual usa comandos de texto do PDF, entao caracteres de controle
+ * e delimitadores precisam ser removidos ou escapados.
+ */
 function pdfText(value) {
   return String(value ?? '')
     .normalize('NFD')
@@ -351,6 +431,13 @@ function pdfText(value) {
     .replaceAll(')', '\\)')
 }
 
+/**
+ * Quebra textos longos em linhas aproximadas para caber no PDF.
+ *
+ * @param {unknown} value Texto original.
+ * @param {number} maxChars Limite aproximado por linha.
+ * @returns {string[]}
+ */
 function wrapText(value, maxChars) {
   const words = String(value ?? '').split(/\s+/).filter(Boolean)
   const lines = []
@@ -372,6 +459,12 @@ function wrapText(value, maxChars) {
   return lines.length > 0 ? lines : ['-']
 }
 
+/**
+ * Monta bytes de um PDF simples sem dependencia externa.
+ *
+ * A implementacao manual mantem o bundle menor para uma exportacao controlada,
+ * baseada apenas em texto e linhas.
+ */
 function makePdfBytes(pages) {
   const objects = []
   const pageCount = pages.length
@@ -426,6 +519,13 @@ function makePdfBytes(pages) {
   return new TextEncoder().encode(parts.join(''))
 }
 
+/**
+ * Gera o catalogo em PDF a partir dos produtos filtrados.
+ *
+ * @param {Object[]} produtos Produtos do inventario.
+ * @param {Object} options Opcoes visuais e de filtro.
+ * @returns {Uint8Array}
+ */
 export function makeCatalogPdf(produtos, options) {
   const date = new Date().toLocaleDateString('pt-BR')
   const filteredProducts = getCatalogProducts(produtos, options)
@@ -522,6 +622,12 @@ export function makeCatalogPdf(produtos, options) {
   return makePdfBytes(pages)
 }
 
+/**
+ * Componente de operacoes em lote do inventario.
+ *
+ * Permite importar planilhas, exportar dados e gerar catalogos sem misturar
+ * essas responsabilidades com a tabela principal de produtos.
+ */
 export default function ImportExportProdutos() {
   const { produtos, loadData } = useData()
   const fileInputRef = useRef(null)

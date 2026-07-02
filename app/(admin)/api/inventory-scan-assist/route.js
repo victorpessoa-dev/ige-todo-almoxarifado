@@ -1,15 +1,34 @@
 import { callAI } from '@/lib/server/ai-providers'
 import { checkRateLimit, createRateLimitResponse } from '@/lib/server/rate-limit'
 
+/**
+ * Endpoint de assistencia ao scanner de inventario.
+ *
+ * Tenta identificar codigo ou nome a partir de uma imagem e cruza o resultado
+ * com uma amostra limitada do catalogo enviada pelo cliente.
+ */
 const MAX_IMAGE_SIZE = 5 * 1024 * 1024
 const MAX_CATALOG_ITEMS = 300
 const MAX_TEXT_LENGTH = 120
 const ALLOWED_IMAGE_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp'])
 
+/**
+ * Cria respostas padronizadas para falhas esperadas de validacao.
+ *
+ * @param {string} message Mensagem segura para exibicao ao usuario.
+ * @param {number} status Codigo HTTP da resposta.
+ * @returns {Response}
+ */
 function createUserError(message, status = 400) {
   return Response.json({ error: message }, { status })
 }
 
+/**
+ * Normaliza textos para comparacoes tolerantes a acentos e caixa.
+ *
+ * Essa normalizacao ajuda a IA a sugerir nomes aproximados sem exigir
+ * correspondencia visual perfeita com o cadastro.
+ */
 function normalizeText(value = '') {
   return String(value)
     .normalize('NFD')
@@ -18,6 +37,13 @@ function normalizeText(value = '') {
     .trim()
 }
 
+/**
+ * Limpa textos enviados ao prompt para manter tamanho previsivel.
+ *
+ * @param {unknown} value Valor informado pelo cliente.
+ * @param {number} maxLength Limite maximo de caracteres.
+ * @returns {string}
+ */
 function cleanText(value, maxLength = MAX_TEXT_LENGTH) {
   return String(value || '')
     .replace(/[\u0000-\u001F\u007F]/g, ' ')
@@ -26,6 +52,13 @@ function cleanText(value, maxLength = MAX_TEXT_LENGTH) {
     .slice(0, maxLength)
 }
 
+/**
+ * Identifica um produto a partir de uma imagem de etiqueta ou codigo.
+ *
+ * A rota nao grava dados; ela apenas valida o payload, consulta a IA e aplica
+ * uma correspondencia local para retornar um produto existente quando houver
+ * confianca suficiente.
+ */
 export async function POST(req) {
   try {
     const rateLimit = checkRateLimit(req, {
@@ -59,6 +92,8 @@ export async function POST(req) {
       return createUserError('Imagem muito pesada.')
     }
 
+    // Envia somente dados essenciais do catalogo ao prompt para reduzir custo,
+    // vazamento de contexto e risco de exceder limites do provedor.
     const catalogText = produtos
       .map((produto) => {
         const codes = [produto.cod, produto.cod_barra]
@@ -107,6 +142,8 @@ export async function POST(req) {
 
     let match = null
 
+    // Codigo exato tem prioridade sobre nome, pois evita escolher produtos
+    // visualmente parecidos quando a etiqueta contem identificador confiavel.
     if (code) {
       match =
         produtos.find((produto) => String(produto.cod_barra || '') === code) ||
@@ -114,6 +151,8 @@ export async function POST(req) {
         null
     }
 
+    // O fallback por nome e propositalmente conservador: nomes muito curtos
+    // aumentam falsos positivos em catalogos com itens semelhantes.
     if (!match && productName) {
       const normalized = normalizeText(productName)
 

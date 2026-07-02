@@ -50,6 +50,13 @@ import {
 } from '@/constants/solicitacoes-config'
 import { formatDateBR, getTodayDateInputValue, toDateInputValue } from '@/lib/date/date-utils'
 
+/**
+ * Dialog de detalhes e edicao de solicitacoes de compra.
+ *
+ * Exibe o historico operacional da solicitacao e permite atualizar status,
+ * valores, previsao e vinculos sem sair da listagem administrativa.
+ */
+
 function toDateInput(value) {
   return toDateInputValue(value)
 }
@@ -142,6 +149,7 @@ function getUpdatedAtDisplay(solicitacao) {
 
   const updatedMinute = Math.floor(updatedTime / 60000)
   const createdMinute = Math.floor(createdTime / 60000)
+  // Evita exibir uma atualizacao artificial quando o registro acabou de ser criado.
   if (updatedMinute === createdMinute) return '-'
 
   return formatDate(updatedAt)
@@ -229,6 +237,12 @@ function buildFormFromSolicitacao(solicitacao) {
   }
 }
 
+/**
+ * Monta o payload de atualizacao a partir do formulario editavel.
+ *
+ * Campos opcionais vazios sao enviados como null para manter consistencia com
+ * o modelo do banco e evitar strings vazias em relatorios.
+ */
 function buildPayload(form) {
   const completedForm = completeMoneyFields(form)
 
@@ -280,6 +294,8 @@ export function SolicitacaoDetailsDialog({
       }
 
       if (field === 'status_geral' && value === 'concluida' && !nextForm.previsao_entrega) {
+        // Ao concluir sem previsao preenchida, usamos a data atual como marco
+        // operacional de fechamento da solicitacao.
         nextForm.previsao_entrega = getTodayDateInputValue()
       }
 
@@ -290,6 +306,8 @@ export function SolicitacaoDetailsDialog({
 
         const centroCusto = getSolicitanteCentroCusto(solicitante, centrosCusto)
         if (centroCusto) {
+          // O centro de custo cadastrado no solicitante prevalece para reduzir
+          // erro manual no preenchimento administrativo.
           const label = getCentroCustoLabel(centroCusto)
           nextForm.centro_custo_id = centroCusto.id
           nextForm.centro_custo = label

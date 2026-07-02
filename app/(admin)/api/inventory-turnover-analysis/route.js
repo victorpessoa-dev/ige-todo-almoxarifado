@@ -1,13 +1,33 @@
 import { callAI } from '@/lib/server/ai-providers'
 import { checkRateLimit, createRateLimitResponse } from '@/lib/server/rate-limit'
 
+/**
+ * Endpoint de analise de giro de estoque.
+ *
+ * Combina dados recentes de movimentacao com sugestoes de IA e mantem um
+ * fallback local para nao deixar a tela sem resposta quando a integracao falha.
+ */
 const MAX_TURNOVER_ANALYSIS_PRODUCTS = 5
 const MAX_TEXT_LENGTH = 140
 
+/**
+ * Cria respostas padronizadas para falhas esperadas de validacao.
+ *
+ * @param {string} message Mensagem segura para exibicao na interface.
+ * @param {number} status Codigo HTTP da resposta.
+ * @returns {Response}
+ */
 function createUserError(message, status = 400) {
   return Response.json({ error: message }, { status })
 }
 
+/**
+ * Limpa textos antes de inclui-los no prompt da IA.
+ *
+ * @param {unknown} value Valor recebido do cliente.
+ * @param {number} maxLength Limite maximo de caracteres.
+ * @returns {string}
+ */
 function cleanText(value, maxLength = MAX_TEXT_LENGTH) {
   return String(value || '')
     .replace(/[\u0000-\u001F\u007F]/g, ' ')
@@ -16,11 +36,24 @@ function cleanText(value, maxLength = MAX_TEXT_LENGTH) {
     .slice(0, maxLength)
 }
 
+/**
+ * Converte valores numericos recebidos do cliente com fallback seguro.
+ *
+ * @param {unknown} value Valor a normalizar.
+ * @param {number|null} fallback Valor usado quando a conversao falha.
+ * @returns {number|null}
+ */
 function cleanNumber(value, fallback = 0) {
   const number = Number(value)
   return Number.isFinite(number) ? number : fallback
 }
 
+/**
+ * Normaliza o produto usado na analise para limitar tamanho e tipos do prompt.
+ *
+ * @param {Object} product Produto calculado na interface.
+ * @returns {Object}
+ */
 function normalizeProduct(product = {}) {
   return {
     productId: cleanText(product.productId, 80),
@@ -39,6 +72,12 @@ function normalizeProduct(product = {}) {
   }
 }
 
+/**
+ * Gera uma recomendacao local quando a IA esta indisponivel.
+ *
+ * A regra privilegia estabilidade operacional: sugere reposicao para estoque
+ * baixo e evita compra de itens sem saida recente.
+ */
 function buildLocalTurnoverAnalysis(products) {
   const totalOut = products.reduce((acc, product) => acc + Number(product.saida30 || 0), 0)
   const totalIn = products.reduce((acc, product) => acc + Number(product.entrada30 || 0), 0)
@@ -114,6 +153,12 @@ function buildLocalTurnoverAnalysis(products) {
   }
 }
 
+/**
+ * Analisa produtos selecionados e retorna recomendacoes de minimo/maximo.
+ *
+ * O limite de itens mantem o prompt pequeno e previsivel para uma analise
+ * pontual, feita sob demanda pelo usuario.
+ */
 export async function POST(req) {
   let products = []
 

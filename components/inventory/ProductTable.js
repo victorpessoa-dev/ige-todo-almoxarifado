@@ -64,6 +64,12 @@ const PRODUCT_TABLE_COLUMNS = [
   { key: 'acoes', width: 62, minWidth: 56 }
 ]
 
+/**
+ * Calcula o status operacional do produto a partir dos limites de estoque.
+ *
+ * @param {Object} produto Produto do inventario.
+ * @returns {{value: string, label: string, className: string}}
+ */
 function getStatus(produto) {
   if (produto.estoque <= produto.min) {
     return {
@@ -88,6 +94,12 @@ function getStatus(produto) {
   }
 }
 
+/**
+ * Tabela principal do inventario.
+ *
+ * Reune selecao em lote, filtros de status, ordenacao e acoes de produto sem
+ * alterar a lista original recebida do contexto de dados.
+ */
 export default function ProductTable({
   produtos,
   openMovimentoDialog,

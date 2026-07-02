@@ -1,3 +1,9 @@
+/**
+ * Contexto de dados administrativos.
+ *
+ * Mantem estado local, sincronizacao realtime e operacoes Supabase para
+ * tarefas, lembretes, inventario, movimentacoes e solicitacoes de compra.
+ */
 'use client'
 
 import { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react'
@@ -24,10 +30,16 @@ const DataContext = createContext()
 const MAX_RETRIES = 3
 const RETRY_DELAY = 1000
 
+/**
+ * Aguarda antes de uma nova tentativa de operacao remota.
+ */
 function delay(ms) {
   return new Promise(resolve => setTimeout(resolve, ms))
 }
 
+/**
+ * Reexecuta operacoes transientes com backoff exponencial simples.
+ */
 async function withRetry(operation, retries = MAX_RETRIES) {
   for (let attempt = 0; attempt < retries; attempt++) {
     try {
@@ -39,6 +51,9 @@ async function withRetry(operation, retries = MAX_RETRIES) {
   }
 }
 
+/**
+ * Ordena listas operacionais do mais recente para o mais antigo.
+ */
 function sortByCreatedAtDesc(items = []) {
   return [...items].sort((a, b) => {
     const aDate = a?.created_at ? new Date(a.created_at).getTime() : 0
@@ -47,22 +62,37 @@ function sortByCreatedAtDesc(items = []) {
   })
 }
 
+/**
+ * Ordena produtos por nome para manter tabelas e selects previsiveis.
+ */
 function sortProdutosByNomeAsc(items = []) {
   return [...items].sort((a, b) =>
     (a?.nome || '').localeCompare(b?.nome || '', 'pt-BR', { sensitivity: 'base' })
   )
 }
 
+/**
+ * Insere ou substitui um item mantendo a ordenacao informada.
+ */
 function upsertSorted(items = [], nextItem, sortFn) {
   const nextItems = items.filter((item) => item.id !== nextItem.id)
   nextItems.push(nextItem)
   return sortFn(nextItems)
 }
 
+/**
+ * Remove um item mantendo a ordenacao informada.
+ */
 function removeSorted(items = [], id, sortFn) {
   return sortFn(items.filter((item) => item.id !== id))
 }
 
+/**
+ * Normaliza movimentacoes recebidas pelo realtime.
+ *
+ * O payload realtime nem sempre traz a relacao produto completa, entao usamos
+ * o cache local de produtos para manter a UI consistente.
+ */
 function normalizeMovimentacao(movimentacao, produtosBase = []) {
   if (!movimentacao) return movimentacao
 
@@ -82,6 +112,9 @@ function normalizeMovimentacao(movimentacao, produtosBase = []) {
   }
 }
 
+/**
+ * Normaliza solicitacoes recebidas pelo realtime ou por consultas parciais.
+ */
 function normalizeSolicitacao(solicitacao, produtosBase = []) {
   if (!solicitacao) return solicitacao
 
@@ -102,6 +135,9 @@ function normalizeSolicitacao(solicitacao, produtosBase = []) {
   }
 }
 
+/**
+ * Provedor dos dados administrativos compartilhados.
+ */
 export function DataProvider({ children }) {
   const [tarefas, setTarefas] = useState([])
   const [lembretes, setLembretes] = useState([])
@@ -129,6 +165,9 @@ export function DataProvider({ children }) {
     }
   }, [])
 
+  /**
+   * Garante usuario autenticado antes de escrever em tabelas internas.
+   */
   const requireAuth = useCallback(async () => {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) {
@@ -137,6 +176,9 @@ export function DataProvider({ children }) {
     return user
   }, [])
 
+  /**
+   * Rebusca uma movimentacao com relacionamento completo apos evento realtime.
+   */
   const refreshMovimentacaoById = useCallback(async (id) => {
     const { data, error: queryError } = await supabase
       .from('movimentacoes_estoque')
@@ -157,6 +199,9 @@ export function DataProvider({ children }) {
     return normalizeMovimentacao(data, produtosRef.current)
   }, [])
 
+  /**
+   * Rebusca uma solicitacao com relacionamento completo apos evento realtime.
+   */
   const refreshSolicitacaoById = useCallback(async (id) => {
     const { data, error: queryError } = await supabase
       .from('solicitacoes_compra')
@@ -178,6 +223,9 @@ export function DataProvider({ children }) {
     return normalizeSolicitacao(data, produtosRef.current)
   }, [])
 
+  /**
+   * Atualiza dados denormalizados do produto nas movimentacoes ja carregadas.
+   */
   const syncProdutoInMovimentacoes = useCallback((produto) => {
     setMovimentacoes((prev) =>
       sortByCreatedAtDesc(
@@ -199,6 +247,9 @@ export function DataProvider({ children }) {
     )
   }, [])
 
+  /**
+   * Remove dados de produto em movimentacoes quando o produto deixa de existir.
+   */
   const clearProdutoInMovimentacoes = useCallback((produtoId) => {
     setMovimentacoes((prev) =>
       sortByCreatedAtDesc(
@@ -214,6 +265,9 @@ export function DataProvider({ children }) {
     )
   }, [])
 
+  /**
+   * Carrega o estado administrativo inicial em paralelo.
+   */
   const loadData = useCallback(async () => {
     setIsLoading(true)
     setError(null)
@@ -308,6 +362,9 @@ export function DataProvider({ children }) {
     }
   }, [])
 
+  /**
+   * Cria tarefa administrativa para o usuario autenticado.
+   */
   async function addTarefa(form) {
     if (!form?.titulo?.trim()) {
       throw new Error('Título é obrigatório')
@@ -338,6 +395,9 @@ export function DataProvider({ children }) {
     return withRetry(operation)
   }
 
+  /**
+   * Atualiza tarefa mantendo estado local sincronizado.
+   */
   async function updateTarefa(id, updates) {
     if (!id) throw new Error('ID é obrigatório')
 
@@ -363,6 +423,9 @@ export function DataProvider({ children }) {
     return withRetry(operation)
   }
 
+  /**
+   * Remove tarefa com rollback local em caso de falha remota.
+   */
   async function deleteTarefa(id) {
     if (!id) throw new Error('ID é obrigatório')
 
@@ -389,6 +452,9 @@ export function DataProvider({ children }) {
     }
   }
 
+  /**
+   * Cria lembrete administrativo para o usuario autenticado.
+   */
   async function addLembrete(form) {
     if (!form?.titulo?.trim()) {
       throw new Error('Título é obrigatório')
@@ -419,6 +485,9 @@ export function DataProvider({ children }) {
     return withRetry(operation)
   }
 
+  /**
+   * Atualiza lembrete mantendo estado local sincronizado.
+   */
   async function updateLembrete(id, updates) {
     if (!id) throw new Error('ID é obrigatório')
 
@@ -444,6 +513,9 @@ export function DataProvider({ children }) {
     return withRetry(operation)
   }
 
+  /**
+   * Remove lembrete com rollback local em caso de falha remota.
+   */
   async function deleteLembrete(id) {
     if (!id) throw new Error('ID é obrigatório')
 
@@ -470,6 +542,9 @@ export function DataProvider({ children }) {
     }
   }
 
+  /**
+   * Cria produto de inventario vinculado ao usuario autenticado.
+   */
   async function addProduto(form) {
     if (!form?.cod?.trim()) {
       throw new Error('Código é obrigatório')
@@ -514,6 +589,9 @@ export function DataProvider({ children }) {
     return withRetry(operation)
   }
 
+  /**
+   * Atualiza produto e propaga nome/codigo para movimentacoes exibidas.
+   */
   async function updateProduto(id, updates) {
     if (!id) throw new Error('ID é obrigatório')
 
@@ -550,6 +628,9 @@ export function DataProvider({ children }) {
     return withRetry(operation)
   }
 
+  /**
+   * Remove produto com rollback do inventario e das movimentacoes locais.
+   */
   async function deleteProduto(id) {
     if (!id) throw new Error('ID é obrigatório')
 
@@ -585,6 +666,9 @@ export function DataProvider({ children }) {
     }
   }
 
+  /**
+   * Registra entrada de estoque e atualiza saldo do produto.
+   */
   async function entradaProduto(id, quantidade, motivo = 'Entrada manual') {
     if (!id) throw new Error('ID do produto é obrigatório')
     if (!quantidade || quantidade <= 0) {
@@ -652,6 +736,9 @@ export function DataProvider({ children }) {
     }
   }
 
+  /**
+   * Registra saida de estoque validando saldo disponivel.
+   */
   async function saidaProduto(id, quantidade, motivo = 'Saída manual') {
     if (!id) throw new Error('ID do produto é obrigatório')
     if (!quantidade || quantidade <= 0) {
@@ -723,6 +810,9 @@ export function DataProvider({ children }) {
     }
   }
 
+  /**
+   * Atualiza solicitacao de compra e reordena a lista local.
+   */
   async function updateSolicitacao(id, updates) {
     const data = await withRetry(() => updateSolicitacaoCompra(id, updates))
     const solicitacaoNormalizada = normalizeSolicitacao(data, produtosRef.current)
@@ -730,6 +820,9 @@ export function DataProvider({ children }) {
     return solicitacaoNormalizada
   }
 
+  /**
+   * Cria solicitacao administrativa e adiciona na lista local.
+   */
   async function addSolicitacao(form) {
     const data = await withRetry(() => createSolicitacaoCompra(form))
     const solicitacaoNormalizada = normalizeSolicitacao(data, produtosRef.current)
@@ -737,6 +830,9 @@ export function DataProvider({ children }) {
     return solicitacaoNormalizada
   }
 
+  /**
+   * Remove solicitacao com rollback local em caso de erro.
+   */
   async function deleteSolicitacao(id) {
     if (!id) throw new Error('ID é obrigatório')
 
@@ -754,6 +850,9 @@ export function DataProvider({ children }) {
     }
   }
 
+  /**
+   * Cria solicitante usado nos fluxos de compra.
+   */
   async function addSolicitante(form) {
     const data = await withRetry(() => createSolicitanteCompra(form))
     setSolicitantesCompra((prev) =>
@@ -762,6 +861,9 @@ export function DataProvider({ children }) {
     return data
   }
 
+  /**
+   * Atualiza solicitante mantendo lista em ordem alfabetica.
+   */
   async function updateSolicitante(id, updates) {
     const data = await withRetry(() => updateSolicitanteCompra(id, updates))
     setSolicitantesCompra((prev) =>
@@ -771,11 +873,17 @@ export function DataProvider({ children }) {
     return data
   }
 
+  /**
+   * Remove solicitante da base administrativa.
+   */
   async function deleteSolicitante(id) {
     await withRetry(() => deleteSolicitanteCompra(id))
     setSolicitantesCompra((prev) => prev.filter((item) => item.id !== id))
   }
 
+  /**
+   * Cria centro de custo usado por solicitantes e compras.
+   */
   async function addCentroCusto(form) {
     const data = await withRetry(() => createCentroCusto(form))
     setCentrosCusto((prev) =>
@@ -784,6 +892,9 @@ export function DataProvider({ children }) {
     return data
   }
 
+  /**
+   * Atualiza centro de custo mantendo lista em ordem alfabetica.
+   */
   async function updateCentroCustoItem(id, updates) {
     const data = await withRetry(() => updateCentroCusto(id, updates))
     setCentrosCusto((prev) =>
@@ -793,12 +904,19 @@ export function DataProvider({ children }) {
     return data
   }
 
+  /**
+   * Remove centro de custo da base administrativa.
+   */
   async function deleteCentroCustoItem(id) {
     await withRetry(() => deleteCentroCusto(id))
     setCentrosCusto((prev) => prev.filter((item) => item.id !== id))
   }
 
   useEffect(() => {
+    // Fluxo de sincronizacao:
+    // 1. Carrega dados iniciais.
+    // 2. Recarrega ao voltar para a aba ou ficar online.
+    // 3. Assina realtime para manter listas administrativas atualizadas.
     queueMicrotask(() => {
       loadData()
     })
@@ -984,6 +1102,9 @@ export function DataProvider({ children }) {
   )
 }
 
+/**
+ * Hook de acesso aos dados administrativos compartilhados.
+ */
 export function useData() {
   const context = useContext(DataContext)
   if (!context) {

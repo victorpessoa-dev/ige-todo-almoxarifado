@@ -57,6 +57,13 @@ function Field({ label, children }) {
   )
 }
 
+/**
+ * Formulario administrativo de criacao de solicitacoes de compra.
+ *
+ * Centraliza os campos de compra, acompanhamento e vinculacao com solicitante
+ * e centro de custo, preservando defaults iguais aos usados nos detalhes.
+ */
+
 function Section({ title, children }) {
   return (
     <section className="grid min-w-0 gap-4 rounded-lg border bg-card p-4 shadow-sm">
@@ -104,6 +111,12 @@ function formatDecimalInput(value) {
   })
 }
 
+/**
+ * Mantem valor unitario e total sincronizados a partir da quantidade.
+ *
+ * A regra evita que o usuario precise calcular manualmente quando altera
+ * quantidade, valor unitario ou valor total.
+ */
 function completeMoneyFields(form, changedField) {
   const quantidade = Number(form.quantidade || 0)
   const valorUnitario = parseDecimalValue(form.valor_unitario)
@@ -146,6 +159,10 @@ function completeMoneyFields(form, changedField) {
   return nextForm
 }
 
+/**
+ * Renderiza o formulario de solicitacao e aplica regras de preenchimento
+ * derivadas, como centro de custo do solicitante e defaults de status.
+ */
 export function SolicitacaoForm({
   form,
   setForm,

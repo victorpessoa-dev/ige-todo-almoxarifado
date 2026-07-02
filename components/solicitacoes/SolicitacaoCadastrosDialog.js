@@ -56,6 +56,13 @@ const defaultCentroCusto = {
   ativo: true
 }
 
+/**
+ * Dialog de manutencao de solicitantes e centros de custo.
+ *
+ * Esses cadastros alimentam a tela publica de solicitacao; por isso a flag
+ * "ativo" controla disponibilidade sem apagar historico ja usado.
+ */
+
 function Field({ label, children }) {
   return (
     <div className="grid min-w-0 gap-2">

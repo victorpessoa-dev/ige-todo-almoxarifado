@@ -13,6 +13,12 @@ import { Button } from '@/components/ui/button'
 import { PRIORIDADE_OPTIONS, STATUS_OPTIONS } from '@/constants/task-config'
 import { toDateInputValue } from '@/lib/date/date-utils'
 
+/**
+ * Formulario compartilhado de tarefas e lembretes.
+ *
+ * Usa o tipo do evento para exibir apenas os campos relevantes, preservando o
+ * mesmo componente em dialogs de criacao e edicao.
+ */
 export default function EventForm({
   form,
   setForm,

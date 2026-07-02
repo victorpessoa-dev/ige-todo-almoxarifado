@@ -14,6 +14,12 @@ const LABEL_MODELS = {
   A4263: { width: 9.9, height: 3.81, scale: 1.3 }
 }
 
+/**
+ * Dialog de geracao de etiqueta com modelos Pimaco.
+ *
+ * O desenho e feito em canvas para produzir uma imagem final fiel ao tamanho
+ * escolhido, pronta para download ou impressao.
+ */
 export default function PrintDialogContent({ produto, onCancel }) {
   const canvasRef = useRef(null)
   const [image, setImage] = useState(null)
@@ -43,8 +49,10 @@ export default function PrintDialogContent({ produto, onCancel }) {
     img.src = '/ige-supergesso.svg'
 
     img.onload = () => {
+      // A marca d'agua preserva identificacao visual sem comprometer leitura
+      // do nome e do codigo de barras.
       ctx.save()
-      ctx.globalAlpha = 0.12
+      ctx.globalAlpha = 0.22
       ctx.drawImage(img, 0, 0, widthPx, heightPx)
       ctx.restore()
 
@@ -63,16 +71,21 @@ export default function PrintDialogContent({ produto, onCancel }) {
         fontSize -= 1
       }
 
+      ctx.lineWidth = Math.max(1, Math.round(fontSize * 0.08))
+      ctx.strokeStyle = '#ffffff'
+      ctx.strokeText(produto.nome, widthPx / 2, heightPx * 0.35)
       ctx.fillText(produto.nome, widthPx / 2, heightPx * 0.35)
 
       const barcodeCanvas = document.createElement('canvas')
 
+      // O codigo de barras fica em canvas separado para manter nitidez ao
+      // redimensionar dentro do layout da etiqueta.
       JsBarcode(barcodeCanvas, String(produto.cod), {
         format: 'CODE128',
         width: Math.max(2, Math.round(widthPx / 210)),
         height: heightPx * 0.38,
         displayValue: false,
-        margin: 0,
+        margin: Math.max(3, Math.round(widthPx * 0.008)),
         background: '#ffffff',
         lineColor: '#111111'
       })

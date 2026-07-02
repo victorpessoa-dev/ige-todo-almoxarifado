@@ -21,6 +21,12 @@ const SCANNER_RETRY_DELAY = 320
 const SCANNER_SUCCESS_DELAY = 900
 const RECENT_SCAN_LOCK_MS = 1400
 
+/**
+ * Ajusta o canvas usado internamente pelo ZXing para priorizar a faixa central.
+ *
+ * As etiquetas do almoxarifado costumam aparecer pequenas no video; reduzir a
+ * area de decodificacao melhora desempenho e diminui leituras fora do alvo.
+ */
 function installScannerCanvasOptimizer() {
   if (BrowserCodeReader.__inventoryScannerCanvasOptimizerInstalled) return
 
@@ -75,6 +81,12 @@ function installScannerCanvasOptimizer() {
   BrowserCodeReader.__inventoryScannerCanvasOptimizerInstalled = true
 }
 
+/**
+ * Define os formatos de codigo de barras aceitos no estoque.
+ *
+ * Restringir formatos reduz o trabalho do decoder e evita leituras ambiguuas
+ * em imagens com muitos textos numericos.
+ */
 function createScannerHints() {
   const hints = new Map()
 
@@ -93,6 +105,12 @@ function createScannerHints() {
   return hints
 }
 
+/**
+ * Normaliza textos para comparar sugestoes da IA com produtos cadastrados.
+ *
+ * @param {string} value Texto original.
+ * @returns {string}
+ */
 function normalizeText(value = '') {
   return String(value)
     .normalize('NFD')
@@ -101,6 +119,11 @@ function normalizeText(value = '') {
     .trim()
 }
 
+/**
+ * Identifica dispositivos moveis para ajustar a experiencia da camera.
+ *
+ * @returns {boolean}
+ */
 function detectMobileDevice() {
   if (typeof navigator === 'undefined') return false
 
@@ -109,6 +132,12 @@ function detectMobileDevice() {
   )
 }
 
+/**
+ * Card de leitura de codigo de barras do inventario.
+ *
+ * Combina entrada manual, camera, zoom e assistencia por imagem sem alterar o
+ * fluxo principal de movimentacao de estoque.
+ */
 export default function BarcodeScannerCard({
   barcodeInput,
   barcodeProduct,
