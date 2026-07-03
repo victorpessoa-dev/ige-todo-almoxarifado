@@ -2,7 +2,7 @@
 import './globals.css'
 import { AuthProvider } from '@/contexts/auth-context'
 import { PwaRegister } from '@/components/pwa/PwaRegister'
-import { Toaster } from 'sonner'
+import { NotificationToaster } from '@/components/notifications/NotificationToaster'
 
 export const metadata = {
   title: 'IGE Almoxarifado',
@@ -33,7 +33,7 @@ export default function RootLayout({ children }) {
       <body className="overflow-x-hidden bg-background text-foreground font-sans antialiased dark">
         <AuthProvider>
           <PwaRegister />
-          <Toaster />
+          <NotificationToaster />
           {children}
         </AuthProvider>
       </body>
