@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react'
 import { supabase } from '@/lib/supabase/client'
 import { useData } from '@/contexts/data-context'
 import { Button } from '@/components/ui/button'
+import { Checkbox } from '@/components/ui/checkbox'
 import { CheckboxFilter } from '@/components/ui/checkbox-filter'
 import { Input } from '@/components/ui/input'
 import {
@@ -47,6 +48,127 @@ function getInventoryCategory(produto) {
   return categoria || 'Sem categoria'
 }
 
+function normalizeRequestText(value) {
+  return String(value || '')
+    .trim()
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+}
+
+function isSolicitacaoAberta(solicitacao) {
+  return !['concluida', 'cancelada'].includes(solicitacao?.status_geral)
+}
+
+function getCompraQuantidade(produto) {
+  return Math.max(
+    0,
+    Number(produto?.max || 0) - Number(produto?.estoque || 0)
+  )
+}
+
+function formatReposicaoQuantidade(quantidade) {
+  const amount = Number(quantidade || 0)
+
+  return Number.isInteger(amount)
+    ? String(amount)
+    : String(amount).replace('.', ',')
+}
+
+function makeReposicaoLine({ produto, quantidade }) {
+  return [
+    String(produto.cod || '').trim() || 'SEM COD',
+    String(produto.nome || '').trim().toLocaleUpperCase('pt-BR'),
+    `${formatReposicaoQuantidade(quantidade)} UND`
+  ].join(' - ')
+}
+
+function makeReposicaoTitle(category) {
+  return `REPOSIÇÃO (${category || 'SEM CATEGORIA'})`.toLocaleUpperCase('pt-BR')
+}
+
+function makeReposicaoBlocks(items, maxLength = 500) {
+  const categoryGroups = new Map()
+
+  items.forEach((item) => {
+    const category = getInventoryCategory(item.produto)
+
+    if (!categoryGroups.has(category)) {
+      categoryGroups.set(category, [])
+    }
+
+    categoryGroups.get(category).push({
+      ...item,
+      line: makeReposicaoLine(item)
+    })
+  })
+
+  const blocks = []
+
+  categoryGroups.forEach((groupItems, category) => {
+    let currentItems = []
+    let currentDescription = ''
+
+    groupItems
+      .sort((a, b) =>
+        String(a.produto.nome || '').localeCompare(String(b.produto.nome || ''), 'pt-BR')
+      )
+      .forEach((item) => {
+        const line = item.line.slice(0, maxLength)
+        const candidate = currentDescription
+          ? `${currentDescription}\n${line}`
+          : line
+
+        if (candidate.length > maxLength && currentItems.length > 0) {
+          blocks.push({
+            category,
+            items: currentItems,
+            descricao: currentDescription
+          })
+
+          currentItems = [item]
+          currentDescription = line
+          return
+        }
+
+        currentItems.push(item)
+        currentDescription = candidate.slice(0, maxLength)
+      })
+
+    if (currentItems.length > 0) {
+      blocks.push({
+        category,
+        items: currentItems,
+        descricao: currentDescription
+      })
+    }
+  })
+
+  return blocks
+}
+
+function hasProdutoInSolicitacao(solicitacao, produto) {
+  if (solicitacao.produto_id === produto.id) return true
+
+  const normalizedCode = normalizeRequestText(produto.cod)
+  const normalizedName = normalizeRequestText(produto.nome)
+  const requestLines = normalizeRequestText([
+    solicitacao.descricao,
+    solicitacao.aplicacoes
+  ].filter(Boolean).join('\n')).split('\n')
+
+  return requestLines.some((line) => {
+    if (normalizedCode) {
+      return (
+        line.startsWith(`${normalizedCode} -`) ||
+        line.includes(`${normalizedCode} - ${normalizedName}`)
+      )
+    }
+
+    return normalizedName && line.startsWith(`${normalizedName} -`)
+  })
+}
+
 export default function InventarioPage() {
   const {
     produtos,
@@ -56,6 +178,7 @@ export default function InventarioPage() {
     entradaProduto,
     saidaProduto,
     addSolicitacao,
+    solicitacoesCompra,
     solicitantesCompra,
     centrosCusto
   } = useData()
@@ -82,6 +205,7 @@ export default function InventarioPage() {
     produto: null,
     quantidade: 0
   })
+  const [selectedCompraProductIds, setSelectedCompraProductIds] = useState([])
   const [compraForm, setCompraForm] = useState({
     centro_custo_id: '',
     solicitante_id: ''
@@ -138,6 +262,30 @@ export default function InventarioPage() {
       Number(produto.estoque || 0) <= Number(produto.min || 0) &&
       Number(produto.max || 0) > Number(produto.estoque || 0)
   )
+  const requestedLowStockProductIds = useMemo(() => {
+    const openSolicitacoes = solicitacoesCompra.filter(isSolicitacaoAberta)
+
+    return new Set(
+      lowStockProducts
+        .filter((produto) => {
+          const normalizedName = normalizeRequestText(produto.nome)
+          const normalizedCode = normalizeRequestText(produto.cod)
+
+          return openSolicitacoes.some((solicitacao) => {
+            return hasProdutoInSolicitacao(solicitacao, {
+              ...produto,
+              cod: normalizedCode || produto.cod,
+              nome: normalizedName || produto.nome
+            })
+          })
+        })
+        .map((produto) => produto.id)
+    )
+  }, [lowStockProducts, solicitacoesCompra])
+  const availableLowStockProducts = useMemo(
+    () => lowStockProducts.filter((produto) => !requestedLowStockProductIds.has(produto.id)),
+    [lowStockProducts, requestedLowStockProductIds]
+  )
 
   const activeSolicitantes = solicitantesCompra.filter((item) => item.ativo !== false)
   const activeCentrosCusto = centrosCusto.filter((item) => item.ativo !== false)
@@ -157,13 +305,15 @@ export default function InventarioPage() {
     )
   }
 
-  const openCompraDialog = (produto) => {
-    const quantidade = Math.max(
-      0,
-      Number(produto.max || 0) - Number(produto.estoque || 0)
-    )
+  const openCompraDialog = (produto = null) => {
+    const availableIds = availableLowStockProducts.map((item) => item.id)
+    const initialSelectedIds =
+      produto && availableIds.includes(produto.id)
+        ? [produto.id]
+        : availableIds
 
-    setCompraDialog({ open: true, produto, quantidade })
+    setSelectedCompraProductIds(initialSelectedIds)
+    setCompraDialog({ open: true, produto: null, quantidade: 0 })
     setCompraForm({ centro_custo_id: '', solicitante_id: '' })
   }
 
@@ -185,36 +335,57 @@ export default function InventarioPage() {
   }
 
   const handleSolicitarCompra = async () => {
-    const produto = compraDialog.produto
+    const selectedItems = availableLowStockProducts
+      .filter((produto) => selectedCompraProductIds.includes(produto.id))
+      .map((produto) => ({
+        produto,
+        quantidade: getCompraQuantidade(produto)
+      }))
+      .filter((item) => item.quantidade > 0)
 
-    if (!produto) return
     if (!compraForm.centro_custo_id || !compraForm.solicitante_id) {
       toast.error('Selecione o centro de custo e o solicitante.')
       return
     }
 
-    if (!compraDialog.quantidade || compraDialog.quantidade <= 0) {
-      toast.error('Este produto não tem quantidade pendente para completar o máximo.')
+    if (selectedItems.length === 0) {
+      toast.error('Selecione ao menos um produto para solicitar compra.')
       return
     }
 
     setIsSolicitandoCompra(true)
 
     try {
-      const solicitacao = await addSolicitacao({
-        nome_item: `${produto.cod ? `${produto.cod} - ` : ''}${produto.nome}`,
-        descricao: `Reposicao de estoque baixo para ${produto.nome}.`,
-        quantidade: compraDialog.quantidade,
-        prioridade: 'media',
-        centro_custo_id: compraForm.centro_custo_id,
-        solicitante_id: compraForm.solicitante_id,
-        produto_id: produto.id,
-        aplicacoes: `Reposição de estoque baixo. Estoque atual: ${produto.estoque}. Máximo: ${produto.max}.`
-      })
+      const reposicaoBlocks = makeReposicaoBlocks(selectedItems, 500)
+      const solicitacoesCriadas = []
+
+      for (const block of reposicaoBlocks) {
+        const quantidadeTotal = block.items.reduce(
+          (total, item) => total + item.quantidade,
+          0
+        )
+
+        const solicitacao = await addSolicitacao({
+          nome_item: makeReposicaoTitle(block.category),
+          descricao: block.descricao,
+          quantidade: quantidadeTotal,
+          prioridade: 'media',
+          centro_custo_id: compraForm.centro_custo_id,
+          solicitante_id: compraForm.solicitante_id,
+          aplicacoes: 'Reposicao de estoque baixo.'
+        })
+
+        solicitacoesCriadas.push(solicitacao)
+      }
 
       setCompraDialog({ open: false, produto: null, quantidade: 0 })
       setCompraForm({ centro_custo_id: '', solicitante_id: '' })
-      toast.success(`Solicitação ${solicitacao.codigo || ''} criada com sucesso!`)
+      setSelectedCompraProductIds([])
+      toast.success(
+        solicitacoesCriadas.length === 1
+          ? `Solicitação ${solicitacoesCriadas[0]?.codigo || ''} criada com sucesso!`
+          : `${solicitacoesCriadas.length} solicitações criadas com sucesso!`
+      )
     } catch (error) {
       toast.error(getUserMessage(error, 'Não foi possível criar a solicitação de compra.'))
     } finally {
@@ -443,12 +614,12 @@ export default function InventarioPage() {
             className="w-full sm:w-auto md:px-6"
             variant="outline"
             onClick={() => {
-              if (lowStockProducts.length === 0) {
-                toast.info('Nenhum produto com estoque baixo para solicitar compra.')
+              if (availableLowStockProducts.length === 0) {
+                toast.info('Nenhum produto com estoque baixo sem solicitação aberta.')
                 return
               }
 
-              openCompraDialog(lowStockProducts[0])
+              openCompraDialog()
             }}
           >
             <ShoppingCart className="mr-2 h-4 w-4" />
@@ -518,7 +689,14 @@ export default function InventarioPage() {
               setBulkSaidaQuantidade(1)
               setBulkSaidaDialogOpen(true)
             }}
-            onSolicitarCompra={openCompraDialog}
+            onSolicitarCompra={(produto) => {
+              if (requestedLowStockProductIds.has(produto.id)) {
+                toast.info('Este produto ja possui solicitacao de compra aberta.')
+                return
+              }
+
+              openCompraDialog(produto)
+            }}
             headerActions={
               <CheckboxFilter
                 label="categoria"
@@ -751,12 +929,13 @@ export default function InventarioPage() {
           if (!open) {
             setCompraDialog({ open: false, produto: null, quantidade: 0 })
             setCompraForm({ centro_custo_id: '', solicitante_id: '' })
+            setSelectedCompraProductIds([])
           } else {
             setCompraDialog((prev) => ({ ...prev, open: true }))
           }
         }}
       >
-        <DialogContent className="w-[95vw] max-w-[520px] p-4 sm:p-6">
+        <DialogContent className="grid max-h-[calc(100dvh-1rem)] w-[calc(100vw-0.75rem)] grid-rows-[auto_minmax(0,1fr)] overflow-hidden p-3 sm:w-[95vw] sm:max-w-2xl sm:p-6">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <ShoppingCart className="h-5 w-5 text-primary" />
@@ -764,59 +943,75 @@ export default function InventarioPage() {
             </DialogTitle>
           </DialogHeader>
 
-          <div className="space-y-4">
-            <div className="min-w-0 rounded-lg border bg-muted/20 p-3 text-sm">
-              <p className="truncate font-medium" title={compraDialog.produto?.nome || '-'}>
-                {compraDialog.produto?.nome}
-              </p>
-              <p
-                className="truncate text-muted-foreground"
-                title={`Código: ${compraDialog.produto?.cod || '-'} | Estoque: ${compraDialog.produto?.estoque || 0} | Max: ${compraDialog.produto?.max || 0}`}
-              >
-                Código: {compraDialog.produto?.cod || '-'} | Estoque: {compraDialog.produto?.estoque || 0} | Max: {compraDialog.produto?.max || 0}
-              </p>
-              <p className="mt-2 font-semibold">
-                Quantidade a solicitar: {compraDialog.quantidade}
-              </p>
-            </div>
+          <div className="ige-scrollbar min-h-0 space-y-4 overflow-y-auto pr-1">
+            <div className="grid gap-2">
+              <div className="flex flex-col gap-3 rounded-lg border bg-muted/20 p-3 text-sm sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <p className="font-semibold">Lista de reposicao</p>
+                  <p className="text-muted-foreground">
+                    {selectedCompraProductIds.length} de {availableLowStockProducts.length} produto(s) selecionado(s)
+                  </p>
+                </div>
 
-            {lowStockProducts.length > 1 && (
-              <div className="grid min-w-0 gap-2">
-                <label className="truncate text-sm font-medium" title="Produto com estoque baixo">Produto com estoque baixo</label>
-                <Select
-                  value={compraDialog.produto?.id || ''}
-                  onValueChange={(value) => {
-                    const produto = lowStockProducts.find((item) => item.id === value)
-                    if (produto) {
-                      const quantidade = Math.max(
-                        0,
-                        Number(produto.max || 0) - Number(produto.estoque || 0)
-                      )
-
-                      setCompraDialog({ open: true, produto, quantidade })
-                    }
-                  }}
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="w-full sm:w-auto"
+                  onClick={() =>
+                    setSelectedCompraProductIds(
+                      selectedCompraProductIds.length === availableLowStockProducts.length
+                        ? []
+                        : availableLowStockProducts.map((produto) => produto.id)
+                    )
+                  }
                 >
-                  <SelectTrigger className="w-full min-w-0 overflow-hidden">
-                    <SelectValue placeholder="Selecione" />
-                  </SelectTrigger>
-                  <SelectContent className="max-w-[calc(100vw-2rem)]">
-                    {lowStockProducts.map((produto) => (
-                      <SelectItem key={produto.id} value={produto.id}>
-                        <span
-                          className="block max-w-[min(34rem,calc(100vw-4rem))] truncate"
-                          title={produto.cod ? `${produto.cod} - ${produto.nome}` : produto.nome}
-                        >
+                  {selectedCompraProductIds.length === availableLowStockProducts.length
+                    ? 'Limpar selecao'
+                    : 'Selecionar todos'}
+                </Button>
+              </div>
+
+              <div className="ige-scrollbar max-h-[42vh] overflow-y-auto rounded-lg border sm:max-h-80">
+                {availableLowStockProducts.map((produto) => {
+                  const quantidade = getCompraQuantidade(produto)
+                  const checked = selectedCompraProductIds.includes(produto.id)
+
+                  return (
+                    <label
+                      key={produto.id}
+                      className="flex cursor-pointer items-start gap-3 border-b p-3 text-sm last:border-b-0 hover:bg-muted/40 sm:items-center"
+                    >
+                      <Checkbox
+                        checked={checked}
+                        onCheckedChange={(value) => {
+                          setSelectedCompraProductIds((prev) =>
+                            value === true
+                              ? Array.from(new Set([...prev, produto.id]))
+                              : prev.filter((id) => id !== produto.id)
+                          )
+                        }}
+                        className="mt-1"
+                      />
+
+                      <span className="min-w-0 flex-1">
+                        <span className="block break-words font-medium sm:truncate" title={produto.nome || '-'}>
                           {produto.cod ? `${produto.cod} - ${produto.nome}` : produto.nome}
                         </span>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
+                        <span className="block text-xs text-muted-foreground sm:text-sm">
+                          Estoque: {produto.estoque || 0} | Min: {produto.min || 0} | Max: {produto.max || 0}
+                        </span>
+                      </span>
 
-            <div className="grid gap-4 sm:grid-cols-2">
+                      <span className="shrink-0 rounded-md bg-muted px-2 py-1 text-xs font-semibold sm:text-sm">
+                        Qtd: {quantidade}
+                      </span>
+                    </label>
+                  )
+                })}
+              </div>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2 sm:gap-4">
               <div className="grid min-w-0 gap-2">
                 <label className="truncate text-sm font-medium" title="Centro de custo">Centro de custo</label>
                 <Select
@@ -872,12 +1067,13 @@ export default function InventarioPage() {
               </div>
             </div>
 
-            <div className="flex flex-col justify-end gap-2 sm:flex-row">
+            <div className="sticky bottom-0 -mx-1 flex flex-col justify-end gap-2 border-t bg-background/95 px-1 pt-3 backdrop-blur sm:static sm:mx-0 sm:flex-row sm:bg-transparent sm:px-0 sm:backdrop-blur-none">
               <Button
                 variant="outline"
                 onClick={() => {
                   setCompraDialog({ open: false, produto: null, quantidade: 0 })
                   setCompraForm({ centro_custo_id: '', solicitante_id: '' })
+                  setSelectedCompraProductIds([])
                 }}
                 disabled={isSolicitandoCompra}
               >

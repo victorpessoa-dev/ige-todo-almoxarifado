@@ -8,7 +8,6 @@ import { useData } from '@/contexts/data-context'
 import { supabase } from '@/lib/supabase/client'
 import { getUserMessage } from '@/lib/messaging/user-messages'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import {
   Dialog,
   DialogContent,
@@ -638,10 +637,12 @@ export default function ImportExportProdutos() {
   const itemsWithDuplicates = useMemo(() => {
     return importItems.map((item) => {
       const duplicateProduct = produtos.find((produto) => produto.cod === item.originalCode)
+      const duplicateAction = ['sum', 'skip'].includes(item.action) ? item.action : 'sum'
+
       return {
         ...item,
         duplicateProduct,
-        action: duplicateProduct ? item.action || 'sum' : 'create'
+        action: duplicateProduct ? duplicateAction : 'create'
       }
     })
   }, [importItems, produtos])
@@ -651,6 +652,8 @@ export default function ImportExportProdutos() {
       (acc, item) => {
         if (item.duplicateProduct && item.action === 'sum') {
           acc.sum += 1
+        } else if (item.duplicateProduct && item.action === 'skip') {
+          acc.skip += 1
         } else {
           acc.create += 1
         }
@@ -658,7 +661,7 @@ export default function ImportExportProdutos() {
         acc.total += 1
         return acc
       },
-      { total: 0, create: 0, sum: 0 }
+      { total: 0, create: 0, sum: 0, skip: 0 }
     )
   }, [itemsWithDuplicates])
 
@@ -767,7 +770,7 @@ export default function ImportExportProdutos() {
     const usedCodes = new Set()
 
     for (const item of itemsWithDuplicates) {
-      if (item.action === 'sum') continue
+      if (item.action === 'sum' || item.action === 'skip') continue
 
       const nextCode = String(item.code || '').trim()
 
@@ -813,6 +816,10 @@ export default function ImportExportProdutos() {
       }
 
       for (const item of itemsWithDuplicates) {
+        if (item.action === 'skip') {
+          continue
+        }
+
         if (item.action === 'sum' && item.duplicateProduct) {
           const { error } = await supabase
             .from('produtos')
@@ -896,7 +903,7 @@ export default function ImportExportProdutos() {
           }
         }}
       >
-        <DialogContent className="grid max-h-[calc(100vh-2rem)] w-[95vw] grid-rows-[auto_minmax(0,1fr)] overflow-hidden p-4 sm:max-w-5xl sm:p-6">
+        <DialogContent className="grid max-h-[calc(100dvh-1rem)] w-[calc(100vw-0.75rem)] grid-rows-[auto_minmax(0,1fr)] overflow-hidden p-3 sm:w-[95vw] sm:max-w-5xl sm:p-6">
           <DialogHeader>
             <DialogTitle>Confirmar importação</DialogTitle>
           </DialogHeader>
@@ -904,47 +911,56 @@ export default function ImportExportProdutos() {
           <div className="flex min-h-0 flex-col gap-4">
             <p className="text-sm text-muted-foreground">
               Revise os produtos lidos antes de salvar no banco. Quando houver código duplicado,
-              você pode somar ao produto existente ou criar um novo com outro código.
+              voce pode somar ao produto existente ou nao importar o item repetido.
             </p>
 
-            <div className="grid gap-3 sm:grid-cols-3">
-              <div className="rounded-xl border bg-background px-4 py-3">
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-3">
+              <div className="rounded-lg border bg-background px-3 py-2 sm:rounded-xl sm:px-4 sm:py-3">
                 <p className="text-xs uppercase tracking-wide text-muted-foreground">
                   Total lidos
                 </p>
-                <p className="text-2xl font-bold">{importSummary.total}</p>
+                <p className="text-xl font-bold sm:text-2xl">{importSummary.total}</p>
               </div>
 
-              <div className="rounded-xl border border-emerald-300 bg-emerald-50 px-4 py-3">
+              <div className="rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-2 sm:rounded-xl sm:px-4 sm:py-3">
                 <p className="text-xs uppercase tracking-wide text-emerald-700">
                   Serão criados
                 </p>
-                <p className="text-2xl font-bold text-emerald-900">
+                <p className="text-xl font-bold text-emerald-900 sm:text-2xl">
                   {importSummary.create}
                 </p>
               </div>
 
-              <div className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3">
+              <div className="rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 sm:rounded-xl sm:px-4 sm:py-3">
                 <p className="text-xs uppercase tracking-wide text-amber-700">
                   Serão somados
                 </p>
-                <p className="text-2xl font-bold text-amber-900">
+                <p className="text-xl font-bold text-amber-900 sm:text-2xl">
                   {importSummary.sum}
+                </p>
+              </div>
+
+              <div className="rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 sm:rounded-xl sm:px-4 sm:py-3">
+                <p className="text-xs uppercase tracking-wide text-slate-700">
+                  Nao serao importados
+                </p>
+                <p className="text-xl font-bold sm:text-2xl text-slate-900">
+                  {importSummary.skip}
                 </p>
               </div>
             </div>
 
-            <div className="ige-scrollbar min-h-0 flex-1 space-y-3 overflow-y-auto pr-1">
+            <div className="ige-scrollbar min-h-0 flex-1 space-y-2 overflow-y-auto pr-1 sm:space-y-3">
               {itemsWithDuplicates.map((item) => (
                 <div
                   key={item.id}
-                  className={`rounded-xl border p-3 ${
+                  className={`rounded-lg border p-3 sm:rounded-xl ${
                     item.duplicateProduct
                       ? 'border-amber-300 bg-amber-50/40'
                       : 'bg-card'
                   }`}
                 >
-                  <div className="grid gap-3 xl:grid-cols-[minmax(0,1fr)_minmax(280px,340px)]">
+                  <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_minmax(220px,300px)] xl:grid-cols-[minmax(0,1fr)_minmax(280px,340px)]">
                     <div className="min-w-0 flex-1 space-y-1">
                       <div className="flex flex-wrap items-center gap-2">
                         <p className="min-w-0 break-words font-semibold">
@@ -961,7 +977,7 @@ export default function ImportExportProdutos() {
                         )}
                       </div>
 
-                      <div className="grid gap-1 text-sm text-muted-foreground sm:grid-cols-3">
+                      <div className="grid gap-1 text-xs text-muted-foreground sm:grid-cols-3 sm:text-sm">
                         <p>Código lido: {item.originalCode}</p>
                         <p>Estoque: {item.estoque}</p>
                         <p>Min: {item.min} | Max: {item.max}</p>
@@ -979,12 +995,12 @@ export default function ImportExportProdutos() {
                     <div className="w-full space-y-2">
                       {item.duplicateProduct ? (
                         <>
-                          <div className="grid gap-2 rounded-lg border bg-background/70 p-3">
-                            <label className="flex items-start gap-2 text-sm">
+                          <div className="grid gap-2 rounded-lg border bg-background/70 p-2 sm:p-3">
+                            <label className="flex min-h-10 items-center gap-2 text-sm">
                               <input
                                 type="radio"
                                 name={`action-${item.id}`}
-                                className="mt-1"
+                                className="size-4"
                                 checked={item.action === 'sum'}
                                 onChange={() =>
                                   updateImportItem(item.id, {
@@ -996,42 +1012,22 @@ export default function ImportExportProdutos() {
                               Somar ao produto existente
                             </label>
 
-                            <label className="flex items-start gap-2 text-sm">
+                            <label className="flex min-h-10 items-center gap-2 text-sm">
                               <input
                                 type="radio"
                                 name={`action-${item.id}`}
-                                className="mt-1"
-                                checked={item.action === 'create'}
+                                className="size-4"
+                                checked={item.action === 'skip'}
                                 onChange={() =>
                                   updateImportItem(item.id, {
-                                    action: 'create',
-                                    code:
-                                      item.code && item.code !== item.originalCode
-                                        ? item.code
-                                        : ''
+                                    action: 'skip',
+                                    code: item.originalCode
                                   })
                                 }
                               />
-                              Criar como novo produto
+                              Nao importar este item
                             </label>
                           </div>
-
-                          {item.action === 'create' && (
-                            <div>
-                              <label className="mb-1 block text-sm font-medium">
-                                Novo código
-                              </label>
-                              <Input
-                                value={item.code}
-                                onChange={(event) =>
-                                  updateImportItem(item.id, {
-                                    code: event.target.value
-                                  })
-                                }
-                                placeholder="Informe outro código"
-                              />
-                            </div>
-                          )}
                         </>
                       ) : (
                         <div className="rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-2 text-sm text-emerald-900">
@@ -1044,7 +1040,7 @@ export default function ImportExportProdutos() {
               ))}
             </div>
 
-            <div className="flex flex-col justify-end gap-2 border-t pt-3 sm:flex-row">
+            <div className="sticky bottom-0 -mx-1 flex flex-col justify-end gap-2 border-t bg-background/95 px-1 pt-3 backdrop-blur sm:static sm:mx-0 sm:flex-row sm:bg-transparent sm:px-0 sm:backdrop-blur-none">
               <Button
                 variant="outline"
                 onClick={resetImportState}
@@ -1061,7 +1057,7 @@ export default function ImportExportProdutos() {
               >
                 {isImporting
                   ? 'Importando...'
-                  : `Confirmar importação (${importSummary.create} criar, ${importSummary.sum} somar)`}
+                  : 'Confirmar importação'}
               </Button>
             </div>
           </div>
