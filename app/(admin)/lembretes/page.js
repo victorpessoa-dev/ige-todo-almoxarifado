@@ -12,7 +12,8 @@ import { LoadingState } from '@/components/ui/spinner'
 import { toast } from 'sonner'
 import { Plus, Pencil, Trash2, CheckCircle2, Circle, Clock, ChevronDown, ChevronUp, StickyNote, Calendar } from 'lucide-react'
 import EventForm from '@/components/events/EventForm'
-import { getUserMessage } from '@/lib/user-messages'
+import { getUserMessage } from '@/lib/messaging/user-messages'
+import { formatDateBR, toDateInputValue } from '@/lib/date/date-utils'
 
 function groupByDate(items) {
   const groups = {}
@@ -36,9 +37,7 @@ function groupByDate(items) {
 }
 
 function formatDateLabel(value) {
-  if (!value) return ''
-  const date = value instanceof Date ? value : new Date(value)
-  return date.toLocaleDateString('pt-BR')
+  return formatDateBR(value, '')
 }
 
 export default function LembretesPage() {
@@ -81,7 +80,7 @@ export default function LembretesPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    if (!form.titulo.trim()) return toast.error('O titulo é obrigatório!')
+    if (!form.titulo.trim()) return toast.error('O título é obrigatório!')
 
     try {
       if (editingLembrete) {
@@ -93,7 +92,7 @@ export default function LembretesPage() {
       }
       handleOpenChange(false)
     } catch (error) {
-      toast.error(getUserMessage(error, 'Nao foi possivel salvar o lembrete.'))
+      toast.error(getUserMessage(error, 'Não foi possível salvar o lembrete.'))
     }
   }
 
@@ -102,7 +101,7 @@ export default function LembretesPage() {
       await deleteLembrete(id)
       toast.success('Lembrete removido com sucesso!')
     } catch (error) {
-      toast.error(getUserMessage(error, 'Nao foi possivel remover o lembrete.'))
+      toast.error(getUserMessage(error, 'Não foi possível remover o lembrete.'))
     }
   }
 
@@ -111,7 +110,7 @@ export default function LembretesPage() {
       await updateLembrete(id, { status })
       toast.success('Status atualizado!')
     } catch (error) {
-      toast.error(getUserMessage(error, 'Nao foi possivel atualizar o status.'))
+      toast.error(getUserMessage(error, 'Não foi possível atualizar o status.'))
     }
   }
 
@@ -120,7 +119,7 @@ export default function LembretesPage() {
       await updateLembrete(id, { status: 'concluido' })
       toast.success('Lembrete concluído!')
     } catch (error) {
-      toast.error(getUserMessage(error, 'Nao foi possivel concluir o lembrete.'))
+      toast.error(getUserMessage(error, 'Não foi possível concluir o lembrete.'))
     }
   }
 
@@ -130,7 +129,7 @@ export default function LembretesPage() {
       titulo: lembrete.titulo || '',
       conteudo: lembrete.conteudo || '',
       destinatario: lembrete.destinatario || '',
-      data: lembrete.data ? new Date(lembrete.data) : null,
+      data: toDateInputValue(lembrete.data) || null,
       status: lembrete.status,
       prioridade: lembrete.prioridade || 'medio'
     })
@@ -251,10 +250,15 @@ export default function LembretesPage() {
   )
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="mx-auto flex w-full max-w-7xl flex-col gap-4 pb-4 sm:gap-6 sm:pb-6">
 
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-        <h1 className="text-2xl sm:text-3xl font-bold">Lembretes</h1>
+      <div className="flex flex-col gap-3 rounded-2xl border bg-card/70 p-4 shadow-sm lg:flex-row lg:items-center lg:justify-between sm:p-5">
+        <div className="space-y-1">
+          <h1 className="flex items-center gap-3 text-xl font-bold sm:text-2xl md:text-3xl">
+            <StickyNote className="h-7 w-7 text-primary" />
+            Lembretes
+          </h1>
+        </div>
 
         <Dialog open={isOpen} onOpenChange={handleOpenChange}>
           <DialogTrigger asChild>
@@ -286,7 +290,7 @@ export default function LembretesPage() {
         </Dialog>
       </div>
 
-      <div className="flex flex-col gap-4 sm:gap-6 max-h-[85vh] sm:max-h-[90vh] overflow-y-auto pr-2 pb-6">
+      <div className="ige-scrollbar flex flex-col gap-4 sm:gap-6 max-h-[85vh] sm:max-h-[90vh] overflow-y-auto pr-2 pb-6">
 
         {groupByDate(lembretesPendentes).map(([date, items]) => (
           <DateGroup key={date} dateLabel={date} items={items} />

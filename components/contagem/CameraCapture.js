@@ -39,7 +39,7 @@ export function CameraCapture({ onCapture, onClose, capturedCount, maxImages }) 
       }
 
       if (!navigator?.mediaDevices?.getUserMedia) {
-        setCameraError('Este aparelho nao suporta abertura da camera por aqui.')
+        setCameraError('Este aparelho não suporta abertura da câmera por aqui.')
         return
       }
 
@@ -59,8 +59,8 @@ export function CameraCapture({ onCapture, onClose, capturedCount, maxImages }) 
       streamRef.current = mediaStream
       setStream(mediaStream)
     } catch (error) {
-      console.error('Erro ao acessar a camera:', error)
-      setCameraError('Nao foi possivel abrir a camera. Verifique a permissao do navegador.')
+      console.error('Erro ao acessar a câmera:', error)
+      setCameraError('Não foi possível abrir a câmera. Verifique a permissão do navegador.')
     } finally {
       setIsLoading(false)
     }
@@ -202,7 +202,7 @@ export function CameraCapture({ onCapture, onClose, capturedCount, maxImages }) 
       )}
 
       <p className="pb-4 text-center text-sm text-white/70">
-        Tire ate {maxImages || 'varias'} fotos e toque no check para analisar
+        Tire até {maxImages || 'várias'} fotos e toque no check para analisar
       </p>
     </div>
   )

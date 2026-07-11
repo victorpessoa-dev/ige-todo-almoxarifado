@@ -1,4 +1,4 @@
-﻿'use client'
+'use client'
 
 import { useMemo, useState } from 'react'
 import FullCalendar from '@fullcalendar/react'
@@ -8,7 +8,8 @@ import interactionPlugin from '@fullcalendar/interaction'
 import ptBrLocale from '@fullcalendar/core/locales/pt-br'
 import { CalendarDays } from 'lucide-react'
 import { toast } from 'sonner'
-import { getUserMessage } from '@/lib/user-messages'
+import { getUserMessage } from '@/lib/messaging/user-messages'
+import { toDateInputValue } from '@/lib/date/date-utils'
 
 import { useData } from '@/contexts/data-context'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
@@ -27,9 +28,7 @@ const defaultForm = {
 }
 
 function formatDateForInput(value) {
-  if (!value) return ''
-  const date = value instanceof Date ? value : new Date(value)
-  return date.toISOString().split('T')[0]
+  return toDateInputValue(value)
 }
 
 export default function CalendarPage() {
@@ -167,7 +166,7 @@ export default function CalendarPage() {
 
       setDialogOpen(false)
     } catch (error) {
-      toast.error(getUserMessage(error, 'Nao foi possivel salvar o evento.'))
+      toast.error(getUserMessage(error, 'Não foi possível salvar o evento.'))
     }
   }
 
@@ -185,21 +184,23 @@ export default function CalendarPage() {
 
       setDialogOpen(false)
     } catch (error) {
-      toast.error(getUserMessage(error, 'Nao foi possivel excluir o evento.'))
+      toast.error(getUserMessage(error, 'Não foi possível excluir o evento.'))
     }
   }
 
   return (
-    <div className="flex h-full min-h-0 flex-col gap-4">
+    <div className="flex min-h-full flex-col gap-4 pb-4 sm:pb-6">
       <div className="rounded-2xl border bg-card/70 p-4 shadow-sm sm:p-5">
-        <div className="flex items-center gap-3">
-          <CalendarDays className="h-8 w-8 text-primary sm:h-10 sm:w-10" />
-          <h1 className="text-2xl font-bold text-foreground sm:text-3xl">Calendario</h1>
+        <div className="space-y-1">
+          <h1 className="flex items-center gap-3 text-xl font-bold sm:text-2xl md:text-3xl">
+            <CalendarDays className="h-7 w-7 text-primary" />
+            Calendario
+          </h1>
         </div>
       </div>
 
-      <div className="min-h-0 flex-1 overflow-hidden rounded-2xl border bg-card p-3 shadow-sm sm:p-4">
-        <div className="h-full min-h-[640px] rounded-xl border bg-background p-2 sm:p-4">
+      <div className="rounded-2xl border bg-card p-3 shadow-sm sm:p-4">
+        <div className="min-h-[620px] rounded-xl border bg-background p-2 sm:min-h-[700px] sm:p-4">
           <FullCalendar
             plugins={[timeGridPlugin, dayGridPlugin, interactionPlugin]}
             initialView="dayGridMonth"
@@ -215,7 +216,7 @@ export default function CalendarPage() {
             events={events}
             dateClick={handleDateClick}
             eventClick={handleEventClick}
-            height="100%"
+            height="auto"
           />
         </div>
       </div>

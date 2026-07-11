@@ -19,19 +19,19 @@ import {
 import { CameraCapture } from '@/components/contagem/CameraCapture'
 import { ImageGallery } from '@/components/contagem/ImageGallery'
 import { ProductList } from '@/components/contagem/ProductList'
-import { downloadExcel } from '@/lib/excel'
-import { getUserMessage } from '@/lib/user-messages'
+import { downloadExcel } from '@/lib/export/excel'
+import { getUserMessage } from '@/lib/messaging/user-messages'
 
 const MAX_IMAGES = 3
 
 function getFriendlyAnalyzeError(error) {
   const message = getUserMessage(
     error,
-    'Nao foi possivel analisar as imagens agora. Tente novamente.'
+    'Não foi possível analisar as imagens agora. Tente novamente.'
   )
 
   if (!message) {
-    return 'Nao foi possivel analisar as imagens agora. Tente novamente.'
+    return 'Não foi possível analisar as imagens agora. Tente novamente.'
   }
 
   if (
@@ -39,7 +39,7 @@ function getFriendlyAnalyzeError(error) {
     message.includes('NetworkError') ||
     message.includes('Load failed')
   ) {
-    return 'Falha de conexao ao analisar as imagens. Tente novamente.'
+    return 'Falha de conexão ao analisar as imagens. Tente novamente.'
   }
 
   return message
@@ -288,14 +288,12 @@ export default function ContagemPage() {
 
   return (
     <div className="mx-auto flex w-full max-w-7xl flex-col gap-4 pb-4 sm:gap-6 sm:pb-6">
-      <div className="flex flex-col gap-3 rounded-2xl border bg-card/70 p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between sm:p-5">
+      <div className="flex flex-col gap-3 rounded-2xl border bg-card/70 p-4 shadow-sm lg:flex-row lg:items-center lg:justify-between sm:p-5">
         <div className="space-y-1">
-          <h1 className="text-xl font-bold sm:text-2xl md:text-3xl">
+          <h1 className="flex items-center gap-3 text-xl font-bold sm:text-2xl md:text-3xl">
+            <Camera className="h-7 w-7 text-primary" />
             Contagem de Estoque
           </h1>
-          <p className="text-sm text-muted-foreground">
-            Tire varias fotos, analise com IA e exporte o resultado em Excel.
-          </p>
         </div>
 
         <div className="flex flex-col gap-2 sm:flex-row">
@@ -332,7 +330,7 @@ export default function ContagemPage() {
           </label>
 
           <div className="rounded-xl border bg-background px-3 py-2 text-sm text-muted-foreground">
-            Ate {MAX_IMAGES} fotos
+            Até {MAX_IMAGES} fotos
           </div>
         </div>
       </div>
@@ -372,10 +370,10 @@ export default function ContagemPage() {
       />
 
       {pendingImages.length > 0 && !isAnalyzing && (
-        <div className="flex gap-2">
+        <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto]">
           <Button
             onClick={analyzeAllImages}
-            className="flex-1 bg-secondary hover:bg-secondary/90"
+            className="w-full bg-secondary hover:bg-secondary/90"
             size="lg"
           >
             <Sparkles className="mr-2 h-5 w-5" />
@@ -386,7 +384,7 @@ export default function ContagemPage() {
             onClick={clearImages}
             variant="outline"
             size="lg"
-            className="border-destructive/30 text-destructive hover:bg-destructive/10"
+            className="w-full border-destructive/30 text-destructive hover:bg-destructive/10 sm:w-auto"
           >
             <Trash2 className="h-5 w-5" />
           </Button>
@@ -406,7 +404,7 @@ export default function ContagemPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Limpar produtos contados?</AlertDialogTitle>
             <AlertDialogDescription>
-              Esta acao remove todos os produtos da contagem atual.
+              Esta ação remove todos os produtos da contagem atual.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

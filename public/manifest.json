@@ -1,0 +1,19 @@
+{
+  "name": "IGE Almoxarifado",
+  "short_name": "IGE",
+  "description": "Sistema de solicitacoes, compras e almoxarifado.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#020617",
+  "theme_color": "#020617",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/ige-supergesso.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

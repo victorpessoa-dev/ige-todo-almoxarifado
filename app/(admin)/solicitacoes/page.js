@@ -1,38 +1,39 @@
 'use client'
 
 import { useMemo, useState } from 'react'
+import { flushSync } from 'react-dom'
 import { toast } from 'sonner'
-import { Download, ShoppingCart } from 'lucide-react'
+import { Download, Plus, ShoppingCart } from 'lucide-react'
 
 import { useData } from '@/contexts/data-context'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { LoadingState } from '@/components/ui/spinner'
 import { SolicitacaoCadastrosDialog } from '@/components/solicitacoes/SolicitacaoCadastrosDialog'
 import { SolicitacaoCard } from '@/components/solicitacoes/SolicitacaoCard'
 import { SolicitacaoDetailsDialog } from '@/components/solicitacoes/SolicitacaoDetailsDialog'
 import { SolicitacaoFilters } from '@/components/solicitacoes/SolicitacaoFilters'
+import {
+  SolicitacaoForm,
+  defaultSolicitacaoForm
+} from '@/components/solicitacoes/SolicitacaoForm'
 import { SolicitacaoTable } from '@/components/solicitacoes/SolicitacaoTable'
-import { getUserMessage } from '@/lib/user-messages'
-import { downloadSolicitacoesExcel } from '@/lib/excel'
-
-function isAtrasada(solicitacao) {
-  const dateValue = solicitacao.previsao_entrega || solicitacao.previsao_desejada
-  if (!dateValue) return false
-
-  const status = solicitacao.status_geral
-  if (status === 'concluida' || status === 'cancelada' || status === 'entregue') {
-    return false
-  }
-
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
-
-  const target = new Date(dateValue)
-  target.setHours(0, 0, 0, 0)
-
-  return target < today
-}
+import { getUserMessage } from '@/lib/messaging/user-messages'
+import { downloadSolicitacoesExcel } from '@/lib/export/excel'
+import { getTodayDateInputValue } from '@/lib/date/date-utils'
+import {
+  getSolicitacaoFilterYears,
+  matchesSolicitacaoDateFilters
+} from '@/lib/solicitacoes/filters'
+import {
+  getSolicitacaoCentroCusto,
+  getSolicitacaoSolicitante
+} from '@/lib/solicitacoes/format'
+import {
+  isSolicitacaoAtrasada,
+  isSolicitacaoEncerrada
+} from '@/constants/solicitacoes-config'
 
 function formatCurrency(value) {
   const number = Number(value || 0)
@@ -50,6 +51,7 @@ export default function SolicitacoesPage() {
     centrosCusto,
     produtos,
     updateSolicitacao,
+    addSolicitacao,
     deleteSolicitacao,
     addSolicitante,
     updateSolicitante,
@@ -63,12 +65,17 @@ export default function SolicitacoesPage() {
 
   const [filters, setFilters] = useState({
     search: '',
-    status: 'todos',
-    prioridade: 'todas'
+    status: [],
+    prioridade: [],
+    mes: [],
+    ano: []
   })
   const [selectedSolicitacao, setSelectedSolicitacao] = useState(null)
   const [detailsOpen, setDetailsOpen] = useState(false)
   const [cadastrosOpen, setCadastrosOpen] = useState(false)
+  const [newPedidoOpen, setNewPedidoOpen] = useState(false)
+  const [newPedidoForm, setNewPedidoForm] = useState(defaultSolicitacaoForm)
+  const [isSubmittingNewPedido, setIsSubmittingNewPedido] = useState(false)
 
   const filteredSolicitacoes = useMemo(() => {
     const search = filters.search.trim().toLowerCase()
@@ -78,50 +85,85 @@ export default function SolicitacoesPage() {
         !search ||
         [
           solicitacao.codigo,
+          solicitacao.nome_item,
           solicitacao.descricao,
-          solicitacao.solicitante,
-          solicitacao.centro_custo
+          solicitacao.aplicacoes,
+          getSolicitacaoSolicitante(solicitacao),
+          getSolicitacaoCentroCusto(solicitacao)
         ]
           .filter(Boolean)
           .some((value) => String(value).toLowerCase().includes(search))
 
       const matchesStatus =
-        filters.status === 'todos' ||
-        solicitacao.status_geral === filters.status
+        filters.status.length === 0
+          ? !['concluida', 'cancelada'].includes(solicitacao.status_geral)
+          : filters.status.includes(solicitacao.status_geral)
 
       const matchesPrioridade =
-        filters.prioridade === 'todas' ||
-        solicitacao.prioridade === filters.prioridade
+        filters.prioridade.length === 0 ||
+        filters.prioridade.includes(solicitacao.prioridade)
 
-      return matchesSearch && matchesStatus && matchesPrioridade
+      const matchesDate = matchesSolicitacaoDateFilters(solicitacao, {
+        meses: filters.mes,
+        anos: filters.ano
+      })
+
+      return matchesSearch && matchesStatus && matchesPrioridade && matchesDate
     })
   }, [filters, solicitacoesCompra])
 
+  const filterYears = useMemo(
+    () => getSolicitacaoFilterYears(solicitacoesCompra),
+    [solicitacoesCompra]
+  )
+
   const summary = useMemo(() => {
-    const abertas = solicitacoesCompra.filter(
-      (item) => !['concluida', 'cancelada'].includes(item.status_geral)
+    const abertas = filteredSolicitacoes.filter(
+      (item) => !isSolicitacaoEncerrada(item)
     )
-    const atrasadas = solicitacoesCompra.filter(isAtrasada)
-    const urgentes = solicitacoesCompra.filter(
-      (item) => item.prioridade === 'urgente' && !['concluida', 'cancelada'].includes(item.status_geral)
+    const atrasadas = filteredSolicitacoes.filter(isSolicitacaoAtrasada)
+    const urgentes = filteredSolicitacoes.filter(
+      (item) => item.prioridade === 'urgente' && !isSolicitacaoEncerrada(item)
     )
     const valorAberto = abertas.reduce(
       (acc, item) => acc + Number(item.valor_total || 0),
       0
     )
+    const valorConcluido = filteredSolicitacoes
+      .filter((item) => item.status_geral === 'concluida')
+      .reduce((acc, item) => acc + Number(item.valor_total || 0), 0)
 
     return {
-      total: solicitacoesCompra.length,
+      total: filteredSolicitacoes.length,
       abertas: abertas.length,
       atrasadas: atrasadas.length,
       urgentes: urgentes.length,
-      valorAberto
+      valorAberto,
+      valorConcluido
     }
-  }, [solicitacoesCompra])
+  }, [filteredSolicitacoes])
 
   const openDetails = (solicitacao) => {
     setSelectedSolicitacao(solicitacao)
     setDetailsOpen(true)
+  }
+
+  const handleDetailsOpenChange = (open) => {
+    setDetailsOpen(open)
+
+    if (!open) {
+      setSelectedSolicitacao(null)
+    }
+  }
+
+  const handleUpdateSolicitacao = async (id, updates) => {
+    const updatedSolicitacao = await updateSolicitacao(id, updates)
+    flushSync(() => {
+      setSelectedSolicitacao((prev) =>
+        prev?.id === id ? updatedSolicitacao : prev
+      )
+    })
+    return updatedSolicitacao
   }
 
   const handleEntradaEstoque = async (solicitacao) => {
@@ -134,16 +176,16 @@ export default function SolicitacoesPage() {
       await entradaProduto(
         solicitacao.produto_id,
         Number(solicitacao.quantidade || 1),
-        `Entrada da solicitacao ${solicitacao.codigo || solicitacao.id}`
+        `Entrada da solicitação ${solicitacao.codigo || solicitacao.id}`
       )
       await updateSolicitacao(solicitacao.id, {
         status_geral: 'concluida',
-        status_transporte: 'entregue'
+        previsao_entrega: solicitacao.previsao_entrega || getTodayDateInputValue()
       })
       toast.success('Entrada de estoque gerada com sucesso!')
       setDetailsOpen(false)
     } catch (error) {
-      toast.error(getUserMessage(error, 'Nao foi possivel gerar a entrada.'))
+      toast.error(getUserMessage(error, 'Não foi possível gerar a entrada.'))
     }
   }
 
@@ -152,24 +194,63 @@ export default function SolicitacoesPage() {
     downloadSolicitacoesExcel(filteredSolicitacoes, `solicitacoes-${date}.xlsx`)
   }
 
+  const handleTogglePublic = async (solicitacao, visivelPublico) => {
+    try {
+      await updateSolicitacao(solicitacao.id, {
+        visivel_publico: visivelPublico ? 1 : 0
+      })
+      toast.success(
+        visivelPublico
+          ? 'Solicitação visível no público.'
+          : 'Solicitação oculta do público.'
+      )
+    } catch (error) {
+      toast.error(getUserMessage(error, 'Não foi possível alterar a visibilidade pública.'))
+    }
+  }
+
+  const handleNewPedidoOpenChange = (open) => {
+    setNewPedidoOpen(open)
+
+    if (!open) {
+      setNewPedidoForm(defaultSolicitacaoForm)
+    }
+  }
+
+  const handleNewPedidoSubmit = async (event) => {
+    event.preventDefault()
+    setIsSubmittingNewPedido(true)
+
+    try {
+      await addSolicitacao(newPedidoForm)
+      toast.success('Solicitação criada com sucesso!')
+      handleNewPedidoOpenChange(false)
+    } catch (error) {
+      toast.error(getUserMessage(error, 'Não foi possível criar a solicitação.'))
+    } finally {
+      setIsSubmittingNewPedido(false)
+    }
+  }
+
   if (!isLoaded) {
     return <LoadingState className="min-h-[60vh]" />
   }
 
   return (
     <div className="mx-auto flex w-full max-w-7xl flex-col gap-4 pb-4 sm:gap-6 sm:pb-6">
-      <div className="flex flex-col gap-3 rounded-2xl border bg-card/70 p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between sm:p-5">
+      <div className="flex flex-col gap-3 rounded-2xl border bg-card/70 p-4 shadow-sm lg:flex-row lg:items-center lg:justify-between sm:p-5">
         <div className="space-y-1">
           <h1 className="flex items-center gap-3 text-xl font-bold sm:text-2xl md:text-3xl">
             <ShoppingCart className="h-7 w-7 text-primary" />
-            Solicitacoes de Compra
+            Solicitações de Compra
           </h1>
-          <p className="text-sm text-muted-foreground">
-            Controle interno de cotacao, pedido, transporte e entrega.
-          </p>
         </div>
 
-        <div className="grid gap-2 sm:grid-cols-3">
+        <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
+          <Button className="w-full" onClick={() => setNewPedidoOpen(true)}>
+            <Plus className="h-4 w-4" />
+            Novo pedido
+          </Button>
           <Button
             className="w-full"
             variant="outline"
@@ -184,28 +265,33 @@ export default function SolicitacoesPage() {
           </Button>
           <Button asChild className="w-full" variant="outline">
             <a href="/solicitar" target="_blank" rel="noreferrer">
-              Abrir formulario publico
+              Abrir formulário público
             </a>
           </Button>
         </div>
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-6">
         <SolicitacaoCard label="Total" value={summary.total} />
         <SolicitacaoCard label="Abertas" value={summary.abertas} />
         <SolicitacaoCard label="Urgentes" value={summary.urgentes} tone="warning" />
         <SolicitacaoCard label="Atrasadas" value={summary.atrasadas} tone="danger" />
         <SolicitacaoCard label="Valor em aberto" value={formatCurrency(summary.valorAberto)} />
+        <SolicitacaoCard label="Gasto concluido" value={formatCurrency(summary.valorConcluido)} tone="success" />
       </div>
 
-      <SolicitacaoFilters filters={filters} setFilters={setFilters} />
+      <SolicitacaoFilters
+        filters={filters}
+        setFilters={setFilters}
+        yearOptions={filterYears}
+      />
 
       {solicitacoesCompra.length === 0 ? (
         <Card className="border-dashed">
           <CardContent className="flex flex-col items-center justify-center py-12 text-center">
             <ShoppingCart className="mb-4 h-12 w-12 text-primary/50" />
             <p className="text-muted-foreground">
-              Nenhuma solicitacao de compra cadastrada.
+              Nenhuma solicitação de compra cadastrada.
             </p>
           </CardContent>
         </Card>
@@ -213,20 +299,45 @@ export default function SolicitacoesPage() {
         <SolicitacaoTable
           solicitacoes={filteredSolicitacoes}
           onOpen={openDetails}
+          onTogglePublic={handleTogglePublic}
         />
       )}
 
       <SolicitacaoDetailsDialog
+        key={selectedSolicitacao?.id || 'empty'}
         solicitacao={selectedSolicitacao}
         open={detailsOpen}
-        onOpenChange={setDetailsOpen}
-        onUpdate={updateSolicitacao}
+        onOpenChange={handleDetailsOpenChange}
+        onUpdate={handleUpdateSolicitacao}
         onDelete={deleteSolicitacao}
         onEntradaEstoque={handleEntradaEstoque}
         produtos={produtos}
         solicitantes={solicitantesCompra}
         centrosCusto={centrosCusto}
       />
+
+      <Dialog open={newPedidoOpen} onOpenChange={handleNewPedidoOpenChange}>
+        <DialogContent className="ige-scrollbar h-[100dvh] max-h-[100dvh] w-full max-w-none overflow-y-auto rounded-none p-4 sm:h-auto sm:max-h-[calc(100vh-2rem)] sm:w-[95vw] sm:max-w-3xl sm:rounded-lg sm:p-6">
+          <DialogHeader>
+            <DialogTitle>Novo pedido</DialogTitle>
+          </DialogHeader>
+
+          <SolicitacaoForm
+            form={newPedidoForm}
+            setForm={setNewPedidoForm}
+            onSubmit={handleNewPedidoSubmit}
+            submitLabel="Criar solicitação"
+            isSubmitting={isSubmittingNewPedido}
+            mode="admin"
+            showSections
+            sectionLayout="tabs"
+            onCancel={() => handleNewPedidoOpenChange(false)}
+            produtos={produtos}
+            solicitantes={solicitantesCompra}
+            centrosCusto={centrosCusto}
+          />
+        </DialogContent>
+      </Dialog>
 
       <SolicitacaoCadastrosDialog
         open={cadastrosOpen}

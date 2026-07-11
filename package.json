@@ -6,7 +6,10 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "test": "node tests/audit/audit-contracts.test.mjs",
+    "audit:supabase:public": "node scripts/audit/supabase-public-audit.mjs",
+    "audit:app:smoke": "node tests/audit/app-smoke.test.mjs"
   },
   "dependencies": {
     "@fullcalendar/core": "^6.1.20",
@@ -75,6 +78,8 @@
     "@types/node": "^22",
     "@types/react": "19.2.14",
     "@types/react-dom": "19.2.3",
+    "eslint": "^9.39.4",
+    "eslint-config-next": "^16.2.6",
     "postcss": "^8.5",
     "tailwindcss": "^4.2.0",
     "tw-animate-css": "1.3.3",

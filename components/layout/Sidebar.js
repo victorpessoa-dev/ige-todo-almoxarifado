@@ -8,6 +8,7 @@ import { cn } from '@/lib/utils'
 import Image from 'next/image'
 import {
   CalendarDays,
+  BookOpen,
   Camera,
   ChartColumn,
   LayoutDashboard,
@@ -24,9 +25,10 @@ const menuItems = [
   { href: '/lembretes', label: 'Lembretes', icon: StickyNote },
   { href: '/calendario', label: 'Calendario', icon: CalendarDays },
   { href: '/inventario', label: 'Inventario', icon: Package },
+  { href: '/catalogo', label: 'Catalogo', icon: BookOpen },
   { href: '/solicitacoes', label: 'Solicitacoes', icon: ShoppingCart },
   { href: '/contagem', label: 'Contagem', icon: Camera },
-  { href: '/analise-giro', label: 'Analise de Giro', icon: ChartColumn }
+  { href: '/analise-giro', label: 'Análise de Giro', icon: ChartColumn }
 ]
 
 export function Sidebar({ onNavigate }) {
@@ -46,13 +48,24 @@ export function Sidebar({ onNavigate }) {
   return (
     <aside className="fixed inset-y-0 left-0 z-40 flex h-dvh w-64 flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground shadow-lg md:w-64">
       <div className="px-4 py-8">
-        <Image
-          src="/ige-supergesso.png"
-          alt="Logo"
-          width={200}
-          height={120}
-          className="mx-auto mb-2"
-        />
+        <Link href="/solicitacoes" onClick={handleClick} className="block lg:hidden">
+          <Image
+            src="/ige-supergesso.svg"
+            alt="Logo"
+            width={200}
+            height={120}
+            className="mx-auto mb-2"
+          />
+        </Link>
+        <Link href="/painel" onClick={handleClick} className="hidden lg:block">
+          <Image
+            src="/ige-supergesso.svg"
+            alt="Logo"
+            width={200}
+            height={120}
+            className="mx-auto mb-2"
+          />
+        </Link>
       </div>
 
       <nav className="sidebar-scroll flex-1 overflow-y-auto px-4 pb-4">

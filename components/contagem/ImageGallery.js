@@ -19,6 +19,8 @@ export function ImageGallery({ images, onRemove, analyzingIndex }) {
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
           {images.map((image, index) => (
             <div key={index} className="relative aspect-square">
+              {/* Local camera previews use data/blob URLs and do not benefit from next/image optimization. */}
+              {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={image}
                 alt={`Foto ${index + 1}`}

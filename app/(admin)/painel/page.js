@@ -10,6 +10,7 @@ import { LembretesSlide } from '@/components/slides/LembretesSlide'
 import { SolicitacoesSlide } from '@/components/slides/SolicitacoesSlide'
 import InventarioSlide from '@/components/slides/InventarioSlide'
 import { Clock, Maximize2, Minimize2, Monitor } from 'lucide-react'
+import { isSolicitacaoEncerrada } from '@/constants/solicitacoes-config'
 
 function RelogioSlide({ onEnd }) {
   const [time, setTime] = useState(new Date())
@@ -89,7 +90,7 @@ export default function PainelPage() {
   const lembretesPendentes = lembretes.filter((lembrete) => lembrete.status !== 'concluido')
   const hasProdutosBaixos = produtos.some((produto) => produto.estoque <= produto.min)
   const hasSolicitacoesAbertas = solicitacoesCompra.some(
-    (solicitacao) => !['concluida', 'cancelada'].includes(solicitacao.status_geral)
+    (solicitacao) => !isSolicitacaoEncerrada(solicitacao)
   )
   const slideDefinitions = [
     ...(tarefasPendentes.length > 0
@@ -112,12 +113,12 @@ export default function PainelPage() {
   const safeCurrentSlide = Math.min(currentSlide, slideCount - 1)
 
   const nextSlide = useCallback(() => {
-    setCurrentSlide((prev) => (prev + 1) % slideCount)
+    setCurrentSlide((prev) => (Math.min(prev, slideCount - 1) + 1) % slideCount)
     setCycleKey((prev) => prev + 1)
   }, [slideCount])
 
   const prevSlide = useCallback(() => {
-    setCurrentSlide((prev) => (prev - 1 + slideCount) % slideCount)
+    setCurrentSlide((prev) => (Math.min(prev, slideCount - 1) - 1 + slideCount) % slideCount)
     setCycleKey((prev) => prev + 1)
   }, [slideCount])
 
@@ -215,10 +216,6 @@ export default function PainelPage() {
   }
 
   useEffect(() => {
-    setCurrentSlide((prev) => Math.min(prev, slideCount - 1))
-  }, [slideCount])
-
-  useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.key === 'ArrowRight') nextSlide()
       if (e.key === 'ArrowLeft') prevSlide()
@@ -271,9 +268,9 @@ export default function PainelPage() {
       <div className="flex min-h-[60vh] items-center justify-center md:hidden">
         <div className="w-full max-w-sm rounded-2xl border bg-card p-5 text-center shadow-sm">
           <Monitor className="mx-auto mb-3 h-10 w-10 text-primary" />
-          <h1 className="text-xl font-bold">Painel disponivel no desktop</h1>
+          <h1 className="text-xl font-bold">Painel disponível no desktop</h1>
           <p className="mt-2 text-sm text-muted-foreground">
-            Esta tela usa slides operacionais e foi desativada no mobile para evitar cortes e sobreposicoes.
+            Esta tela usa slides operacionais e foi desativada no mobile para evitar cortes e sobreposições.
           </p>
           <Button asChild className="mt-4 w-full">
             <a href="/solicitacoes">Abrir solicitacoes</a>

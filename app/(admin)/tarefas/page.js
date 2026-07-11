@@ -10,9 +10,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { LoadingState } from '@/components/ui/spinner'
 import { toast } from 'sonner'
-import { Plus, Pencil, Trash2, CheckCircle2, Circle, Clock, ChevronDown, ChevronUp, Calendar } from 'lucide-react'
+import { Plus, Pencil, Trash2, CheckCircle2, Circle, Clock, ChevronDown, ChevronUp, Calendar, ListTodo } from 'lucide-react'
 import EventForm from '@/components/events/EventForm'
-import { getUserMessage } from '@/lib/user-messages'
+import { getUserMessage } from '@/lib/messaging/user-messages'
+import { formatDateBR, toDateInputValue } from '@/lib/date/date-utils'
 
 function groupByDate(items) {
   const groups = {}
@@ -44,9 +45,7 @@ function groupByDate(items) {
 }
 
 function formatDateLabel(value) {
-  if (!value) return ''
-  const date = value instanceof Date ? value : new Date(value)
-  return date.toLocaleDateString('pt-BR')
+  return formatDateBR(value, '')
 }
 
 export default function TarefasPage() {
@@ -93,7 +92,7 @@ export default function TarefasPage() {
     setForm({
       titulo: tarefa.titulo || '',
       descricao: tarefa.descricao || '',
-      data: tarefa.data ? new Date(tarefa.data) : new Date(),
+      data: toDateInputValue(tarefa.data) || toDateInputValue(new Date()),
       responsavel: tarefa.responsavel || '',
       status: tarefa.status,
       prioridade: tarefa.prioridade || 'medio'
@@ -118,7 +117,7 @@ export default function TarefasPage() {
       }
       handleOpenChange(false)
     } catch (error) {
-      toast.error(getUserMessage(error, 'Nao foi possivel salvar a tarefa.'))
+      toast.error(getUserMessage(error, 'Não foi possível salvar a tarefa.'))
     }
   }
 
@@ -127,7 +126,7 @@ export default function TarefasPage() {
       await deleteTarefa(id)
       toast.success('Tarefa removida com sucesso!')
     } catch (error) {
-      toast.error(getUserMessage(error, 'Nao foi possivel remover a tarefa.'))
+      toast.error(getUserMessage(error, 'Não foi possível remover a tarefa.'))
     }
   }
 
@@ -140,7 +139,7 @@ export default function TarefasPage() {
         toast.success('Status atualizado!')
       }
     } catch (error) {
-      toast.error(getUserMessage(error, 'Nao foi possivel atualizar o status.'))
+      toast.error(getUserMessage(error, 'Não foi possível atualizar o status.'))
     }
   }
 
@@ -149,7 +148,7 @@ export default function TarefasPage() {
       await updateTarefa(id, { status: 'concluido' })
       toast.success('Tarefa concluida!')
     } catch (error) {
-      toast.error(getUserMessage(error, 'Nao foi possivel concluir a tarefa.'))
+      toast.error(getUserMessage(error, 'Não foi possível concluir a tarefa.'))
     }
   }
 
@@ -247,7 +246,7 @@ export default function TarefasPage() {
               </div>
             </div>
 
-            <div className="flex items-center gap-4 w-full sm:w-auto justify-end">
+            <div className="grid w-full grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-2 sm:w-auto">
               {!isConcluido && (
                 <Select
                   value={tarefa.status}
@@ -298,7 +297,7 @@ export default function TarefasPage() {
         <Calendar className="h-4 w-4" />
         <span className="font-medium capitalize">{dateLabel}</span>
       </div>
-      <div className={`flex flex-col gap-3 pl-6 border-l-2 ${isConcluido ? 'border-muted/50' : 'border-muted'} ${!isConcluido ? 'outline-' : ''}`}>
+      <div className={`flex flex-col gap-3 border-l-2 pl-3 sm:pl-6 ${isConcluido ? 'border-muted/50' : 'border-muted'} ${!isConcluido ? 'outline-' : ''}`}>
         {items.map((tarefa) => (
           <TarefaCard key={tarefa.id} tarefa={tarefa} isConcluido={isConcluido} />
         ))}
@@ -307,14 +306,17 @@ export default function TarefasPage() {
   )
 
   return (
-    <div className="flex flex-col gap-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">Tarefas</h1>
+    <div className="mx-auto flex w-full max-w-7xl flex-col gap-4 pb-4 sm:gap-6 sm:pb-6">
+      <div className="flex flex-col gap-3 rounded-2xl border bg-card/70 p-4 shadow-sm lg:flex-row lg:items-center lg:justify-between sm:p-5">
+        <div className="space-y-1">
+          <h1 className="flex items-center gap-3 text-xl font-bold sm:text-2xl md:text-3xl">
+            <ListTodo className="h-7 w-7 text-primary" />
+            Tarefas
+          </h1>
         </div>
         <Dialog open={isOpen} onOpenChange={handleOpenChange}>
           <DialogTrigger asChild>
-            <Button className="gap-2">
+            <Button className="w-full gap-2 sm:w-auto">
               <Plus className="h-4 w-4" />
               Nova Tarefa
             </Button>
@@ -340,7 +342,7 @@ export default function TarefasPage() {
         </Dialog>
       </div>
 
-      <div className="flex flex-col gap-4 sm:gap-6 max-h-[85vh] sm:max-h-[90vh] overflow-y-auto pr-2 scroll-smooth scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent pb-6">
+      <div className="ige-scrollbar flex flex-col gap-4 sm:gap-6 max-h-[85vh] sm:max-h-[90vh] overflow-y-auto pr-2 scroll-smooth pb-6">
         <div className="flex flex-col gap-4">
           <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
             <Circle className="h-5 w-5" />
@@ -350,7 +352,7 @@ export default function TarefasPage() {
             <Card>
               <CardContent className="flex flex-col items-center justify-center py-8">
                 <p className="text-muted-foreground">Nenhuma tarefa pendente</p>
-                <p className="text-sm text-muted-foreground">Clique em "Nova Tarefa" para comecar</p>
+                <p className="text-sm text-muted-foreground">Clique em &quot;Nova Tarefa&quot; para começar</p>
               </CardContent>
             </Card>
           ) : (
