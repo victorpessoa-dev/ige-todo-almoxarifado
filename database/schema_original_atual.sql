@@ -86,10 +86,18 @@ create table if not exists public.solicitacoes_compra (
   descricao text,
   quantidade numeric not null default 1 check (quantidade > 0),
   prioridade text not null default 'media',
-  status_geral text not null default 'nova',
-  status_cotacao text not null default 'nao_iniciado',
-  status_pedido text not null default 'nao_digitado',
-  status_transporte text not null default 'producao_separacao',
+  status_geral text not null default 'nova'
+    check (status_geral in (
+      'nova',
+      'em_cotacao',
+      'preparando_pedido',
+      'aguardando_aprovacao',
+      'aguardando_pagamento',
+      'transporte',
+      'disponivel_retirada',
+      'concluida',
+      'cancelada'
+    )),
   valor_unitario numeric,
   valor_total numeric,
   data_solicitacao timestamptz not null default now(),
@@ -203,10 +211,7 @@ create or replace function public.criar_solicitacao_compra_publica(
 )
 returns table (
   codigo text,
-  status_geral text,
-  status_cotacao text,
-  status_pedido text,
-  status_transporte text
+  status_geral text
 )
 language plpgsql
 security definer
@@ -287,10 +292,7 @@ begin
     fornecedor_nome,
     fornecedor_contato,
     solicitante_id,
-    status_geral,
-    status_cotacao,
-    status_pedido,
-    status_transporte
+    status_geral
   ) values (
     trim(p_nome_item),
     nullif(trim(coalesce(p_descricao, '')), ''),
@@ -303,20 +305,14 @@ begin
     nullif(trim(coalesce(p_fornecedor_nome, '')), ''),
     nullif(trim(coalesce(p_fornecedor_contato, '')), ''),
     p_solicitante_id,
-    'nova',
-    'nao_iniciado',
-    'nao_digitado',
-    'producao_separacao'
+    'nova'
   )
   returning * into nova_solicitacao;
 
   return query
   select
     nova_solicitacao.codigo,
-    nova_solicitacao.status_geral,
-    nova_solicitacao.status_cotacao,
-    nova_solicitacao.status_pedido,
-    nova_solicitacao.status_transporte;
+    nova_solicitacao.status_geral;
 end;
 $$;
 
@@ -328,9 +324,6 @@ returns table (
   quantidade numeric,
   prioridade text,
   status_geral text,
-  status_cotacao text,
-  status_pedido text,
-  status_transporte text,
   previsao_desejada date,
   previsao_entrega date,
   solicitante text,
@@ -351,9 +344,6 @@ as $$
     s.quantidade,
     s.prioridade,
     s.status_geral,
-    s.status_cotacao,
-    s.status_pedido,
-    s.status_transporte,
     s.previsao_desejada,
     s.previsao_entrega,
     sc.nome as solicitante,
@@ -377,9 +367,6 @@ returns table (
   quantidade numeric,
   prioridade text,
   status_geral text,
-  status_cotacao text,
-  status_pedido text,
-  status_transporte text,
   previsao_desejada date,
   previsao_entrega date,
   solicitante text,
@@ -400,9 +387,6 @@ as $$
     s.quantidade,
     s.prioridade,
     s.status_geral,
-    s.status_cotacao,
-    s.status_pedido,
-    s.status_transporte,
     s.previsao_desejada,
     s.previsao_entrega,
     sc.nome as solicitante,

@@ -24,27 +24,33 @@ export const SOLICITACAO_PRIORIDADE_OPTIONS = [
 ]
 
 export const SOLICITACAO_STATUS_GERAL_OPTIONS = [
-  { value: 'nova', label: 'Nova', className: 'border-[#7dd3fc] bg-[#e0f2fe] text-[#075985]' },
-  { value: 'aceita', label: 'Aceita', className: 'border-[#5eead4] bg-[#ccfbf1] text-[#115e59]' },
-  { value: 'em_cotacao', label: 'Em cotação', className: 'border-[#d8b4fe] bg-[#f3e8ff] text-[#6b21a8]' },
-  { value: 'aprovacao', label: 'Em aprovação', className: 'border-[#fcd34d] bg-[#fef3c7] text-[#92400e]' },
-  { value: 'preparando_pedido', label: 'Preparando pedido', className: 'border-[#fdba74] bg-[#ffedd5] text-[#9a3412]' },
-  { value: 'em_transporte', label: 'Em transporte', className: 'border-[#a5b4fc] bg-[#e0e7ff] text-[#3730a3]' },
-  { value: 'entregue', label: 'Entregue', className: 'border-[#67e8f9] bg-[#cffafe] text-[#155e75]' },
-  { value: 'concluida', label: 'Concluída', className: 'border-[#22c55e] bg-[#dcfce7] text-[#14532d]' },
-  { value: 'cancelada', label: 'Cancelada', className: 'border-[#fca5a5] bg-[#fee2e2] text-[#991b1b]' }
+  { value: 'nova', label: 'Cotação não iniciada', color: '#0284c7', className: 'border-[#7dd3fc] bg-[#e0f2fe] text-[#075985]' },
+  { value: 'em_cotacao', label: 'Em cotação', color: '#9333ea', className: 'border-[#c084fc] bg-[#f3e8ff] text-[#6b21a8]' },
+  { value: 'preparando_pedido', label: 'Preparando pedido', color: '#2563eb', className: 'border-[#60a5fa] bg-[#dbeafe] text-[#1d4ed8]' },
+  { value: 'aguardando_aprovacao', label: 'Aguardando aprovação', color: '#ca8a04', className: 'border-[#facc15] bg-[#fef9c3] text-[#854d0e]' },
+  { value: 'aguardando_pagamento', label: 'Aguardando pagamento', color: '#ea580c', className: 'border-[#fb923c] bg-[#ffedd5] text-[#9a3412]' },
+  { value: 'transporte', label: 'Transporte', color: '#4f46e5', className: 'border-[#818cf8] bg-[#e0e7ff] text-[#3730a3]' },
+  { value: 'disponivel_retirada', label: 'Disponível para retirada', color: '#0d9488', className: 'border-[#2dd4bf] bg-[#ccfbf1] text-[#115e59]' },
+  { value: 'concluida', label: 'Concluída', color: '#15803d', className: 'border-[#22c55e] bg-[#dcfce7] text-[#14532d]' },
+  { value: 'cancelada', label: 'Cancelada', color: '#dc2626', className: 'border-[#fca5a5] bg-[#fee2e2] text-[#991b1b]' }
 ]
+
+export const SOLICITACAO_STATUS_FLOW = SOLICITACAO_STATUS_GERAL_OPTIONS
 
 export const SOLICITACAO_STATUS_DOT_CLASSES = {
   nova: 'bg-[#0284c7]',
-  aceita: 'bg-[#0d9488]',
   em_cotacao: 'bg-[#9333ea]',
-  aprovacao: 'bg-[#d97706]',
-  preparando_pedido: 'bg-[#ea580c]',
-  em_transporte: 'bg-[#4f46e5]',
-  entregue: 'bg-[#06b6d4]',
+  preparando_pedido: 'bg-[#2563eb]',
+  aguardando_aprovacao: 'bg-[#ca8a04]',
+  aguardando_pagamento: 'bg-[#ea580c]',
+  transporte: 'bg-[#4f46e5]',
+  disponivel_retirada: 'bg-[#0d9488]',
   concluida: 'bg-[#15803d]',
   cancelada: 'bg-[#dc2626]'
+}
+
+export function getSolicitacaoOption(options, value) {
+  return options.find((option) => option.value === value) || options[0]
 }
 
 export function getSolicitacaoStatusDotClass(status) {
@@ -53,44 +59,8 @@ export function getSolicitacaoStatusDotClass(status) {
   return SOLICITACAO_STATUS_DOT_CLASSES[option.value] || SOLICITACAO_STATUS_DOT_CLASSES.nova
 }
 
-export const SOLICITACAO_STATUS_COTACAO_OPTIONS = [
-  { value: 'nao_iniciado', label: 'Não iniciado' },
-  { value: 'cotando', label: 'Cotando' },
-  { value: 'cotacao_em_analise', label: 'Cotação em análise' },
-  { value: 'cotacao_finalizada', label: 'Cotação finalizada' },
-  { value: 'cotacao_aprovada', label: 'Cotação aprovada' },
-  { value: 'adiada', label: 'Adiada' },
-  { value: 'cancelada', label: 'Cancelada' },
-  { value: 'outra', label: 'Outra' }
-]
-
-export const SOLICITACAO_STATUS_PEDIDO_OPTIONS = [
-  { value: 'nao_digitado', label: 'Não digitado' },
-  { value: 'pedido_digitado', label: 'Pedido digitado' },
-  { value: 'pedido_em_analise', label: 'Pedido em análise' },
-  { value: 'pedido_encerrado', label: 'Pedido encerrado' },
-  { value: 'pedido_aprovado', label: 'Pedido aprovado' },
-  { value: 'pedido_adiado', label: 'Pedido adiado' },
-  { value: 'pedido_cancelado', label: 'Pedido cancelado' },
-  { value: 'aguardando_pagamento', label: 'Aguardando pagamento' },
-  { value: 'outra', label: 'Outra' },
-  { value: 'preparando_pedido', label: 'Preparando pedido' }
-]
-
-export const SOLICITACAO_STATUS_TRANSPORTE_OPTIONS = [
-  { value: 'producao_separacao', label: 'Produção / separação' },
-  { value: 'disponivel_retirada', label: 'Disponível para retirada' },
-  { value: 'transporte', label: 'Transporte' },
-  { value: 'entregue', label: 'Entregue' },
-  { value: 'entrega_atrasada', label: 'Entrega atrasada' },
-  { value: 'entregue_conferido', label: 'Entregue e conferido' },
-  { value: 'cancelada', label: 'Cancelada' },
-  { value: 'adiada', label: 'Adiada' },
-  { value: 'outra', label: 'Outra' }
-]
-
-export function getSolicitacaoOption(options, value) {
-  return options.find((option) => option.value === value) || options[0]
+export function getSolicitacaoStatusColor(status) {
+  return getSolicitacaoOption(SOLICITACAO_STATUS_GERAL_OPTIONS, status).color
 }
 
 export function getSolicitacaoPrioridadeOrder(prioridade) {
@@ -104,55 +74,17 @@ export function getSolicitacaoPrioridadeOrder(prioridade) {
   return order[prioridade] ?? 99
 }
 
-export function getSolicitacaoStatusDefaults(statusGeral) {
-  if (statusGeral === 'concluida') {
-    return {
-      status_cotacao: 'cotacao_aprovada',
-      status_pedido: 'pedido_aprovado',
-      status_transporte: 'entregue_conferido'
-    }
-  }
-
-  if (statusGeral === 'cancelada') {
-    return {
-      status_cotacao: 'cancelada',
-      status_pedido: 'pedido_cancelado',
-      status_transporte: 'cancelada'
-    }
-  }
-
-  return {}
-}
-
 export function isSolicitacaoEncerrada(solicitacao = {}) {
-  return (
-    solicitacao.status_geral === 'entregue' ||
-    solicitacao.status_geral === 'concluida' ||
-    solicitacao.status_geral === 'cancelada' ||
-    solicitacao.status_cotacao === 'cancelada' ||
-    solicitacao.status_pedido === 'pedido_encerrado' ||
-    solicitacao.status_pedido === 'pedido_cancelado' ||
-    solicitacao.status_transporte === 'entregue' ||
-    solicitacao.status_transporte === 'entregue_conferido' ||
-    solicitacao.status_transporte === 'cancelada'
-  )
+  return solicitacao.status_geral === 'concluida' || solicitacao.status_geral === 'cancelada'
 }
 
-export function isSolicitacaoAdiada(solicitacao = {}) {
-  return (
-    solicitacao.status_cotacao === 'adiada' ||
-    solicitacao.status_pedido === 'pedido_adiado' ||
-    solicitacao.status_transporte === 'adiada'
-  )
+export function isSolicitacaoAdiada() {
+  return false
 }
 
 export function isSolicitacaoAtrasada(solicitacao = {}) {
-  if (isSolicitacaoEncerrada(solicitacao) || isSolicitacaoAdiada(solicitacao)) {
+  if (isSolicitacaoEncerrada(solicitacao)) {
     return false
-  }
-
-  if (solicitacao.status_transporte === 'entrega_atrasada') {
-    return true
   }
 
   const dateValue = solicitacao.previsao_entrega
@@ -164,53 +96,39 @@ export function isSolicitacaoAtrasada(solicitacao = {}) {
   return !!targetDate && targetDate < today
 }
 
-export function getSolicitacaoSituacao(solicitacao = {}) {
-  const geral = solicitacao.status_geral
-  const cotacao = solicitacao.status_cotacao
-  const pedido = solicitacao.status_pedido
-  const entrega = solicitacao.status_transporte
-  const descricao = [solicitacao.nome_item, solicitacao.descricao]
-    .filter(Boolean)
-    .join(' ')
-    .trim()
-  const previsaoEntrega = solicitacao.previsao_entrega
-
-  if (geral === 'cancelada') {
-    return {
-      label: 'CANCELADA',
-      className: 'border-[#fca5a5] bg-[#fee2e2] text-[#991b1b]'
-    }
+export function isSolicitacaoChegaHoje(solicitacao = {}) {
+  if (isSolicitacaoEncerrada(solicitacao)) {
+    return false
   }
 
-  if (geral === 'concluida' || entrega === 'entregue_conferido') {
-    return {
-      label: 'ENTREGUE E CONFERIDO!',
-      className: 'border-[#22c55e] bg-[#dcfce7] text-[#14532d]'
-    }
-  }
+  const dateValue = solicitacao.previsao_entrega
+  if (!dateValue) return false
 
-  if (geral === 'entregue' || entrega === 'entregue') {
+  const today = toDateInputValue(new Date())
+  const targetDate = toDateInputValue(dateValue)
+
+  return !!targetDate && targetDate === today
+}
+
+export function getSolicitacaoPrazoSituacao(solicitacao = {}) {
+  if (solicitacao.status_geral === 'concluida') {
     return {
       label: 'ENTREGUE',
-      className: 'border-[#67e8f9] bg-[#cffafe] text-[#155e75]'
+      className: 'border-[#67e8f9] bg-[#cffafe] text-[#0e7490]'
     }
   }
 
-  if (
-    cotacao === 'cancelada' ||
-    pedido === 'pedido_cancelado' ||
-    entrega === 'cancelada'
-  ) {
+  if (solicitacao.status_geral === 'cancelada') {
     return {
       label: 'CANCELADA',
-      className: 'border-[#fca5a5] bg-[#fee2e2] text-[#991b1b]'
+      className: 'border-[#f87171] bg-[#fee2e2] text-[#991b1b]'
     }
   }
 
-  if (isSolicitacaoAdiada(solicitacao)) {
+  if (!solicitacao.previsao_entrega) {
     return {
-      label: 'PEDIDO ADIADO!',
-      className: 'border-[#fcd34d] bg-[#fef3c7] text-[#92400e]'
+      label: 'SEM PRAZO!',
+      className: 'border-[#cbd5e1] bg-[#f1f5f9] text-[#475569]'
     }
   }
 
@@ -221,81 +139,29 @@ export function getSolicitacaoSituacao(solicitacao = {}) {
     }
   }
 
-  if (cotacao === 'cotando') {
+  if (isSolicitacaoChegaHoje(solicitacao)) {
     return {
-      label: 'COTAÇÃO',
-      className: 'border-[#d8b4fe] bg-[#f3e8ff] text-[#6b21a8]'
-    }
-  }
-
-  if (cotacao === 'nao_iniciado') {
-    return {
-      label: 'COTAÇÃO NÃO INICIADA!',
-      className: 'border-[#7dd3fc] bg-[#e0f2fe] text-[#075985]'
-    }
-  }
-
-  if (pedido === 'pedido_em_analise') {
-    return {
-      label: 'AGUARDANDO RETORNO DO PEDIDO',
-      className: 'border-[#a5b4fc] bg-[#e0e7ff] text-[#3730a3]'
-    }
-  }
-
-  if (pedido === 'aguardando_pagamento') {
-    return {
-      label: 'AGUARDANDO PAGAMENTO',
-      className: 'border-[#fb923c] bg-[#ffedd5] text-[#9a3412]'
-    }
-  }
-
-  if (pedido === 'preparando_pedido') {
-    return {
-      label: 'PREPARANDO PEDIDO',
-      className: 'border-[#5eead4] bg-[#ccfbf1] text-[#115e59]'
-    }
-  }
-
-  if (entrega === 'disponivel_retirada') {
-    return {
-      label: 'DISPONÍVEL PARA RETIRADA',
-      className: 'border-[#67e8f9] bg-[#cffafe] text-[#155e75]'
-    }
-  }
-
-  if (!descricao) {
-    return {
-      label: '',
-      className: 'border-transparent bg-transparent text-transparent'
-    }
-  }
-
-  if (!previsaoEntrega) {
-    return {
-      label: 'SEM DATA DE ENTREGA',
-      className: 'border-[#cbd5e1] bg-[#f1f5f9] text-[#334155]'
-    }
-  }
-
-  const today = toDateInputValue(new Date())
-  const deliveryDate = toDateInputValue(previsaoEntrega)
-
-  if (!deliveryDate) {
-    return {
-      label: 'SEM DATA DE ENTREGA',
-      className: 'border-[#cbd5e1] bg-[#f1f5f9] text-[#334155]'
-    }
-  }
-
-  if (today < deliveryDate) {
-    return {
-      label: 'NO PRAZO!',
-      className: 'border-[#86efac] bg-[#dcfce7] text-[#166534]'
+      label: 'CHEGA HOJE!',
+      className: 'border-[#fde68a] bg-[#fef3c7] text-[#92400e]'
     }
   }
 
   return {
-    label: 'PARA CHEGAR HOJE!',
-    className: 'border-[#facc15] bg-[#fef9c3] text-[#854d0e]'
+    label: 'NO PRAZO!',
+    className: 'border-[#86efac] bg-[#dcfce7] text-[#166534]'
+  }
+}
+
+export function getSolicitacaoStatusOrder(status) {
+  const index = SOLICITACAO_STATUS_FLOW.findIndex((option) => option.value === status)
+  return index === -1 ? 0 : index
+}
+
+export function getSolicitacaoSituacao(solicitacao = {}) {
+  const option = getSolicitacaoOption(SOLICITACAO_STATUS_GERAL_OPTIONS, solicitacao.status_geral)
+
+  return {
+    label: option.label,
+    className: option.className
   }
 }

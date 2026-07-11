@@ -121,6 +121,46 @@
   --color-baixo: var(--baixo);
 }
 
+@keyframes timeline-fill-x {
+  from {
+    transform: scaleX(0);
+  }
+
+  to {
+    transform: scaleX(1);
+  }
+}
+
+@keyframes timeline-fill-y {
+  from {
+    transform: scaleY(0);
+  }
+
+  to {
+    transform: scaleY(1);
+  }
+}
+
+@keyframes timeline-dot-fill {
+  from {
+    border-color: #cbd5e1;
+  }
+
+  to {
+    border-color: var(--timeline-color);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .timeline-fill {
+    animation-duration: 1ms !important;
+  }
+
+  .timeline-dot {
+    animation-duration: 1ms !important;
+  }
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;

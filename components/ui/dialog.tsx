@@ -54,17 +54,26 @@ function DialogContent({
 }: React.ComponentProps<typeof DialogPrimitive.Content> & {
   showCloseButton?: boolean
 }) {
+  const fallbackDescriptionId = React.useId()
+  const describedBy = props['aria-describedby'] ?? fallbackDescriptionId
+
   return (
     <DialogPortal data-slot="dialog-portal">
       <DialogOverlay />
       <DialogPrimitive.Content
+        {...props}
         data-slot="dialog-content"
+        aria-describedby={describedBy}
         className={cn(
           'ige-scrollbar bg-background data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 fixed top-[50%] left-[50%] z-50 grid max-h-[calc(100vh-2rem)] w-[95vw] max-w-4xl translate-x-[-50%] translate-y-[-50%] gap-4 overflow-y-auto rounded-lg border p-4 shadow-lg duration-200 sm:p-6',
           className,
         )}
-        {...props}
       >
+        {describedBy === fallbackDescriptionId && (
+          <DialogPrimitive.Description id={fallbackDescriptionId} className="sr-only">
+            Janela de diálogo com informações e ações relacionadas ao item selecionado.
+          </DialogPrimitive.Description>
+        )}
         {children}
         {showCloseButton && (
           <DialogPrimitive.Close
