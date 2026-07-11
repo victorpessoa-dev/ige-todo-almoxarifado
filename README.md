@@ -58,9 +58,9 @@ O objetivo e manter o estoque mais organizado, reduzir esquecimentos de reposica
 
 O modulo de compras acompanha o ciclo da solicitacao desde a criacao ate a conclusao.
 
-Ele permite controlar prioridade, centro de custo, solicitante, cotacao, pedido, transporte, previsao de entrega, fornecedor, valores e situacao operacional.
+Ele permite controlar prioridade, centro de custo, solicitante, previsao de entrega, fornecedor, valores e situacao operacional.
 
-Esse acompanhamento ajuda a equipe a visualizar o que esta pendente, atrasado, urgente, em cotacao, em transporte ou ja entregue.
+O fluxo de status padrao e: Nova, Em cotacao, Preparando pedido, Aguardando aprovacao, Aguardando pagamento, Transporte, Disponivel para retirada e Concluida. Quando necessario, a solicitacao tambem pode ser marcada como Cancelada.
 
 ## Contagem e giro
 

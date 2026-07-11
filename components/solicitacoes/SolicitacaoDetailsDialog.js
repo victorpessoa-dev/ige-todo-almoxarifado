@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { toast } from 'sonner'
+import { Copy } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -40,21 +41,17 @@ import {
 } from '@/lib/solicitacoes/format'
 import {
   SOLICITACAO_PRIORIDADE_OPTIONS,
-  SOLICITACAO_STATUS_COTACAO_OPTIONS,
   SOLICITACAO_STATUS_GERAL_OPTIONS,
-  SOLICITACAO_STATUS_PEDIDO_OPTIONS,
-  SOLICITACAO_STATUS_TRANSPORTE_OPTIONS,
-  getSolicitacaoStatusDefaults,
-  getSolicitacaoOption,
-  getSolicitacaoSituacao
+  getSolicitacaoSituacao,
+  getSolicitacaoStatusColor
 } from '@/constants/solicitacoes-config'
 import { formatDateBR, getTodayDateInputValue, toDateInputValue } from '@/lib/date/date-utils'
 
 /**
- * Dialog de detalhes e edicao de solicitacoes de compra.
+ * Dialog de detalhes e edição de solicitações de compra.
  *
- * Exibe o historico operacional da solicitacao e permite atualizar status,
- * valores, previsao e vinculos sem sair da listagem administrativa.
+ * Exibe o histórico operacional da solicitação e permite atualizar status,
+ * valores, previsão e vínculos sem sair da listagem administrativa.
  */
 
 function toDateInput(value) {
@@ -82,6 +79,16 @@ function formatDecimalInput(value) {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2
   })
+}
+
+function shouldShowSituacaoBadge(solicitacao, situacao) {
+  if (!situacao?.label) return false
+
+  const statusOption = SOLICITACAO_STATUS_GERAL_OPTIONS.find(
+    (option) => option.value === solicitacao?.status_geral
+  )
+
+  return situacao.label !== statusOption?.label
 }
 
 function completeMoneyFields(form, changedField) {
@@ -169,28 +176,64 @@ function InfoItem({ label, value }) {
   return (
     <div className="min-w-0 rounded-lg border bg-card px-3 py-2.5 shadow-sm">
       <p className="truncate text-xs font-medium uppercase tracking-wide text-muted-foreground" title={label}>{label}</p>
-      <p className="mt-1 min-w-0 whitespace-pre-line break-words text-sm font-medium [overflow-wrap:anywhere]">{value || '-'}</p>
+      <div className="mt-1 min-w-0 whitespace-pre-line break-words text-sm font-medium [overflow-wrap:anywhere]">{value || '-'}</div>
     </div>
+  )
+}
+
+function CopyableReferenceLink({ href }) {
+  if (!href) return '-'
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(href)
+      toast.success('Link copiado!')
+    } catch {
+      toast.error('Não foi possível copiar o link.')
+    }
+  }
+
+  return (
+    <span className="flex min-w-0 items-center gap-2">
+      <a
+        href={href}
+        target="_blank"
+        rel="noreferrer"
+        className="min-w-0 flex-1 truncate text-primary underline-offset-4 hover:underline"
+        title={href}
+      >
+        {href}
+      </a>
+      <Button
+        type="button"
+        variant="ghost"
+        className="size-7 shrink-0 p-0"
+        aria-label="Copiar link de referência"
+        title="Copiar link"
+        onClick={handleCopy}
+      >
+        <Copy className="size-4" />
+      </Button>
+    </span>
   )
 }
 
 function Field({ label, children }) {
   return (
-    <div className="grid min-w-0 gap-2">
-      <label className="truncate text-sm font-medium leading-none text-foreground" title={label}>{label}</label>
-      {children}
+    <div className="min-w-0 rounded-lg border bg-card px-3 py-2.5 shadow-sm">
+      <label className="block truncate text-xs font-medium uppercase tracking-wide text-muted-foreground" title={label}>{label}</label>
+      <div className="mt-1 min-w-0">
+        {children}
+      </div>
     </div>
   )
 }
 
-function StatusItem({ label, value, options }) {
-  const option = getSolicitacaoOption(options, value)
-
+function getStatusLabel(status) {
   return (
-    <div className="min-w-0 rounded-lg border bg-card px-3 py-2.5 shadow-sm">
-      <p className="truncate text-xs font-medium uppercase tracking-wide text-muted-foreground" title={label}>{label}</p>
-      <p className="mt-1 truncate text-sm font-semibold" title={option.label}>{option.label}</p>
-    </div>
+    SOLICITACAO_STATUS_GERAL_OPTIONS.find((option) => option.value === status)?.label ||
+    SOLICITACAO_STATUS_GERAL_OPTIONS[0]?.label ||
+    '-'
   )
 }
 
@@ -230,9 +273,6 @@ function buildFormFromSolicitacao(solicitacao) {
     valor_unitario: formatDecimalInput(solicitacao?.valor_unitario),
     valor_total: formatDecimalInput(solicitacao?.valor_total),
     previsao_entrega: toDateInput(solicitacao?.previsao_entrega),
-    status_cotacao: solicitacao?.status_cotacao || 'nao_iniciado',
-    status_pedido: solicitacao?.status_pedido || 'nao_digitado',
-    status_transporte: solicitacao?.status_transporte || 'producao_separacao',
     produto_id: solicitacao?.produto_id || ''
   }
 }
@@ -262,11 +302,173 @@ function buildPayload(form) {
     valor_unitario: parseDecimalValue(completedForm.valor_unitario),
     valor_total: parseDecimalValue(completedForm.valor_total),
     previsao_entrega: completedForm.previsao_entrega || null,
-    status_cotacao: completedForm.status_cotacao,
-    status_pedido: completedForm.status_pedido,
-    status_transporte: completedForm.status_transporte,
     produto_id: completedForm.produto_id || null
   }
+}
+
+function StatusTimeline({ status }) {
+  const steps = SOLICITACAO_STATUS_GERAL_OPTIONS.filter(
+    (option) => option.value !== 'cancelada'
+  )
+  const currentOrder = steps.findIndex((option) => option.value === status)
+  const isCanceled = status === 'cancelada'
+  const currentOption = steps[currentOrder] || steps[0]
+  const neutralColor = '#cbd5e1'
+  const currentColor = isCanceled ? neutralColor : getSolicitacaoStatusColor(currentOption.value)
+
+  return (
+    <>
+      <div className="hidden sm:block">
+        <div
+          key={status}
+          className="grid w-full animate-in fade-in-0 zoom-in-95 pb-1 duration-300"
+          style={{ gridTemplateColumns: `repeat(${steps.length}, minmax(0, 1fr))` }}
+        >
+        {steps.map((option, index) => {
+          const current = !isCanceled && option.value === status
+          const reached = !isCanceled && currentOrder >= 0 && index <= currentOrder
+          const dotColor = reached ? currentColor : neutralColor
+          const fillLeft = !isCanceled && currentOrder >= 0 && index > 0 && index <= currentOrder
+          const fillRight = !isCanceled && currentOrder >= 0 && index < currentOrder
+          const segmentDuration = 220
+          const rightDelay = `${index * segmentDuration * 2}ms`
+          const leftDelay = `${((index - 1) * segmentDuration * 2) + segmentDuration}ms`
+          const dotDelay = `${index * segmentDuration * 2}ms`
+
+          return (
+            <div
+              key={option.value}
+              className="grid min-w-0 grid-rows-[1.5rem] content-start"
+              title={option.label}
+            >
+              <div className="grid min-w-0 grid-cols-[1fr_auto_1fr] items-center">
+                <span
+                  aria-hidden="true"
+                  className="relative h-1 min-w-0 overflow-hidden transition-colors duration-500"
+                  style={{ backgroundColor: index === 0 ? 'transparent' : neutralColor }}
+                >
+                  {fillLeft && (
+                    <span
+                      className="timeline-fill absolute inset-0 origin-left"
+                      style={{
+                        animation: `timeline-fill-x ${segmentDuration}ms ease-out forwards`,
+                        animationDelay: leftDelay,
+                        backgroundColor: currentColor,
+                        transform: 'scaleX(0)'
+                      }}
+                    />
+                  )}
+                </span>
+                <span
+                  className={`timeline-dot flex size-5 shrink-0 rounded-full border-[3px] bg-background transition-all duration-500 ${
+                    current ? 'scale-110 shadow-sm' : ''
+                  }`}
+                  style={{
+                    '--timeline-color': currentColor,
+                    animation: reached ? 'timeline-dot-fill 160ms ease-out forwards' : undefined,
+                    animationDelay: reached ? dotDelay : undefined,
+                    borderColor: reached ? neutralColor : dotColor
+                  }}
+                  aria-current={current ? 'step' : undefined}
+                />
+                <span
+                  aria-hidden="true"
+                  className="relative h-1 min-w-0 overflow-hidden transition-colors duration-500"
+                  style={{ backgroundColor: index === steps.length - 1 ? 'transparent' : neutralColor }}
+                >
+                  {fillRight && (
+                    <span
+                      className="timeline-fill absolute inset-0 origin-left"
+                      style={{
+                        animation: `timeline-fill-x ${segmentDuration}ms ease-out forwards`,
+                        animationDelay: rightDelay,
+                        backgroundColor: currentColor,
+                        transform: 'scaleX(0)'
+                      }}
+                    />
+                  )}
+                </span>
+              </div>
+            </div>
+          )
+        })}
+        </div>
+      </div>
+
+      <div className="h-full min-h-0 w-5 max-w-full sm:hidden" aria-label={`Timeline: ${isCanceled ? 'Cancelada' : currentOption.label}`}>
+        <span className="sr-only">{isCanceled ? 'Cancelada' : currentOption.label}</span>
+        <div
+          key={status}
+          className="grid h-full min-h-64 w-5 animate-in fade-in-0 zoom-in-95 duration-300"
+          style={{ gridTemplateRows: `repeat(${steps.length}, minmax(0, 1fr))` }}
+        >
+        {steps.map((option, index) => {
+          const current = !isCanceled && option.value === status
+          const reached = !isCanceled && currentOrder >= 0 && index <= currentOrder
+          const dotColor = reached ? currentColor : neutralColor
+          const fillTop = !isCanceled && currentOrder >= 0 && index > 0 && index <= currentOrder
+          const fillBottom = !isCanceled && currentOrder >= 0 && index < currentOrder
+          const segmentDuration = 220
+          const bottomDelay = `${index * segmentDuration * 2}ms`
+          const topDelay = `${((index - 1) * segmentDuration * 2) + segmentDuration}ms`
+          const dotDelay = `${index * segmentDuration * 2}ms`
+          const isLast = index === steps.length - 1
+
+          return (
+            <div key={option.value} className="grid min-h-0 grid-rows-[1fr_auto_1fr] justify-items-center" title={option.label}>
+              <span
+                aria-hidden="true"
+                className="relative w-1 overflow-hidden transition-colors duration-500"
+                style={{ backgroundColor: index === 0 ? 'transparent' : neutralColor }}
+              >
+                {fillTop && (
+                  <span
+                    className="timeline-fill absolute inset-0 origin-top"
+                    style={{
+                      animation: `timeline-fill-y ${segmentDuration}ms ease-out forwards`,
+                      animationDelay: topDelay,
+                      backgroundColor: currentColor,
+                      transform: 'scaleY(0)'
+                    }}
+                  />
+                )}
+              </span>
+                <span
+                  className={`timeline-dot flex size-4 shrink-0 rounded-full border-[3px] bg-background transition-all duration-500 ${
+                    current ? 'scale-110 shadow-sm' : ''
+                  }`}
+                  style={{
+                    '--timeline-color': currentColor,
+                    animation: reached ? 'timeline-dot-fill 160ms ease-out forwards' : undefined,
+                    animationDelay: reached ? dotDelay : undefined,
+                    borderColor: reached ? neutralColor : dotColor
+                  }}
+                  aria-current={current ? 'step' : undefined}
+                />
+              <span
+                aria-hidden="true"
+                className="relative w-1 overflow-hidden transition-colors duration-500"
+                style={{ backgroundColor: isLast ? 'transparent' : neutralColor }}
+              >
+                {fillBottom && (
+                  <span
+                    className="timeline-fill absolute inset-0 origin-top"
+                    style={{
+                      animation: `timeline-fill-y ${segmentDuration}ms ease-out forwards`,
+                      animationDelay: bottomDelay,
+                      backgroundColor: currentColor,
+                      transform: 'scaleY(0)'
+                    }}
+                  />
+                )}
+              </span>
+            </div>
+          )
+        })}
+        </div>
+      </div>
+    </>
+  )
 }
 
 export function SolicitacaoDetailsDialog({
@@ -289,13 +491,12 @@ export function SolicitacaoDetailsDialog({
     setForm((prev) => {
       const nextForm = {
         ...prev,
-        [field]: value,
-        ...(field === 'status_geral' ? getSolicitacaoStatusDefaults(value) : {})
+        [field]: value
       }
 
       if (field === 'status_geral' && value === 'concluida' && !nextForm.previsao_entrega) {
-        // Ao concluir sem previsao preenchida, usamos a data atual como marco
-        // operacional de fechamento da solicitacao.
+        // Ao concluir sem previsão preenchida, usamos a data atual como marco
+        // operacional de fechamento da solicitação.
         nextForm.previsao_entrega = getTodayDateInputValue()
       }
 
@@ -337,7 +538,8 @@ export function SolicitacaoDetailsDialog({
     setIsSubmitting(true)
 
     try {
-      await onUpdate(solicitacao.id, buildPayload(form))
+      const updatedSolicitacao = await onUpdate(solicitacao.id, buildPayload(form))
+      setForm(buildFormFromSolicitacao(updatedSolicitacao || solicitacao))
       toast.success('Solicitação atualizada com sucesso!')
       setIsEditing(false)
     } catch (error) {
@@ -351,9 +553,9 @@ export function SolicitacaoDetailsDialog({
     if (!solicitacao) return
 
     try {
-      await onUpdate(solicitacao.id, updates)
+      const updatedSolicitacao = await onUpdate(solicitacao.id, updates)
+      setForm(buildFormFromSolicitacao(updatedSolicitacao || { ...solicitacao, ...updates }))
       toast.success(message)
-      onOpenChange(false)
     } catch (error) {
       toast.error(getUserMessage(error, 'Não foi possível atualizar a solicitação.'))
     }
@@ -373,8 +575,9 @@ export function SolicitacaoDetailsDialog({
   }
 
   const situacao = solicitacao ? getSolicitacaoSituacao(solicitacao) : null
+  const showSituacaoBadge = shouldShowSituacaoBadge(solicitacao, situacao)
   const dialogTitle = [
-    solicitacao?.codigo || 'Solicitacao',
+    solicitacao?.codigo || 'Solicitação',
     formatSolicitacaoItem(solicitacao)
   ].filter(Boolean).join(' - ')
 
@@ -382,6 +585,7 @@ export function SolicitacaoDetailsDialog({
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="ige-scrollbar h-[100dvh] max-h-[100dvh] w-full max-w-none overflow-y-auto rounded-none p-4 sm:h-auto sm:max-h-[calc(100vh-2rem)] sm:w-[95vw] sm:max-w-6xl sm:rounded-lg sm:p-6">
+          <div className="min-w-0 space-y-4">
           <DialogHeader className="pr-10">
             <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
               <DialogTitle className="min-w-0 line-clamp-3 break-words pr-2 text-left text-base [overflow-wrap:anywhere] sm:text-lg" title={dialogTitle}>
@@ -421,6 +625,14 @@ export function SolicitacaoDetailsDialog({
           </div>
         </DialogHeader>
 
+        <div className="relative min-w-0 pl-8 sm:pl-0">
+          <div className="absolute left-0 top-0 h-[calc(100dvh-7rem)] max-h-[calc(100dvh-7rem)] w-5 sm:hidden">
+            <StatusTimeline status={solicitacao?.status_geral || 'nova'} />
+          </div>
+          <div className="mb-6 hidden pt-2 sm:block sm:px-8">
+            <StatusTimeline status={solicitacao?.status_geral || 'nova'} />
+          </div>
+
         <Tabs defaultValue="resumo" className="space-y-4">
           <TabsList className="grid h-auto w-full grid-cols-3 gap-1">
             <TabsTrigger value="resumo" className="px-2 text-xs sm:text-sm">Resumo</TabsTrigger>
@@ -435,7 +647,7 @@ export function SolicitacaoDetailsDialog({
                 type="prioridade"
                 value={solicitacao?.prioridade}
               />
-              {situacao?.label && (
+              {showSituacaoBadge && (
                 <span
                   className={`block max-w-full truncate rounded-md border px-2 py-1 text-xs font-semibold ${situacao.className}`}
                   title={situacao.label}
@@ -603,18 +815,7 @@ export function SolicitacaoDetailsDialog({
                   <InfoItem label="Aplicação" value={solicitacao?.aplicacoes} />
                   <InfoItem
                     label="Link de referência"
-                    value={
-                      solicitacao?.link_referencia ? (
-                        <a
-                          href={solicitacao.link_referencia}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="break-words text-primary underline-offset-4 [overflow-wrap:anywhere] hover:underline"
-                        >
-                          {solicitacao.link_referencia}
-                        </a>
-                      ) : '-'
-                    }
+                    value={<CopyableReferenceLink href={solicitacao?.link_referencia} />}
                   />
                   <InfoItem label="Fornecedor sugerido" value={solicitacao?.fornecedor_nome} />
                   <InfoItem label="Contato do fornecedor" value={solicitacao?.fornecedor_contato} />
@@ -637,66 +838,6 @@ export function SolicitacaoDetailsDialog({
                       </SelectTrigger>
                       <SelectContent>
                         {SOLICITACAO_STATUS_GERAL_OPTIONS.map((option) => (
-                          <SelectItem key={option.value} value={option.value}>
-                            <span className="block max-w-[min(34rem,calc(100vw-4rem))] truncate" title={option.label}>
-                              {option.label}
-                            </span>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </Field>
-
-                  <Field label="Status da cotação">
-                    <Select
-                      value={form.status_cotacao}
-                      onValueChange={(value) => updateField('status_cotacao', value)}
-                    >
-                      <SelectTrigger className="w-full min-w-0 overflow-hidden">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {SOLICITACAO_STATUS_COTACAO_OPTIONS.map((option) => (
-                          <SelectItem key={option.value} value={option.value}>
-                            <span className="block max-w-[min(34rem,calc(100vw-4rem))] truncate" title={option.label}>
-                              {option.label}
-                            </span>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </Field>
-
-                  <Field label="Status pedido">
-                    <Select
-                      value={form.status_pedido}
-                      onValueChange={(value) => updateField('status_pedido', value)}
-                    >
-                      <SelectTrigger className="w-full min-w-0 overflow-hidden">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {SOLICITACAO_STATUS_PEDIDO_OPTIONS.map((option) => (
-                          <SelectItem key={option.value} value={option.value}>
-                            <span className="block max-w-[min(34rem,calc(100vw-4rem))] truncate" title={option.label}>
-                              {option.label}
-                            </span>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </Field>
-
-                  <Field label="Status entrega">
-                    <Select
-                      value={form.status_transporte}
-                      onValueChange={(value) => updateField('status_transporte', value)}
-                    >
-                      <SelectTrigger className="w-full min-w-0 overflow-hidden">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {SOLICITACAO_STATUS_TRANSPORTE_OPTIONS.map((option) => (
                           <SelectItem key={option.value} value={option.value}>
                             <span className="block max-w-[min(34rem,calc(100vw-4rem))] truncate" title={option.label}>
                               {option.label}
@@ -745,8 +886,8 @@ export function SolicitacaoDetailsDialog({
                       </SelectTrigger>
                       <SelectContent className="max-w-[calc(100vw-2rem)]">
                         <SelectItem value="sem_produto">
-                          <span className="block max-w-[min(34rem,calc(100vw-4rem))] truncate" title="Sem vinculo">
-                            Sem vinculo
+                          <span className="block max-w-[min(34rem,calc(100vw-4rem))] truncate" title="Sem vínculo">
+                            Sem vínculo
                           </span>
                         </SelectItem>
                         {produtos.map((produto) => (
@@ -766,25 +907,8 @@ export function SolicitacaoDetailsDialog({
               </div>
             ) : (
               <>
-                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                  <StatusItem
-                    label="Cotação"
-                    value={solicitacao?.status_cotacao}
-                    options={SOLICITACAO_STATUS_COTACAO_OPTIONS}
-                  />
-                  <StatusItem
-                    label="Pedido"
-                    value={solicitacao?.status_pedido}
-                    options={SOLICITACAO_STATUS_PEDIDO_OPTIONS}
-                  />
-                  <StatusItem
-                    label="Entrega"
-                    value={solicitacao?.status_transporte}
-                    options={SOLICITACAO_STATUS_TRANSPORTE_OPTIONS}
-                  />
-                </div>
-
                 <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                  <InfoItem label="Status" value={getStatusLabel(solicitacao?.status_geral)} />
                   <InfoItem label="Data da solicitação" value={formatDate(getSolicitacaoCreatedAt(solicitacao))} />
                   <InfoItem label="Previsão desejada" value={formatDate(solicitacao?.previsao_desejada)} />
                   <InfoItem label="Previsão de entrega" value={formatDate(solicitacao?.previsao_entrega)} />
@@ -803,12 +927,12 @@ export function SolicitacaoDetailsDialog({
                 variant="outline"
                 onClick={() =>
                   quickUpdate(
-                    { status_geral: 'aceita', status_pedido: 'pedido_aprovado' },
-                    'Pedido aceito!'
+                    { status_geral: 'em_cotacao' },
+                    'Solicitação enviada para cotação!'
                   )
                 }
               >
-                Aceitar pedido
+                Iniciar cotação
               </Button>
 
               <Button
@@ -816,12 +940,12 @@ export function SolicitacaoDetailsDialog({
                 variant="outline"
                 onClick={() =>
                   quickUpdate(
-                    { status_geral: 'entregue', status_transporte: 'entregue' },
-                    'Solicitação marcada como entregue!'
+                    { status_geral: 'transporte' },
+                    'Solicitação enviada para transporte!'
                   )
                 }
               >
-                Marcar entregue
+                Marcar transporte
               </Button>
 
               <Button
@@ -831,7 +955,6 @@ export function SolicitacaoDetailsDialog({
                   quickUpdate(
                     {
                       status_geral: 'concluida',
-                      ...getSolicitacaoStatusDefaults('concluida'),
                       previsao_entrega: solicitacao?.previsao_entrega || getTodayDateInputValue()
                     },
                     'Solicitação concluída!'
@@ -856,14 +979,13 @@ export function SolicitacaoDetailsDialog({
                 onClick={() =>
                   quickUpdate(
                     {
-                      status_geral: 'cancelada',
-                      ...getSolicitacaoStatusDefaults('cancelada')
+                      status_geral: 'cancelada'
                     },
                     'Solicitação cancelada!'
                   )
                 }
               >
-                Cancelar
+                Cancelar solicitação
               </Button>
 
               <Button
@@ -876,6 +998,8 @@ export function SolicitacaoDetailsDialog({
             </div>
           </TabsContent>
         </Tabs>
+        </div>
+          </div>
         </DialogContent>
       </Dialog>
 

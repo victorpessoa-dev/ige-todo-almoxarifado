@@ -410,10 +410,7 @@ Finalidade: pedidos/solicitações de compra.
 | `descricao` | `text` |
 | `quantidade` | `numeric not null default 1 check (quantidade > 0)` |
 | `prioridade` | `text not null default 'media'` |
-| `status_geral` | `text not null default 'nova'` |
-| `status_cotacao` | `text not null default 'nao_iniciado'` |
-| `status_pedido` | `text not null default 'nao_digitado'` |
-| `status_transporte` | `text not null default 'producao_separacao'` |
+| `status_geral` | `text not null default 'nova'`, limitado aos status do fluxo de compras |
 | `valor_unitario` | `numeric` |
 | `valor_total` | `numeric` |
 | `data_solicitacao` | `timestamptz not null default now()` |
@@ -578,7 +575,7 @@ Componentes principais:
 Regras:
 
 - Sem solicitantes ou centros ativos, exibe aviso.
-- Quando nenhum status é filtrado, oculta concluídas e canceladas na lista.
+- Quando nenhum status e filtrado, oculta concluidas e canceladas na lista.
 - Consulta por código usa RPC; busca textual filtra dados já carregados.
 
 ### `/catalogo-publico`
@@ -738,7 +735,7 @@ Fluxos:
 
 Regras:
 
-- Filtro padrão oculta concluídas e canceladas.
+- Filtro padrao oculta concluidas e canceladas.
 - Entrada de estoque exige `produto_id`.
 - Ao gerar entrada, solicitação é marcada como concluída e recebe status derivados.
 
@@ -1210,33 +1207,46 @@ O fluxo de compras é representado pela tabela `solicitacoes_compra` e pelas tel
 ### Fluxo principal
 
 ```text
-Solicitação
-  ↓
 Nova
-  ↓
-Aceita
-  ↓
+  |
 Em cotação
-  ↓
-Aprovação
-  ↓
+  |
 Preparando pedido
-  ↓
-Em transporte
-  ↓
-Entregue
-  ↓
-Recebimento / entrada no estoque
-  ↓
+  |
+Aguardando aprovação
+  |
+Aguardando pagamento
+  |
+Transporte
+  |
+Disponível para retirada
+  |
 Concluída
 ```
 
 ### Status envolvidos
 
-- `status_geral`
-- `status_cotacao`
-- `status_pedido`
-- `status_transporte`
+- `status_geral` e o unico status persistido no banco e a fonte de verdade exibida em filtros, badges, timeline, dashboards, exportacoes e APIs.
+
+Valores permitidos:
+
+- `nova`
+- `em_cotacao`
+- `preparando_pedido`
+- `aguardando_aprovacao`
+- `aguardando_pagamento`
+- `transporte`
+- `disponivel_retirada`
+- `concluida`
+- `cancelada`
+
+Regras de negocio:
+
+- `nova` e o status padrao ao criar uma solicitacao.
+- `aguardando_aprovacao` indica dependencia de Josias e bloqueia etapas posteriores.
+- `aguardando_pagamento` indica dependencia de Silene e bloqueia etapas posteriores ate confirmacao.
+- `transporte` permite acompanhamento por `previsao_entrega`.
+- `concluida` e `cancelada` encerram operacionalmente a solicitacao.
 
 ### Recebimento e estoque
 
@@ -1246,7 +1256,37 @@ Na tela `/solicitacoes`, se a solicitação possui `produto_id`, o administrador
 2. registra movimentação;
 3. atualiza saldo;
 4. marca a solicitação como `concluida`;
-5. aplica defaults de status para conclusão.
+5. mantem `status_geral = concluida`.
+
+### Migracao do fluxo de status
+
+Arquivo: `database/migrations/20260709_update_solicitacoes_status_flow.sql`.
+
+Estrategia:
+
+- remove constraints antigas de status;
+- troca defaults dos campos de status para `nova`;
+- mapeia registros existentes para o novo fluxo quando ha correspondencia;
+- migra casos sem correspondencia para `nova`;
+- remove os campos antigos de status auxiliar do banco;
+- adiciona constraints permitindo exclusivamente os status novos;
+- recria a RPC publica de criacao com status padrao `nova`.
+
+Arquivos impactados:
+
+- `constants/solicitacoes-config.js`
+- `components/solicitacoes/SolicitacaoForm.js`
+- `components/solicitacoes/SolicitacaoDetailsDialog.js`
+- `app/solicitar/page.js`
+- `app/(admin)/solicitacoes/page.js`
+- `app/(admin)/painel/page.js`
+- `app/(admin)/inventario/page.js`
+- `lib/services/solicitacoes-service.js`
+- `lib/export/excel.js`
+- `database/schema_original_atual.sql`
+- `database/migrations/20260709_update_solicitacoes_status_flow.sql`
+- `README.md`
+- `docs/Documentacao_Tecnica_Projeto.md`
 
 ## 19. Catálogo
 
@@ -1534,22 +1574,17 @@ Exportação XLSX
 
 ### Status de compras
 
-- `concluida` define:
-  - `status_cotacao = cotacao_aprovada`
-  - `status_pedido = pedido_aprovado`
-  - `status_transporte = entregue_conferido`
-- `cancelada` define:
-  - `status_cotacao = cancelada`
-  - `status_pedido = pedido_cancelado`
-  - `status_transporte = cancelada`
+- O sistema aceita exclusivamente: `nova`, `em_cotacao`, `preparando_pedido`, `aguardando_aprovacao`, `aguardando_pagamento`, `transporte`, `disponivel_retirada`, `concluida` e `cancelada`.
+- `status_geral` e a fonte de verdade.
+- Informacoes como atraso, prazo e chegada hoje sao calculadas pela logica de tempo da aplicacao, sem persistir novos status no banco.
+- `concluida` e `cancelada` encerram operacionalmente a solicitacao.
 
 ### Atrasos
 
 Uma solicitação é considerada atrasada quando:
 
 - não está encerrada;
-- não está adiada;
-- possui `status_transporte = entrega_atrasada`; ou
+- está em andamento;
 - possui `previsao_entrega` menor que a data atual.
 
 ## 25. Guia para Desenvolvedores

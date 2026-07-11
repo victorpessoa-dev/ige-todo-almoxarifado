@@ -33,6 +33,7 @@ import MovementFormFields from '@/components/inventory/MovementFormFields'
 import PrintDialogContent from '@/components/inventory/PrintDialogContent'
 import PrintEtiqueta from '@/components/inventory/PrintEtiqueta'
 import { getUserMessage } from '@/lib/messaging/user-messages'
+import { isSolicitacaoEncerrada } from '@/constants/solicitacoes-config'
 
 function normalizeCategory(value) {
   return String(value || '')
@@ -57,7 +58,7 @@ function normalizeRequestText(value) {
 }
 
 function isSolicitacaoAberta(solicitacao) {
-  return !['concluida', 'cancelada'].includes(solicitacao?.status_geral)
+  return !isSolicitacaoEncerrada(solicitacao)
 }
 
 function getCompraQuantidade(produto) {
@@ -85,6 +86,20 @@ function makeReposicaoLine({ produto, quantidade }) {
 
 function makeReposicaoTitle(category) {
   return `REPOSIÇÃO (${category || 'SEM CATEGORIA'})`.toLocaleUpperCase('pt-BR')
+}
+
+const EMPTY_PRODUCT_FORM = {
+  cod: '',
+  nome: '',
+  cod_barra: '',
+  categoria: '',
+  aplicacao: '',
+  medidas: '',
+  marcas: '',
+  img_url: '',
+  max: 0,
+  min: 0,
+  estoque: 0
 }
 
 function makeReposicaoBlocks(items, maxLength = 500) {
@@ -393,6 +408,27 @@ export default function InventarioPage() {
     }
   }
 
+  const handleAddDialogOpenChange = (open) => {
+    setIsAddDialogOpen(open)
+
+    if (open) {
+      setEditingProduto(null)
+      reset(EMPTY_PRODUCT_FORM)
+      return
+    }
+
+    if (!editingProduto) {
+      reset(EMPTY_PRODUCT_FORM)
+    }
+  }
+
+  const handleEditDialogOpenChange = (open) => {
+    if (open) return
+
+    setEditingProduto(null)
+    reset(EMPTY_PRODUCT_FORM)
+  }
+
   const checkCodigoExists = async (cod, ignoreId = null) => {
     const { data, error } = await supabase
       .from('produtos')
@@ -427,14 +463,15 @@ export default function InventarioPage() {
       if (editingProduto) {
         await updateProduto(editingProduto.id, payload)
         setEditingProduto(null)
+        reset(EMPTY_PRODUCT_FORM)
         toast.success('Produto atualizado com sucesso!')
       } else {
         await addProduto(payload)
         setIsAddDialogOpen(false)
+        reset(EMPTY_PRODUCT_FORM)
         toast.success('Produto criado com sucesso!')
       }
 
-      reset()
     } catch (error) {
       toast.error(getUserMessage(error, 'Não foi possível salvar o produto.'))
     }
@@ -626,9 +663,15 @@ export default function InventarioPage() {
             Solicitar Compra
           </Button>
 
-          <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+          <Dialog open={isAddDialogOpen} onOpenChange={handleAddDialogOpenChange}>
             <DialogTrigger asChild>
-              <Button className="w-full sm:w-auto md:px-6">
+              <Button
+                className="w-full sm:w-auto md:px-6"
+                onClick={() => {
+                  setEditingProduto(null)
+                  reset(EMPTY_PRODUCT_FORM)
+                }}
+              >
                 <Plus className="mr-2 h-4 w-4" />
                 Novo Produto
               </Button>
@@ -832,7 +875,7 @@ export default function InventarioPage() {
 
       <Dialog
         open={!!editingProduto}
-        onOpenChange={() => setEditingProduto(null)}
+        onOpenChange={handleEditDialogOpenChange}
       >
         <DialogContent className="ige-scrollbar max-h-[calc(100vh-2rem)] w-[95vw] overflow-y-auto p-4 sm:max-w-xl sm:p-6">
           <DialogHeader>

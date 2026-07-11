@@ -1,6 +1,7 @@
 'use client'
 
 import { useMemo, useState } from 'react'
+import { flushSync } from 'react-dom'
 import { toast } from 'sonner'
 import { Download, Plus, ShoppingCart } from 'lucide-react'
 
@@ -30,7 +31,6 @@ import {
   getSolicitacaoSolicitante
 } from '@/lib/solicitacoes/format'
 import {
-  getSolicitacaoStatusDefaults,
   isSolicitacaoAtrasada,
   isSolicitacaoEncerrada
 } from '@/constants/solicitacoes-config'
@@ -96,7 +96,7 @@ export default function SolicitacoesPage() {
 
       const matchesStatus =
         filters.status.length === 0
-          ? solicitacao.status_geral !== 'concluida' && solicitacao.status_geral !== 'cancelada'
+          ? !['concluida', 'cancelada'].includes(solicitacao.status_geral)
           : filters.status.includes(solicitacao.status_geral)
 
       const matchesPrioridade =
@@ -156,6 +156,16 @@ export default function SolicitacoesPage() {
     }
   }
 
+  const handleUpdateSolicitacao = async (id, updates) => {
+    const updatedSolicitacao = await updateSolicitacao(id, updates)
+    flushSync(() => {
+      setSelectedSolicitacao((prev) =>
+        prev?.id === id ? updatedSolicitacao : prev
+      )
+    })
+    return updatedSolicitacao
+  }
+
   const handleEntradaEstoque = async (solicitacao) => {
     if (!solicitacao?.produto_id) {
       toast.error('Vincule um produto do inventario antes de gerar a entrada.')
@@ -170,7 +180,6 @@ export default function SolicitacoesPage() {
       )
       await updateSolicitacao(solicitacao.id, {
         status_geral: 'concluida',
-        ...getSolicitacaoStatusDefaults('concluida'),
         previsao_entrega: solicitacao.previsao_entrega || getTodayDateInputValue()
       })
       toast.success('Entrada de estoque gerada com sucesso!')
@@ -299,7 +308,7 @@ export default function SolicitacoesPage() {
         solicitacao={selectedSolicitacao}
         open={detailsOpen}
         onOpenChange={handleDetailsOpenChange}
-        onUpdate={updateSolicitacao}
+        onUpdate={handleUpdateSolicitacao}
         onDelete={deleteSolicitacao}
         onEntradaEstoque={handleEntradaEstoque}
         produtos={produtos}

@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { useEffect, useMemo, useState } from 'react'
 import Image from 'next/image'
-import { CheckCircle2, LogIn, PackageSearch, Plus, Search, Send, X } from 'lucide-react'
+import { CheckCircle2, Copy, LogIn, PackageSearch, Plus, Search, Send, X } from 'lucide-react'
 import { toast } from 'sonner'
 
 import {
@@ -63,12 +63,9 @@ import { SolicitacaoStatusBadge } from '@/components/solicitacoes/SolicitacaoSta
 import {
   SOLICITACAO_PRIORIDADE_OPTIONS,
   SOLICITACAO_STATUS_GERAL_OPTIONS,
-  SOLICITACAO_STATUS_COTACAO_OPTIONS,
-  SOLICITACAO_STATUS_PEDIDO_OPTIONS,
-  SOLICITACAO_STATUS_TRANSPORTE_OPTIONS,
-  getSolicitacaoOption,
   getSolicitacaoPrioridadeOrder,
-  getSolicitacaoSituacao
+  getSolicitacaoSituacao,
+  getSolicitacaoStatusColor
 } from '@/constants/solicitacoes-config'
 import { formatDateBR, getLocalDateTime } from '@/lib/date/date-utils'
 
@@ -127,6 +124,16 @@ function compareText(a, b) {
   })
 }
 
+function shouldShowSituacaoBadge(solicitacao, situacao) {
+  if (!situacao?.label) return false
+
+  const statusOption = SOLICITACAO_STATUS_GERAL_OPTIONS.find(
+    (option) => option.value === solicitacao?.status_geral
+  )
+
+  return situacao.label !== statusOption?.label
+}
+
 function compareSolicitacaoByKey(a, b, key) {
   if (key === 'prioridade') {
     return (
@@ -171,38 +178,169 @@ const PUBLIC_SOLICITACAO_TABLE_COLUMNS = [
   { key: 'updated_at', width: 118, minWidth: 100 }
 ]
 
-function DetailStatus({ label, value, options }) {
-  const option = getSolicitacaoOption(options, value)
-
-  return (
-    <div className="min-w-0 rounded-lg border bg-card px-3 py-2.5 shadow-sm">
-      <p className="truncate text-xs font-medium uppercase tracking-wide text-muted-foreground" title={label}>
-        {label}
-      </p>
-      <p className="mt-1 truncate text-sm font-medium" title={option.label}>{option.label}</p>
-    </div>
-  )
-}
-
 function StatusGrid({ solicitacao }) {
+  const steps = SOLICITACAO_STATUS_GERAL_OPTIONS.filter(
+    (option) => option.value !== 'cancelada'
+  )
+  const status = solicitacao?.status_geral || 'nova'
+  const currentOrder = steps.findIndex((option) => option.value === status)
+  const isCanceled = status === 'cancelada'
+  const currentOption = steps[currentOrder] || steps[0]
+  const neutralColor = '#cbd5e1'
+  const currentColor = isCanceled ? neutralColor : getSolicitacaoStatusColor(currentOption.value)
+
   return (
-    <div className="grid gap-2 sm:grid-cols-3">
-      <DetailStatus
-        label="Cotação"
-        value={solicitacao.status_cotacao}
-        options={SOLICITACAO_STATUS_COTACAO_OPTIONS}
-      />
-      <DetailStatus
-        label="Pedido"
-        value={solicitacao.status_pedido}
-        options={SOLICITACAO_STATUS_PEDIDO_OPTIONS}
-      />
-      <DetailStatus
-        label="Entrega"
-        value={solicitacao.status_transporte}
-        options={SOLICITACAO_STATUS_TRANSPORTE_OPTIONS}
-      />
-    </div>
+    <>
+      <div className="hidden sm:block">
+        <div
+          key={status}
+          className="grid w-full animate-in fade-in-0 zoom-in-95 pb-1 duration-300"
+          style={{ gridTemplateColumns: `repeat(${steps.length}, minmax(0, 1fr))` }}
+        >
+          {steps.map((option, index) => {
+            const current = !isCanceled && option.value === status
+            const reached = !isCanceled && currentOrder >= 0 && index <= currentOrder
+            const dotColor = reached ? currentColor : neutralColor
+            const fillLeft = !isCanceled && currentOrder >= 0 && index > 0 && index <= currentOrder
+            const fillRight = !isCanceled && currentOrder >= 0 && index < currentOrder
+            const segmentDuration = 220
+            const rightDelay = `${index * segmentDuration * 2}ms`
+            const leftDelay = `${((index - 1) * segmentDuration * 2) + segmentDuration}ms`
+            const dotDelay = `${index * segmentDuration * 2}ms`
+
+            return (
+              <div
+                key={option.value}
+                className="grid min-w-0 grid-rows-[1.5rem] content-start"
+                title={option.label}
+              >
+                <div className="grid min-w-0 grid-cols-[1fr_auto_1fr] items-center">
+                  <span
+                    aria-hidden="true"
+                    className="relative h-1 min-w-0 overflow-hidden transition-colors duration-500"
+                    style={{ backgroundColor: index === 0 ? 'transparent' : neutralColor }}
+                  >
+                    {fillLeft && (
+                      <span
+                        className="timeline-fill absolute inset-0 origin-left"
+                        style={{
+                          animation: `timeline-fill-x ${segmentDuration}ms ease-out forwards`,
+                          animationDelay: leftDelay,
+                          backgroundColor: currentColor,
+                          transform: 'scaleX(0)'
+                        }}
+                      />
+                    )}
+                  </span>
+                  <span
+                    className={`timeline-dot flex size-5 shrink-0 rounded-full border-[3px] bg-background transition-all duration-500 ${
+                      current ? 'scale-110 shadow-sm' : ''
+                    }`}
+                    style={{
+                      '--timeline-color': currentColor,
+                      animation: reached ? 'timeline-dot-fill 160ms ease-out forwards' : undefined,
+                      animationDelay: reached ? dotDelay : undefined,
+                      borderColor: reached ? neutralColor : dotColor
+                    }}
+                    aria-current={current ? 'step' : undefined}
+                  />
+                  <span
+                    aria-hidden="true"
+                    className="relative h-1 min-w-0 overflow-hidden transition-colors duration-500"
+                    style={{ backgroundColor: index === steps.length - 1 ? 'transparent' : neutralColor }}
+                  >
+                    {fillRight && (
+                      <span
+                        className="timeline-fill absolute inset-0 origin-left"
+                        style={{
+                          animation: `timeline-fill-x ${segmentDuration}ms ease-out forwards`,
+                          animationDelay: rightDelay,
+                          backgroundColor: currentColor,
+                          transform: 'scaleX(0)'
+                        }}
+                      />
+                    )}
+                  </span>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      </div>
+
+      <div className="h-full min-h-0 w-5 max-w-full sm:hidden" aria-label={`Timeline: ${isCanceled ? 'Cancelada' : currentOption.label}`}>
+        <span className="sr-only">{isCanceled ? 'Cancelada' : currentOption.label}</span>
+        <div
+          key={status}
+          className="grid h-full min-h-64 w-5 animate-in fade-in-0 zoom-in-95 duration-300"
+          style={{ gridTemplateRows: `repeat(${steps.length}, minmax(0, 1fr))` }}
+        >
+        {steps.map((option, index) => {
+            const current = !isCanceled && option.value === status
+            const reached = !isCanceled && currentOrder >= 0 && index <= currentOrder
+            const dotColor = reached ? currentColor : neutralColor
+            const fillTop = !isCanceled && currentOrder >= 0 && index > 0 && index <= currentOrder
+            const fillBottom = !isCanceled && currentOrder >= 0 && index < currentOrder
+            const segmentDuration = 220
+            const bottomDelay = `${index * segmentDuration * 2}ms`
+            const topDelay = `${((index - 1) * segmentDuration * 2) + segmentDuration}ms`
+            const dotDelay = `${index * segmentDuration * 2}ms`
+            const isLast = index === steps.length - 1
+
+            return (
+              <div key={option.value} className="grid min-h-0 grid-rows-[1fr_auto_1fr] justify-items-center" title={option.label}>
+                <span
+                  aria-hidden="true"
+                  className="relative w-1 overflow-hidden transition-colors duration-500"
+                  style={{ backgroundColor: index === 0 ? 'transparent' : neutralColor }}
+                >
+                  {fillTop && (
+                    <span
+                      className="timeline-fill absolute inset-0 origin-top"
+                      style={{
+                        animation: `timeline-fill-y ${segmentDuration}ms ease-out forwards`,
+                        animationDelay: topDelay,
+                        backgroundColor: currentColor,
+                        transform: 'scaleY(0)'
+                      }}
+                    />
+                  )}
+                </span>
+                  <span
+                    className={`timeline-dot flex size-4 shrink-0 rounded-full border-[3px] bg-background transition-all duration-500 ${
+                      current ? 'scale-110 shadow-sm' : ''
+                    }`}
+                    style={{
+                      '--timeline-color': currentColor,
+                      animation: reached ? 'timeline-dot-fill 160ms ease-out forwards' : undefined,
+                      animationDelay: reached ? dotDelay : undefined,
+                      borderColor: reached ? neutralColor : dotColor
+                    }}
+                    aria-current={current ? 'step' : undefined}
+                  />
+                <span
+                  aria-hidden="true"
+                  className="relative w-1 overflow-hidden transition-colors duration-500"
+                  style={{ backgroundColor: isLast ? 'transparent' : neutralColor }}
+                >
+                  {fillBottom && (
+                    <span
+                      className="timeline-fill absolute inset-0 origin-top"
+                      style={{
+                        animation: `timeline-fill-y ${segmentDuration}ms ease-out forwards`,
+                        animationDelay: bottomDelay,
+                        backgroundColor: currentColor,
+                        transform: 'scaleY(0)'
+                      }}
+                    />
+                  )}
+                </span>
+              </div>
+            )
+          })}
+        </div>
+      </div>
+    </>
   )
 }
 
@@ -210,8 +348,45 @@ function InfoItem({ label, value }) {
   return (
     <div className="min-w-0 rounded-lg border bg-card px-3 py-2.5 shadow-sm">
       <p className="truncate text-xs font-medium uppercase tracking-wide text-muted-foreground" title={label}>{label}</p>
-      <p className="mt-1 min-w-0 whitespace-pre-line break-words text-sm font-medium [overflow-wrap:anywhere]">{value || '-'}</p>
+      <div className="mt-1 min-w-0 whitespace-pre-line break-words text-sm font-medium [overflow-wrap:anywhere]">{value || '-'}</div>
     </div>
+  )
+}
+
+function CopyableReferenceLink({ href }) {
+  if (!href) return '-'
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(href)
+      toast.success('Link copiado!')
+    } catch {
+      toast.error('Não foi possível copiar o link.')
+    }
+  }
+
+  return (
+    <span className="flex min-w-0 items-center gap-2">
+      <a
+        href={href}
+        target="_blank"
+        rel="noreferrer"
+        className="min-w-0 flex-1 truncate text-primary underline-offset-4 hover:underline"
+        title={href}
+      >
+        {href}
+      </a>
+      <Button
+        type="button"
+        variant="ghost"
+        className="size-7 shrink-0 p-0"
+        aria-label="Copiar link de referência"
+        title="Copiar link"
+        onClick={handleCopy}
+      >
+        <Copy className="size-4" />
+      </Button>
+    </span>
   )
 }
 
@@ -247,7 +422,7 @@ function SolicitacaoPublicTable({ solicitacoes, onOpen, sortConfig, onSort }) {
               className="min-w-0 rounded-xl border bg-background p-4 text-left shadow-sm transition hover:border-primary/50"
             >
               <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
+                <div className="min-w-0 flex-1">
                   <p className="truncate font-semibold tabular-nums">{solicitacao.codigo}</p>
                   <p className="mt-1 line-clamp-2 text-sm break-words [overflow-wrap:anywhere]" title={formatSolicitacaoItem(solicitacao) || '-'}>
                     {formatSolicitacaoItem(solicitacao)}
@@ -265,7 +440,7 @@ function SolicitacaoPublicTable({ solicitacoes, onOpen, sortConfig, onSort }) {
                 <SolicitacaoStatusBadge type="prioridade" value={solicitacao.prioridade} />
                 {situacao.label && (
                   <span
-                    className={`block max-w-full truncate rounded-md border px-2 py-1 text-xs font-semibold ${situacao.className}`}
+                    className={`block max-w-full truncate rounded-[4px] border px-2 py-1.5 text-xs font-bold uppercase leading-none ${situacao.className}`}
                     title={situacao.label}
                   >
                     {situacao.label}
@@ -412,7 +587,7 @@ function SolicitacaoPublicTable({ solicitacoes, onOpen, sortConfig, onSort }) {
                   <TableCell className="px-3 py-3">
                     {situacao.label ? (
                       <span
-                        className={`block truncate rounded-md border px-2 py-1 text-xs font-semibold ${situacao.className}`}
+                        className={`block w-full truncate rounded-[4px] border px-2 py-1.5 text-xs font-bold uppercase leading-none ${situacao.className}`}
                         title={situacao.label}
                       >
                         {situacao.label}
@@ -450,21 +625,31 @@ function SolicitacaoPublicDetailsDialog({ solicitacao, open, onOpenChange }) {
   if (!solicitacao) return null
 
   const situacao = getSolicitacaoSituacao(solicitacao)
+  const showSituacaoBadge = shouldShowSituacaoBadge(solicitacao, situacao)
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="ige-scrollbar h-[100dvh] max-h-[100dvh] w-full max-w-none overflow-y-auto rounded-none p-4 sm:h-auto sm:max-h-[calc(100vh-2rem)] sm:w-[95vw] sm:max-w-3xl sm:rounded-lg sm:p-6">
+        <div className="min-w-0 space-y-4">
         <DialogHeader>
               <DialogTitle className="line-clamp-3 break-words text-left text-base [overflow-wrap:anywhere] sm:text-lg" title={`${solicitacao.codigo} - ${formatSolicitacaoItem(solicitacao)}`}>
                 {solicitacao.codigo} - {formatSolicitacaoItem(solicitacao)}
               </DialogTitle>
         </DialogHeader>
 
+        <div className="relative min-w-0 pl-8 sm:pl-0">
+          <div className="absolute left-0 top-0 h-[calc(100dvh-7rem)] max-h-[calc(100dvh-7rem)] w-5 sm:hidden">
+            <StatusGrid solicitacao={solicitacao} />
+          </div>
+          <div className="mb-6 hidden pt-2 sm:block sm:px-8">
+            <StatusGrid solicitacao={solicitacao} />
+          </div>
+
         <div className="space-y-4">
           <div className="flex flex-wrap gap-2">
             <SolicitacaoStatusBadge value={solicitacao.status_geral} />
             <SolicitacaoStatusBadge type="prioridade" value={solicitacao.prioridade} />
-            {situacao.label && (
+            {showSituacaoBadge && (
               <span
                 className={`block max-w-full truncate rounded-md border px-2 py-1 text-xs font-semibold ${situacao.className}`}
                 title={situacao.label}
@@ -473,8 +658,6 @@ function SolicitacaoPublicDetailsDialog({ solicitacao, open, onOpenChange }) {
               </span>
             )}
           </div>
-
-          <StatusGrid solicitacao={solicitacao} />
 
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             <InfoItem label="Solicitante" value={getSolicitacaoSolicitante(solicitacao)} />
@@ -488,7 +671,15 @@ function SolicitacaoPublicDetailsDialog({ solicitacao, open, onOpenChange }) {
 
           <InfoItem label="Nome do item" value={solicitacao.nome_item} />
           <InfoItem label="Descrição do item" value={solicitacao.descricao} />
-          <InfoItem label="Aplicação" value={solicitacao.aplicacoes} />
+          <div className="grid gap-3 sm:grid-cols-2">
+            <InfoItem label="Aplicação" value={solicitacao.aplicacoes} />
+            <InfoItem
+              label="Link de referência"
+              value={<CopyableReferenceLink href={solicitacao.link_referencia} />}
+            />
+          </div>
+        </div>
+        </div>
         </div>
       </DialogContent>
     </Dialog>
@@ -523,6 +714,7 @@ export default function SolicitarPage() {
   const statusResultSituacao = statusResult
     ? getSolicitacaoSituacao(statusResult)
     : null
+  const showStatusResultSituacao = shouldShowSituacaoBadge(statusResult, statusResultSituacao)
   const publicSearch = codigoBusca.trim().toLowerCase()
   const filteredSolicitacoesPublicas = useMemo(() => {
     const filteredBySearch = publicSearch
@@ -542,8 +734,8 @@ export default function SolicitarPage() {
 
     const filteredByStatus = statusFiltro.length === 0
       ? filteredBySearch.filter((solicitacao) => {
-          // Se nenhum status for selecionado, esconde concluída e cancelada
-          return solicitacao.status_geral !== 'concluida' && solicitacao.status_geral !== 'cancelada'
+          // Se nenhum status for selecionado, esconde concluidas e canceladas.
+          return !['concluida', 'cancelada'].includes(solicitacao.status_geral)
         })
       : filteredBySearch.filter((solicitacao) =>
           statusFiltro.includes(solicitacao.status_geral)
@@ -729,7 +921,6 @@ export default function SolicitarPage() {
               width={150}
               height={90}
               className="h-auto w-32 sm:w-[150px]"
-              priority
             />
             <div>
               <h1 className="text-2xl font-bold sm:text-3xl">
@@ -883,7 +1074,7 @@ export default function SolicitarPage() {
                   </div>
                   <div className="flex flex-col items-start gap-2 sm:items-end">
                     <SolicitacaoStatusBadge value={statusResult.status_geral} />
-                    {statusResultSituacao?.label && (
+                    {showStatusResultSituacao && (
                       <span
                         className={`block max-w-full truncate rounded-md border px-2 py-1 text-xs font-semibold ${statusResultSituacao.className}`}
                         title={statusResultSituacao.label}
@@ -893,8 +1084,6 @@ export default function SolicitarPage() {
                     )}
                   </div>
                 </div>
-
-                <StatusGrid solicitacao={statusResult} />
 
                 <div className="grid gap-1 text-xs text-muted-foreground sm:grid-cols-2 lg:grid-cols-3">
                   <span className="truncate" title={`Solicitante: ${getSolicitacaoSolicitante(statusResult) || '-'}`}>

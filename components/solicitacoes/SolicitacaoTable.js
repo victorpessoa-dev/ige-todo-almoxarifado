@@ -293,7 +293,7 @@ export function SolicitacaoTable({
                 className="min-w-0 rounded-xl border bg-card p-4 text-left shadow-sm transition hover:border-primary/40"
               >
                 <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
+                  <div className="min-w-0 flex-1">
                     <p className="flex min-w-0 items-center gap-2 font-semibold">
                       <span className={`h-2.5 w-2.5 rounded-full ${getStatusDotClass(solicitacao.status_geral)}`} />
                       <span className="truncate">{solicitacao.codigo || '-'}</span>
@@ -308,6 +308,11 @@ export function SolicitacaoTable({
                       {getSolicitacaoSolicitante(solicitacao) || '-'} | {getSolicitacaoCentroCusto(solicitacao) || '-'}
                     </p>
                   </div>
+                  <PublicVisibilityToggle
+                    checked={isPublicVisible(solicitacao.visivel_publico)}
+                    disabled={updatingPublicIds.includes(solicitacao.id)}
+                    onChange={(checked) => handleTogglePublic(solicitacao, checked)}
+                  />
                 </div>
 
                 <div className="mt-3 flex flex-wrap gap-2">
@@ -317,7 +322,7 @@ export function SolicitacaoTable({
                   />
                   {situacao.label && (
                     <span
-                      className={`block max-w-full truncate rounded-md border px-2 py-1 text-xs font-semibold ${situacao.className}`}
+                      className={`block max-w-full truncate rounded-[4px] border px-2 py-1.5 text-xs font-bold uppercase leading-none ${situacao.className}`}
                       title={situacao.label}
                     >
                       {situacao.label}
@@ -330,13 +335,6 @@ export function SolicitacaoTable({
                   <span>Solicitado: {formatDate(getSolicitacaoCreatedAt(solicitacao))}</span>
                   <span>Previsão: {formatDate(solicitacao.previsao_entrega)}</span>
                   <span>Atualizado: {getUpdatedAtDisplay(solicitacao)}</span>
-                </div>
-                <div className="mt-3">
-                  <PublicVisibilityToggle
-                    checked={isPublicVisible(solicitacao.visivel_publico)}
-                    disabled={updatingPublicIds.includes(solicitacao.id)}
-                    onChange={(checked) => handleTogglePublic(solicitacao, checked)}
-                  />
                 </div>
               </div>
             )
@@ -512,7 +510,7 @@ export function SolicitacaoTable({
                       <TableCell>
                         {situacao.label ? (
                           <span
-                            className={`block truncate rounded-md border px-2 py-1 text-xs font-semibold ${situacao.className}`}
+                            className={`block w-full truncate rounded-[4px] border px-2 py-1.5 text-xs font-bold uppercase leading-none ${situacao.className}`}
                             title={situacao.label}
                           >
                             {situacao.label}

@@ -10,6 +10,7 @@ import { LembretesSlide } from '@/components/slides/LembretesSlide'
 import { SolicitacoesSlide } from '@/components/slides/SolicitacoesSlide'
 import InventarioSlide from '@/components/slides/InventarioSlide'
 import { Clock, Maximize2, Minimize2, Monitor } from 'lucide-react'
+import { isSolicitacaoEncerrada } from '@/constants/solicitacoes-config'
 
 function RelogioSlide({ onEnd }) {
   const [time, setTime] = useState(new Date())
@@ -89,7 +90,7 @@ export default function PainelPage() {
   const lembretesPendentes = lembretes.filter((lembrete) => lembrete.status !== 'concluido')
   const hasProdutosBaixos = produtos.some((produto) => produto.estoque <= produto.min)
   const hasSolicitacoesAbertas = solicitacoesCompra.some(
-    (solicitacao) => !['concluida', 'cancelada'].includes(solicitacao.status_geral)
+    (solicitacao) => !isSolicitacaoEncerrada(solicitacao)
   )
   const slideDefinitions = [
     ...(tarefasPendentes.length > 0

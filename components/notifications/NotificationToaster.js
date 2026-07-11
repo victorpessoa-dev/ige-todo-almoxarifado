@@ -38,8 +38,10 @@ export function NotificationToaster() {
       richColors
       expand
       visibleToasts={4}
+      swipeDirections={['left', 'right']}
       toastOptions={{
         duration: 4200,
+        dismissible: true,
         className: 'ige-toast'
       }}
     />

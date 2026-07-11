@@ -14,11 +14,7 @@ import {
 } from '@/components/ui/select'
 import {
   SOLICITACAO_PRIORIDADE_OPTIONS,
-  SOLICITACAO_STATUS_COTACAO_OPTIONS,
-  SOLICITACAO_STATUS_GERAL_OPTIONS,
-  SOLICITACAO_STATUS_PEDIDO_OPTIONS,
-  SOLICITACAO_STATUS_TRANSPORTE_OPTIONS,
-  getSolicitacaoStatusDefaults
+  SOLICITACAO_STATUS_GERAL_OPTIONS
 } from '@/constants/solicitacoes-config'
 import { getTodayDateInputValue } from '@/lib/date/date-utils'
 
@@ -42,9 +38,6 @@ export const defaultSolicitacaoForm = {
   valor_unitario: '',
   valor_total: '',
   previsao_entrega: '',
-  status_cotacao: 'nao_iniciado',
-  status_pedido: 'nao_digitado',
-  status_transporte: 'producao_separacao',
   produto_id: ''
 }
 
@@ -184,8 +177,7 @@ export function SolicitacaoForm({
   const updateField = (field, value) => {
     const nextForm = {
       ...form,
-      [field]: value,
-      ...(field === 'status_geral' ? getSolicitacaoStatusDefaults(value) : {})
+      [field]: value
     }
 
     if (field === 'status_geral' && value === 'concluida' && !nextForm.previsao_entrega) {
@@ -422,8 +414,8 @@ export function SolicitacaoForm({
                 </SelectTrigger>
                 <SelectContent className="max-w-[calc(100vw-2rem)]">
                   <SelectItem value="sem_produto">
-                    <span className="block max-w-[min(34rem,calc(100vw-4rem))] truncate" title="Sem vinculo">
-                      Sem vinculo
+                    <span className="block max-w-[min(34rem,calc(100vw-4rem))] truncate" title="Sem vínculo">
+                      Sem vínculo
                     </span>
                   </SelectItem>
                   {produtos.map((produto) => (
@@ -484,67 +476,6 @@ export function SolicitacaoForm({
             </Field>
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-3">
-            <Field label="Status da cotação">
-              <Select
-                value={form.status_cotacao}
-                onValueChange={(value) => updateField('status_cotacao', value)}
-              >
-                <SelectTrigger className="w-full min-w-0 overflow-hidden">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {SOLICITACAO_STATUS_COTACAO_OPTIONS.map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
-                      <span className="block max-w-[min(34rem,calc(100vw-4rem))] truncate" title={option.label}>
-                        {option.label}
-                      </span>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </Field>
-
-            <Field label="Status do pedido">
-              <Select
-                value={form.status_pedido}
-                onValueChange={(value) => updateField('status_pedido', value)}
-              >
-                <SelectTrigger className="w-full min-w-0 overflow-hidden">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {SOLICITACAO_STATUS_PEDIDO_OPTIONS.map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
-                      <span className="block max-w-[min(34rem,calc(100vw-4rem))] truncate" title={option.label}>
-                        {option.label}
-                      </span>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </Field>
-
-            <Field label="Status do transporte">
-              <Select
-                value={form.status_transporte}
-                onValueChange={(value) => updateField('status_transporte', value)}
-              >
-                <SelectTrigger className="w-full min-w-0 overflow-hidden">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {SOLICITACAO_STATUS_TRANSPORTE_OPTIONS.map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
-                      <span className="block max-w-[min(34rem,calc(100vw-4rem))] truncate" title={option.label}>
-                        {option.label}
-                      </span>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </Field>
-          </div>
         </>
       )}
     </>
