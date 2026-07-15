@@ -382,11 +382,6 @@ export default function PrintDialogContent({
 
   return (
     <div className="space-y-4">
-      {bulk && (
-        <p className="text-sm text-muted-foreground">
-          {selectedProducts.length} produto(s) selecionado(s). A imagem abaixo é a prévia do modelo escolhido.
-        </p>
-      )}
 
       <div>
         <label className="text-sm font-medium">Modelo Pimaco</label>
