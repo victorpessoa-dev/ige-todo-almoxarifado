@@ -31,7 +31,6 @@ import ProductTable from '@/components/inventory/ProductTable'
 import ProductFormFields from '@/components/inventory/ProductFormFields'
 import MovementFormFields from '@/components/inventory/MovementFormFields'
 import PrintDialogContent from '@/components/inventory/PrintDialogContent'
-import PrintEtiqueta from '@/components/inventory/PrintEtiqueta'
 import { getUserMessage } from '@/lib/messaging/user-messages'
 import { isSolicitacaoEncerrada } from '@/constants/solicitacoes-config'
 
@@ -235,10 +234,11 @@ export default function InventarioPage() {
 
   const [printDialog, setPrintDialog] = useState({
     open: false,
-    produto: null
+    produto: null,
+    produtos: [],
+    bulk: false
   })
 
-  const [printCopies, setPrintCopies] = useState(14)
   const [barcodeInput, setBarcodeInput] = useState('')
   const [barcodeProduct, setBarcodeProduct] = useState(null)
   const [scanQuantity, setScanQuantity] = useState(1)
@@ -549,14 +549,6 @@ export default function InventarioPage() {
     }
   }
 
-  const handlePrint = () => {
-    setPrintDialog((prev) => ({ ...prev, open: false }))
-
-    setTimeout(() => {
-      window.print()
-    }, 600)
-  }
-
   const toggleProductSelection = (id) => {
     setSelectedProductIds((prev) =>
       prev.includes(id)
@@ -634,10 +626,6 @@ export default function InventarioPage() {
 
   return (
     <div className="mx-auto flex w-full max-w-7xl flex-col gap-4 pb-4 sm:gap-6 sm:pb-6">
-      <div className="hidden print-area">
-        <PrintEtiqueta produto={printDialog.produto} copies={printCopies} />
-      </div>
-
       <div className="flex flex-col gap-3 rounded-2xl border bg-card/70 p-4 shadow-sm lg:flex-row lg:items-center lg:justify-between sm:p-5">
         <div className="space-y-1">
           <h1 className="flex items-center gap-3 text-xl font-bold sm:text-2xl md:text-3xl">
@@ -732,6 +720,14 @@ export default function InventarioPage() {
               setBulkSaidaQuantidade(1)
               setBulkSaidaDialogOpen(true)
             }}
+            onBulkDownload={() =>
+              setPrintDialog({
+                open: true,
+                produto: null,
+                produtos: selectedProducts,
+                bulk: true
+              })
+            }
             onSolicitarCompra={(produto) => {
               if (requestedLowStockProductIds.has(produto.id)) {
                 toast.info('Este produto ja possui solicitacao de compra aberta.')
@@ -1158,19 +1154,18 @@ export default function InventarioPage() {
 
       <Dialog
         open={printDialog.open}
-        onOpenChange={() => setPrintDialog({ open: false, produto: null })}
+        onOpenChange={() => setPrintDialog({ open: false, produto: null, produtos: [], bulk: false })}
       >
         <DialogContent className="w-[95vw] max-w-[420px] p-4 sm:p-6">
           <DialogHeader>
-            <DialogTitle>Imprimir Etiqueta</DialogTitle>
+            <DialogTitle>{printDialog.bulk ? 'Baixar etiquetas selecionadas' : 'Baixar etiqueta'}</DialogTitle>
           </DialogHeader>
 
           <PrintDialogContent
-            produto={printDialog.produto}
-            printCopies={printCopies}
-            setPrintCopies={setPrintCopies}
-            onPrint={handlePrint}
-            onCancel={() => setPrintDialog({ open: false, produto: null })}
+            produto={printDialog.produto || (printDialog.produtos ?? [])[0]}
+            produtos={printDialog.produtos ?? []}
+            bulk={printDialog.bulk}
+            onCancel={() => setPrintDialog({ open: false, produto: null, produtos: [], bulk: false })}
           />
         </DialogContent>
       </Dialog>
