@@ -32,60 +32,16 @@ import ProductFormFields from '@/components/inventory/ProductFormFields'
 import MovementFormFields from '@/components/inventory/MovementFormFields'
 import PrintDialogContent from '@/components/inventory/PrintDialogContent'
 import { getUserMessage } from '@/lib/messaging/user-messages'
-import { isSolicitacaoEncerrada } from '@/constants/solicitacoes-config'
+import {
+  getCompraQuantidade,
+  getInventoryCategory,
+  isSolicitacaoAberta,
+  makeReposicaoLine,
+  makeReposicaoTitle,
+  normalizeCategory
+} from '@/lib/inventory/replenishment'
 
-function normalizeCategory(value) {
-  return String(value || '')
-    .trim()
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-}
-
-function getInventoryCategory(produto) {
-  const categoria = String(produto?.categoria || '').trim()
-
-  return categoria || 'Sem categoria'
-}
-
-function normalizeRequestText(value) {
-  return String(value || '')
-    .trim()
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-}
-
-function isSolicitacaoAberta(solicitacao) {
-  return !isSolicitacaoEncerrada(solicitacao)
-}
-
-function getCompraQuantidade(produto) {
-  return Math.max(
-    0,
-    Number(produto?.max || 0) - Number(produto?.estoque || 0)
-  )
-}
-
-function formatReposicaoQuantidade(quantidade) {
-  const amount = Number(quantidade || 0)
-
-  return Number.isInteger(amount)
-    ? String(amount)
-    : String(amount).replace('.', ',')
-}
-
-function makeReposicaoLine({ produto, quantidade }) {
-  return [
-    String(produto.cod || '').trim() || 'SEM COD',
-    String(produto.nome || '').trim().toLocaleUpperCase('pt-BR'),
-    `${formatReposicaoQuantidade(quantidade)} UND`
-  ].join(' - ')
-}
-
-function makeReposicaoTitle(category) {
-  return `REPOSIÇÃO (${category || 'SEM CATEGORIA'})`.toLocaleUpperCase('pt-BR')
-}
+const normalizeRequestText = normalizeCategory
 
 const EMPTY_PRODUCT_FORM = {
   cod: '',

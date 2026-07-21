@@ -9,12 +9,10 @@ import { useEffect, useRef, useState } from 'react'
 export default function PrintEtiqueta({ produto, copies = 1 }) {
   const canvasRef = useRef(null)
   const [image, setImage] = useState(null)
+  const productKey = produto ? String(produto.id || produto.cod || produto.cod_barra) : ''
 
   useEffect(() => {
-    if (!produto) {
-      setImage(null)
-      return
-    }
+    if (!produto) return
 
     const canvas = canvasRef.current
     if (!canvas) return
@@ -73,12 +71,12 @@ export default function PrintEtiqueta({ produto, copies = 1 }) {
       ctx.drawImage(barcodeCanvas, 50, 110, 500, 80)
       ctx.restore()
 
-      setImage(canvas.toDataURL('image/png'))
+      setImage({ productKey, url: canvas.toDataURL('image/png') })
     }
 
     img.onload = renderLabel
     img.onerror = renderLabel
-  }, [produto])
+  }, [produto, productKey])
 
   if (!produto) return null
 
@@ -87,10 +85,10 @@ export default function PrintEtiqueta({ produto, copies = 1 }) {
   return (
     <>
       <canvas ref={canvasRef} className="hidden" />
-      {image && Array.from({ length: safeCopies }, (_, index) => (
+      {image?.productKey === productKey && Array.from({ length: safeCopies }, (_, index) => (
         <div className="print-label-item" key={`${produto.id || produto.cod}-${index}`}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={image} alt={`Etiqueta de ${produto.nome}`} />
+          <img src={image.url} alt={`Etiqueta de ${produto.nome}`} />
         </div>
       ))}
     </>

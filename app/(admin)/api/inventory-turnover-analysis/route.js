@@ -1,5 +1,6 @@
 import { callAI } from '@/lib/server/ai-providers'
 import { checkRateLimit, createRateLimitResponse } from '@/lib/server/rate-limit'
+import { authenticateApiRequest, createUnauthorizedResponse } from '@/lib/server/api-auth'
 
 /**
  * Endpoint de analise de giro de estoque.
@@ -163,10 +164,12 @@ export async function POST(req) {
   let products = []
 
   try {
-    const rateLimit = checkRateLimit(req, {
-      keyPrefix: 'api:inventory-turnover-analysis',
-      limit: 15,
-      windowMs: 60_000
+    const { user, accessToken } = await authenticateApiRequest(req)
+    if (!user) return createUnauthorizedResponse()
+
+    const rateLimit = await checkRateLimit({
+      accessToken,
+      keyPrefix: 'api:inventory-turnover-analysis'
     })
 
     if (!rateLimit.allowed) {

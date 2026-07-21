@@ -24,116 +24,17 @@ import {
   updateSolicitanteCompra
 } from '@/lib/services/solicitacoes-service'
 import { toDateInputValue } from '@/lib/date/date-utils'
+import {
+  normalizeMovimentacao,
+  normalizeSolicitacao,
+  removeSorted,
+  sortByCreatedAtDesc,
+  sortProdutosByNomeAsc,
+  upsertSorted,
+  withRetry
+} from '@/lib/data/context-utils'
 
 const DataContext = createContext()
-
-const MAX_RETRIES = 3
-const RETRY_DELAY = 1000
-
-/**
- * Aguarda antes de uma nova tentativa de operacao remota.
- */
-function delay(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms))
-}
-
-/**
- * Reexecuta operacoes transientes com backoff exponencial simples.
- */
-async function withRetry(operation, retries = MAX_RETRIES) {
-  for (let attempt = 0; attempt < retries; attempt++) {
-    try {
-      return await operation()
-    } catch (error) {
-      if (attempt === retries - 1) throw error
-      await delay(RETRY_DELAY * Math.pow(2, attempt))
-    }
-  }
-}
-
-/**
- * Ordena listas operacionais do mais recente para o mais antigo.
- */
-function sortByCreatedAtDesc(items = []) {
-  return [...items].sort((a, b) => {
-    const aDate = a?.created_at ? new Date(a.created_at).getTime() : 0
-    const bDate = b?.created_at ? new Date(b.created_at).getTime() : 0
-    return bDate - aDate
-  })
-}
-
-/**
- * Ordena produtos por nome para manter tabelas e selects previsiveis.
- */
-function sortProdutosByNomeAsc(items = []) {
-  return [...items].sort((a, b) =>
-    (a?.nome || '').localeCompare(b?.nome || '', 'pt-BR', { sensitivity: 'base' })
-  )
-}
-
-/**
- * Insere ou substitui um item mantendo a ordenacao informada.
- */
-function upsertSorted(items = [], nextItem, sortFn) {
-  const nextItems = items.filter((item) => item.id !== nextItem.id)
-  nextItems.push(nextItem)
-  return sortFn(nextItems)
-}
-
-/**
- * Remove um item mantendo a ordenacao informada.
- */
-function removeSorted(items = [], id, sortFn) {
-  return sortFn(items.filter((item) => item.id !== id))
-}
-
-/**
- * Normaliza movimentacoes recebidas pelo realtime.
- *
- * O payload realtime nem sempre traz a relacao produto completa, entao usamos
- * o cache local de produtos para manter a UI consistente.
- */
-function normalizeMovimentacao(movimentacao, produtosBase = []) {
-  if (!movimentacao) return movimentacao
-
-  const produtoRelacionado =
-    movimentacao.produtos ||
-    produtosBase.find((produto) => produto.id === movimentacao.produto_id) ||
-    null
-
-  return {
-    ...movimentacao,
-    produtos: produtoRelacionado
-      ? {
-          nome: produtoRelacionado.nome ?? null,
-          cod: produtoRelacionado.cod ?? null
-        }
-      : null
-  }
-}
-
-/**
- * Normaliza solicitacoes recebidas pelo realtime ou por consultas parciais.
- */
-function normalizeSolicitacao(solicitacao, produtosBase = []) {
-  if (!solicitacao) return solicitacao
-
-  const produtoRelacionado =
-    solicitacao.produtos ||
-    produtosBase.find((produto) => produto.id === solicitacao.produto_id) ||
-    null
-
-  return {
-    ...solicitacao,
-    produtos: produtoRelacionado
-      ? {
-          id: produtoRelacionado.id ?? solicitacao.produto_id,
-          nome: produtoRelacionado.nome ?? null,
-          cod: produtoRelacionado.cod ?? null
-        }
-      : null
-  }
-}
 
 /**
  * Provedor dos dados administrativos compartilhados.

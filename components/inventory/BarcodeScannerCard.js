@@ -10,6 +10,7 @@ import { Label } from '@/components/ui/label'
 import { Slider } from '@/components/ui/slider'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Barcode, Camera, CameraOff, Sparkles, ZoomIn } from 'lucide-react'
+import { authenticatedFetch } from '@/lib/api/authenticated-fetch'
 
 const CAMERA_HELP = 'No celular, permita o acesso a câmera para escanear.'
 const DEFAULT_CAMERA_ZOOM = 2
@@ -531,7 +532,7 @@ export default function BarcodeScannerCard({
       )
 
       const image = canvas.toDataURL('image/jpeg', 0.92)
-      const response = await fetch('/api/inventory-scan-assist', {
+      const response = await authenticatedFetch('/api/inventory-scan-assist', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

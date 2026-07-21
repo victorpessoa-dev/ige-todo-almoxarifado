@@ -59,6 +59,21 @@ jobs:
       - name: Build
         run: npm run build
 
+      - name: Application smoke tests
+        env:
+          APP_EXPECT_PRODUCTION_CSP: 'true'
+        run: |
+          npm start > /tmp/ige-next.log 2>&1 &
+          for attempt in {1..30}; do
+            if curl --fail --silent http://localhost:3000/login > /dev/null; then
+              npm run audit:app:smoke
+              exit 0
+            fi
+            sleep 1
+          done
+          cat /tmp/ige-next.log
+          exit 1
+
   deploy:
     name: Deploy to Vercel
     runs-on: ubuntu-latest

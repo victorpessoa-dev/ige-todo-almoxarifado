@@ -80,7 +80,8 @@ async function testAuditFilesStayOrganizedByUse() {
   const technicalAudit = await readText('docs/technical-audit.md')
 
   // Audit assets should stay grouped by purpose instead of returning to root folders.
-  assert.equal(packageJson.scripts.test, 'node tests/audit/audit-contracts.test.mjs')
+  assert.match(packageJson.scripts.test, /node --test tests\/unit/)
+  assert.match(packageJson.scripts.test, /node tests\/audit\/audit-contracts\.test\.mjs/)
   assert.equal(packageJson.scripts['audit:supabase:public'], 'node scripts/audit/supabase-public-audit.mjs')
   assert.match(runbook, /database\/audit\/supabase_audit\.sql/)
   assert.doesNotMatch(`${runbook}\n${technicalAudit}`, /database\/(security_audit_queries|rls_check|realtime_publication_fix)\.sql/)
@@ -95,6 +96,52 @@ async function testDomainFilesStayOrganizedByUse() {
   assert.match(technicalAudit, /components\/layout\//)
 }
 
+async function testAiRoutesRequireAuthenticatedUser() {
+  const apiAuth = await readText('lib/server/api-auth.js')
+  const authenticatedFetch = await readText('lib/api/authenticated-fetch.js')
+  const routes = await Promise.all([
+    readText('app/(admin)/api/analyze/route.js'),
+    readText('app/(admin)/api/inventory-scan-assist/route.js'),
+    readText('app/(admin)/api/inventory-turnover-analysis/route.js')
+  ])
+  const callers = await Promise.all([
+    readText('app/(admin)/contagem/page.js'),
+    readText('components/inventory/BarcodeScannerCard.js'),
+    readText('app/(admin)/analise-giro/page.js')
+  ])
+
+  assert.match(apiAuth, /supabase\.auth\.getUser\(token\)/)
+  assert.match(apiAuth, /status:\s*401/)
+  assert.match(authenticatedFetch, /Authorization/)
+  assert.match(authenticatedFetch, /session\.access_token/)
+
+  for (const route of routes) {
+    assert.match(route, /authenticateApiRequest\(req\)/)
+    assert.match(route, /if \(!user\) return createUnauthorizedResponse\(\)/)
+  }
+
+  for (const caller of callers) {
+    assert.match(caller, /authenticatedFetch\(/)
+  }
+}
+
+async function testAiRateLimitIsDistributedAndUserScoped() {
+  const rateLimit = await readText('lib/server/rate-limit.js')
+  const migration = await readText(
+    'database/migrations/20260721_add_distributed_api_rate_limit.sql'
+  )
+  const schema = await readText('database/schema_original_atual.sql')
+
+  assert.match(rateLimit, /rpc\('check_api_rate_limit'/)
+  assert.doesNotMatch(rateLimit, /new Map\(/)
+  assert.match(migration, /current_user_id uuid := auth\.uid\(\)/)
+  assert.match(migration, /on conflict \(bucket_key\) do update/)
+  assert.match(migration, /security definer/)
+  assert.match(migration, /revoke all privileges on public\.api_rate_limits from public, anon, authenticated/)
+  assert.match(migration, /grant execute on function public\.check_api_rate_limit\(text\) to authenticated/)
+  assert.match(schema, /create table if not exists public\.api_rate_limits/)
+}
+
 await testManifestUsesSvgLogo()
 await testPublicPurchaseRequestsDoNotGrantAnonInsert()
 await testPublicListServicesUseMemoryCache()
@@ -102,5 +149,7 @@ await testSolicitacaoDateFilterLogicIsShared()
 await testCatalogSummaryDoesNotRenderLinks()
 await testAuditFilesStayOrganizedByUse()
 await testDomainFilesStayOrganizedByUse()
+await testAiRoutesRequireAuthenticatedUser()
+await testAiRateLimitIsDistributedAndUserScoped()
 
 console.log('audit contracts passed')

@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
-    "test": "node tests/audit/audit-contracts.test.mjs",
+    "test": "node --test tests/unit && node tests/audit/audit-contracts.test.mjs",
     "audit:supabase:public": "node scripts/audit/supabase-public-audit.mjs",
     "audit:app:smoke": "node tests/audit/app-smoke.test.mjs"
   },

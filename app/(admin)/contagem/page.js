@@ -21,6 +21,7 @@ import { ImageGallery } from '@/components/contagem/ImageGallery'
 import { ProductList } from '@/components/contagem/ProductList'
 import { downloadExcel } from '@/lib/export/excel'
 import { getUserMessage } from '@/lib/messaging/user-messages'
+import { authenticatedFetch } from '@/lib/api/authenticated-fetch'
 
 const MAX_IMAGES = 3
 
@@ -136,7 +137,7 @@ export default function ContagemPage() {
     setError(null)
 
     try {
-      const response = await fetch('/api/analyze', {
+      const response = await authenticatedFetch('/api/analyze', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ images: pendingImages })

@@ -16,6 +16,7 @@ import { toast } from 'sonner'
 
 import { useData } from '@/contexts/data-context'
 import { getUserMessage } from '@/lib/messaging/user-messages'
+import { authenticatedFetch } from '@/lib/api/authenticated-fetch'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -334,7 +335,7 @@ export default function AnaliseGiroPage() {
     setTurnoverAnalysis(null)
 
     try {
-      const response = await fetch('/api/inventory-turnover-analysis', {
+      const response = await authenticatedFetch('/api/inventory-turnover-analysis', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ products: productsForAnalysis })
