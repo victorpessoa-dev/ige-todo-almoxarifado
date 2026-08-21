@@ -1,26 +1,25 @@
-﻿'use client'
+'use client'
 
 import JsBarcode from 'jsbarcode'
 import { useEffect, useRef, useState } from 'react'
 
 /**
- * Gera uma etiqueta padrao para produto do inventario.
- *
- * Mantem compatibilidade com o fluxo antigo de impressao, usando canvas para
- * exportar uma imagem pronta com logo, nome e codigo de barras.
+ * Gera uma ou mais copias imprimiveis da etiqueta de um produto.
  */
-export default function PrintEtiqueta({ produto }) {
+export default function PrintEtiqueta({ produto, copies = 1 }) {
   const canvasRef = useRef(null)
   const [image, setImage] = useState(null)
+  const productKey = produto ? String(produto.id || produto.cod || produto.cod_barra) : ''
 
   useEffect(() => {
     if (!produto) return
 
     const canvas = canvasRef.current
+    if (!canvas) return
+
     const ctx = canvas.getContext('2d')
     const scale = 2
 
-    // Renderiza em escala maior para preservar nitidez na impressao.
     canvas.width = 600 * scale
     canvas.height = 240 * scale
     canvas.style.width = '600px'
@@ -35,31 +34,29 @@ export default function PrintEtiqueta({ produto }) {
     const img = new Image()
     img.src = '/ige-supergesso.svg'
 
-    img.onload = () => {
-      // A marca d'agua identifica a origem da etiqueta sem disputar contraste
-      // com o codigo de barras.
-      ctx.save()
-      ctx.globalAlpha = 0.22
-      ctx.drawImage(img, 0, 0, 600, 240)
-      ctx.restore()
-
-      ctx.drawImage(img, 10, 10, 120, 40)
+    const renderLabel = () => {
+      if (img.complete && img.naturalWidth > 0) {
+        ctx.save()
+        ctx.globalAlpha = 0.22
+        ctx.drawImage(img, 0, 0, 600, 240)
+        ctx.restore()
+        ctx.drawImage(img, 10, 10, 120, 40)
+      }
 
       ctx.fillStyle = '#000'
       ctx.font = 'bold 20px monospace'
       ctx.textAlign = 'right'
-      ctx.fillText(produto.cod, 590, 30)
+      ctx.fillText(String(produto.cod || ''), 590, 30)
 
       ctx.font = 'bold 22px Arial'
       ctx.textAlign = 'center'
       ctx.lineWidth = 2
       ctx.strokeStyle = '#ffffff'
-      ctx.strokeText(produto.nome, 300, 90)
-      ctx.fillText(produto.nome, 300, 90)
+      ctx.strokeText(String(produto.nome || ''), 300, 90)
+      ctx.fillText(String(produto.nome || ''), 300, 90)
 
       const barcodeCanvas = document.createElement('canvas')
-
-      JsBarcode(barcodeCanvas, String(produto.cod), {
+      JsBarcode(barcodeCanvas, String(produto.cod || produto.cod_barra || produto.id), {
         format: 'CODE128',
         width: 3,
         height: 78,
@@ -74,32 +71,26 @@ export default function PrintEtiqueta({ produto }) {
       ctx.drawImage(barcodeCanvas, 50, 110, 500, 80)
       ctx.restore()
 
-      const url = canvas.toDataURL('image/png')
-      setImage(url)
+      setImage({ productKey, url: canvas.toDataURL('image/png') })
     }
-  }, [produto])
+
+    img.onload = renderLabel
+    img.onerror = renderLabel
+  }, [produto, productKey])
 
   if (!produto) return null
 
+  const safeCopies = Math.max(1, Math.floor(Number(copies) || 1))
+
   return (
-    <div className="flex flex-col items-center gap-4">
+    <>
       <canvas ref={canvasRef} className="hidden" />
-
-      {image && (
-        <>
-          {/* Generated label data URL is rendered as-is for print/download fidelity. */}
+      {image?.productKey === productKey && Array.from({ length: safeCopies }, (_, index) => (
+        <div className="print-label-item" key={`${produto.id || produto.cod}-${index}`}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={image} alt="Etiqueta" className="border" />
-
-          <a
-            href={image}
-            download={`etiqueta-${produto.cod}.png`}
-            className="bg-black text-white px-4 py-2 rounded"
-          >
-            Baixar Imagem
-          </a>
-        </>
-      )}
-    </div>
+          <img src={image.url} alt={`Etiqueta de ${produto.nome}`} />
+        </div>
+      ))}
+    </>
   )
 }

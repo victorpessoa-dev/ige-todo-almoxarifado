@@ -29,7 +29,11 @@ grant select on public.centros_custo to anon;
 
 -- Neste projeto, authenticated representa operador interno confiavel.
 grant select, insert, update, delete on all tables in schema public to authenticated;
+revoke all privileges on public.api_rate_limits from public, anon, authenticated;
 grant usage, select on sequence public.solicitacoes_compra_codigo_seq to authenticated;
+
+grant execute on function public.check_api_rate_limit(text)
+to authenticated;
 
 grant execute on function public.criar_solicitacao_compra_publica(text, text, numeric, text, date, uuid, text, text, text, text, uuid)
 to anon, authenticated;
@@ -42,6 +46,8 @@ to anon, authenticated;
 
 grant execute on function public.listar_produtos_catalogo_publico()
 to anon, authenticated;
+
+alter table public.api_rate_limits enable row level security;
 
 drop policy if exists "delete tarefas" on public.tarefas;
 drop policy if exists "insert tarefas" on public.tarefas;

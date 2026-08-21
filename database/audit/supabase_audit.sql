@@ -98,11 +98,14 @@ from information_schema.routine_privileges
 where routine_schema = 'public'
   and grantee in ('anon', 'authenticated')
   and privilege_type = 'EXECUTE'
-  and routine_name not in (
-    'criar_solicitacao_compra_publica',
-    'buscar_solicitacao_compra_publica',
-    'listar_solicitacoes_compra_publica',
-    'listar_produtos_catalogo_publico'
+  and not (
+    routine_name in (
+      'criar_solicitacao_compra_publica',
+      'buscar_solicitacao_compra_publica',
+      'listar_solicitacoes_compra_publica',
+      'listar_produtos_catalogo_publico'
+    )
+    or (routine_name = 'check_api_rate_limit' and grantee = 'authenticated')
   )
 order by routine_name, grantee;
 
