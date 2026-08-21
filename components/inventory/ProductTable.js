@@ -33,7 +33,7 @@ import {
   CheckCheck,
   MoreHorizontal,
   Pencil,
-  Printer,
+  Download,
   ShoppingCart,
   Trash2,
   TrendingDown,
@@ -113,6 +113,7 @@ export default function ProductTable({
   onClearSelection,
   onBulkDelete,
   onBulkSaida,
+  onBulkDownload,
   onSolicitarCompra,
   headerActions
 }) {
@@ -299,10 +300,10 @@ export default function ProductTable({
         </DropdownMenuItem>
 
         <DropdownMenuItem
-          onClick={() => setPrintDialog({ open: true, produto })}
+          onClick={() => setPrintDialog({ open: true, produto, produtos: [], bulk: false })}
         >
-          <Printer className="h-4 w-4" />
-          Imprimir etiqueta
+          <Download className="h-4 w-4" />
+          Baixar etiqueta
         </DropdownMenuItem>
 
         <DropdownMenuSeparator />
@@ -376,6 +377,11 @@ export default function ProductTable({
             </div>
 
             <div className="grid gap-2 sm:flex sm:flex-wrap">
+              <Button size="sm" variant="outline" className="w-full sm:w-auto" onClick={onBulkDownload}>
+                <Download className="mr-2 h-4 w-4" />
+                Baixar etiquetas
+              </Button>
+
               <Button size="sm" variant="outline" className="w-full sm:w-auto" onClick={onBulkSaida}>
                 <TrendingDown className="mr-2 h-4 w-4" />
                 Dar baixa
@@ -672,12 +678,12 @@ export default function ProductTable({
               variant="outline"
               onClick={() =>
                 runProductAction((produto) =>
-                  setPrintDialog({ open: true, produto })
+                  setPrintDialog({ open: true, produto, produtos: [], bulk: false })
                 )
               }
             >
-              <Printer className="h-4 w-4" />
-              Imprimir etiqueta
+              <Download className="h-4 w-4" />
+              Baixar etiqueta
             </Button>
 
             <Button

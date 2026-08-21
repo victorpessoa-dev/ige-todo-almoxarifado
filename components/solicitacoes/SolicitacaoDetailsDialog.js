@@ -30,7 +30,6 @@ import {
   AlertDialogTitle
 } from '@/components/ui/alert-dialog'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { defaultSolicitacaoForm } from './SolicitacaoForm'
 import { SolicitacaoStatusBadge } from './SolicitacaoStatusBadge'
 import { getUserMessage } from '@/lib/messaging/user-messages'
 import {
@@ -45,7 +44,14 @@ import {
   getSolicitacaoSituacao,
   getSolicitacaoStatusColor
 } from '@/constants/solicitacoes-config'
-import { formatDateBR, getTodayDateInputValue, toDateInputValue } from '@/lib/date/date-utils'
+import { formatDateBR, getTodayDateInputValue } from '@/lib/date/date-utils'
+import {
+  buildSolicitacaoDetailsForm,
+  buildSolicitacaoDetailsPayload,
+  completeSolicitacaoMoneyFields,
+  formatSolicitacaoDecimalInput,
+  parseSolicitacaoDecimal
+} from '@/lib/solicitacoes/details-form'
 
 /**
  * Dialog de detalhes e edição de solicitações de compra.
@@ -53,33 +59,6 @@ import { formatDateBR, getTodayDateInputValue, toDateInputValue } from '@/lib/da
  * Exibe o histórico operacional da solicitação e permite atualizar status,
  * valores, previsão e vínculos sem sair da listagem administrativa.
  */
-
-function toDateInput(value) {
-  return toDateInputValue(value)
-}
-
-function parseDecimalValue(value) {
-  if (value === null || value === undefined || value === '') return null
-  if (typeof value === 'number') return value
-
-  const cleanValue = String(value).trim().replace(/[^\d,.-]/g, '')
-  const normalizedValue = cleanValue.includes(',')
-    ? cleanValue.replace(/\./g, '').replace(',', '.')
-    : cleanValue
-  const number = Number(normalizedValue)
-
-  return Number.isFinite(number) ? number : null
-}
-
-function formatDecimalInput(value) {
-  const number = parseDecimalValue(value)
-  if (!number) return ''
-
-  return number.toLocaleString('pt-BR', {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2
-  })
-}
 
 function shouldShowSituacaoBadge(solicitacao, situacao) {
   if (!situacao?.label) return false
@@ -89,48 +68,6 @@ function shouldShowSituacaoBadge(solicitacao, situacao) {
   )
 
   return situacao.label !== statusOption?.label
-}
-
-function completeMoneyFields(form, changedField) {
-  const quantidade = Number(form.quantidade || 0)
-  const valorUnitario = parseDecimalValue(form.valor_unitario)
-  const valorTotal = parseDecimalValue(form.valor_total)
-  const nextForm = { ...form }
-
-  if (quantidade <= 0) return nextForm
-
-  if (changedField === 'valor_unitario') {
-    nextForm.valor_total = valorUnitario > 0
-      ? formatDecimalInput(quantidade * valorUnitario)
-      : ''
-    return nextForm
-  }
-
-  if (changedField === 'valor_total') {
-    nextForm.valor_unitario = valorTotal > 0
-      ? formatDecimalInput(valorTotal / quantidade)
-      : ''
-    return nextForm
-  }
-
-  if (changedField === 'quantidade') {
-    if (valorUnitario > 0) {
-      nextForm.valor_total = formatDecimalInput(quantidade * valorUnitario)
-    } else if (valorTotal > 0) {
-      nextForm.valor_unitario = formatDecimalInput(valorTotal / quantidade)
-    }
-    return nextForm
-  }
-
-  if (valorUnitario > 0 && !valorTotal) {
-    nextForm.valor_total = formatDecimalInput(quantidade * valorUnitario)
-  }
-
-  if (valorTotal > 0 && !valorUnitario) {
-    nextForm.valor_unitario = formatDecimalInput(valorTotal / quantidade)
-  }
-
-  return nextForm
 }
 
 function formatDate(value) {
@@ -163,7 +100,7 @@ function getUpdatedAtDisplay(solicitacao) {
 }
 
 function formatCurrency(value) {
-  const number = parseDecimalValue(value)
+  const number = parseSolicitacaoDecimal(value)
   if (!number) return '-'
 
   return number.toLocaleString('pt-BR', {
@@ -251,60 +188,10 @@ function getSolicitanteCentroCusto(solicitante, centrosCusto) {
   )
 }
 
-function buildFormFromSolicitacao(solicitacao) {
-  return {
-    ...defaultSolicitacaoForm,
-    nome_item: solicitacao?.nome_item || '',
-    descricao: solicitacao?.descricao || '',
-    quantidade: solicitacao?.quantidade || 1,
-    prioridade: solicitacao?.prioridade || 'media',
-    previsao_desejada: toDateInput(solicitacao?.previsao_desejada),
-    centro_custo_id: solicitacao?.centro_custo_id || '',
-    centro_custo: getSolicitacaoCentroCusto(solicitacao),
-    centro_custo_nome: getSolicitacaoCentroCusto(solicitacao),
-    aplicacoes: solicitacao?.aplicacoes || '',
-    link_referencia: solicitacao?.link_referencia || '',
-    fornecedor_nome: solicitacao?.fornecedor_nome || '',
-    fornecedor_contato: solicitacao?.fornecedor_contato || '',
-    solicitante_id: solicitacao?.solicitante_id || '',
-    solicitante: getSolicitacaoSolicitante(solicitacao),
-    solicitante_nome: getSolicitacaoSolicitante(solicitacao),
-    status_geral: solicitacao?.status_geral || 'nova',
-    valor_unitario: formatDecimalInput(solicitacao?.valor_unitario),
-    valor_total: formatDecimalInput(solicitacao?.valor_total),
-    previsao_entrega: toDateInput(solicitacao?.previsao_entrega),
-    produto_id: solicitacao?.produto_id || ''
-  }
-}
-
-/**
- * Monta o payload de atualizacao a partir do formulario editavel.
- *
- * Campos opcionais vazios sao enviados como null para manter consistencia com
- * o modelo do banco e evitar strings vazias em relatorios.
- */
-function buildPayload(form) {
-  const completedForm = completeMoneyFields(form)
-
-  return {
-    nome_item: completedForm.nome_item,
-    descricao: completedForm.descricao,
-    quantidade: Number(completedForm.quantidade || 0),
-    prioridade: completedForm.prioridade,
-    previsao_desejada: completedForm.previsao_desejada || null,
-    centro_custo_id: completedForm.centro_custo_id || null,
-    aplicacoes: completedForm.aplicacoes || null,
-    link_referencia: completedForm.link_referencia || null,
-    fornecedor_nome: completedForm.fornecedor_nome?.trim?.() || null,
-    fornecedor_contato: completedForm.fornecedor_contato?.trim?.() || null,
-    solicitante_id: completedForm.solicitante_id || null,
-    status_geral: completedForm.status_geral,
-    valor_unitario: parseDecimalValue(completedForm.valor_unitario),
-    valor_total: parseDecimalValue(completedForm.valor_total),
-    previsao_entrega: completedForm.previsao_entrega || null,
-    produto_id: completedForm.produto_id || null
-  }
-}
+const buildFormFromSolicitacao = buildSolicitacaoDetailsForm
+const buildPayload = buildSolicitacaoDetailsPayload
+const completeMoneyFields = completeSolicitacaoMoneyFields
+const formatDecimalInput = formatSolicitacaoDecimalInput
 
 function StatusTimeline({ status }) {
   const steps = SOLICITACAO_STATUS_GERAL_OPTIONS.filter(

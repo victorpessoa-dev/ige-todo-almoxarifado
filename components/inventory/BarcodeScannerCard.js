@@ -554,7 +554,7 @@ export default function BarcodeScannerCard({
       )
 
       const image = canvas.toDataURL('image/jpeg', 0.92)
-      const response = await fetch('/api/inventory-scan-assist', {
+      const response = await authenticatedFetch('/api/inventory-scan-assist', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...(await getApiAuthHeaders()) },
         body: JSON.stringify({
