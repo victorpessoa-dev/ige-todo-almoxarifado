@@ -1,6 +1,6 @@
 import { callAI } from '@/lib/server/ai-providers'
 import { checkRateLimit, createRateLimitResponse } from '@/lib/server/rate-limit'
-import { authenticateApiRequest, createUnauthorizedResponse } from '@/lib/server/api-auth'
+import { requireApiAuth } from '@/lib/server/api-auth'
 
 /**
  * Endpoint de apoio a contagem por imagem.
@@ -62,12 +62,13 @@ function validateBase64Image(image) {
  */
 export async function POST(req) {
   try {
-    const { user, accessToken } = await authenticateApiRequest(req)
-    if (!user) return createUnauthorizedResponse()
+    const auth = await requireApiAuth(req)
+    if (auth.response) return auth.response
 
-    const rateLimit = await checkRateLimit({
-      accessToken,
-      keyPrefix: 'api:analyze'
+    const rateLimit = await checkRateLimit(req, {
+      keyPrefix: 'api:analyze',
+      limit: 12,
+      windowMs: 60_000
     })
 
     if (!rateLimit.allowed) {

@@ -1,4 +1,5 @@
 'use client'
+import { getApiAuthHeaders } from '@/lib/supabase/client'
 
 import { useMemo, useState } from 'react'
 import {
@@ -337,7 +338,7 @@ export default function AnaliseGiroPage() {
     try {
       const response = await authenticatedFetch('/api/inventory-turnover-analysis', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...(await getApiAuthHeaders()) },
         body: JSON.stringify({ products: productsForAnalysis })
       })
 

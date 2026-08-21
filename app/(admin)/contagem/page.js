@@ -1,4 +1,5 @@
 'use client'
+import { getApiAuthHeaders } from '@/lib/supabase/client'
 
 import { useCallback, useState } from 'react'
 import { AlertCircle, Camera, ImagePlus, Loader2, Sparkles, Trash2 } from 'lucide-react'
@@ -139,7 +140,7 @@ export default function ContagemPage() {
     try {
       const response = await authenticatedFetch('/api/analyze', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...(await getApiAuthHeaders()) },
         body: JSON.stringify({ images: pendingImages })
       })
 

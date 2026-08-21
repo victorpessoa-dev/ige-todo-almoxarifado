@@ -1,5 +1,6 @@
 'use client'
 
+import { motion } from 'motion/react'
 import { useState, useEffect, useCallback } from 'react'
 import { useData } from '@/contexts/data-context'
 import { Button } from '@/components/ui/button'
@@ -232,9 +233,17 @@ export default function PainelPage() {
 
   if (isFullscreen) {
     return (
-      <div className="fixed inset-0 z-50 flex flex-col bg-background px-3 py-3 sm:px-4 sm:py-4 md:px-6">
+      <div className="fixed inset-0 z-50 flex flex-col overflow-hidden bg-background px-3 py-3 sm:px-4 sm:py-4 md:px-6">
         <div className="relative min-h-0 flex-1 overflow-hidden rounded-2xl border bg-card/40">
-          {slides[safeCurrentSlide].component}
+          <motion.div
+            key={slides[safeCurrentSlide].key}
+            className="h-full"
+            initial={{ opacity: 0, x: 18 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.24, ease: 'easeOut' }}
+          >
+            {slides[safeCurrentSlide].component}
+          </motion.div>
           <Button
             variant="ghost"
             size="icon"
@@ -278,9 +287,17 @@ export default function PainelPage() {
         </div>
       </div>
 
-      <div className="hidden h-full min-h-0 flex-col gap-3 md:flex">
+      <div className="hidden h-[calc(100dvh-3rem)] max-h-[calc(100dvh-3rem)] min-h-0 flex-col gap-3 overflow-hidden md:flex">
         <div className="relative min-h-0 flex-1 overflow-hidden rounded-2xl border bg-card/40">
-          {slides[safeCurrentSlide].component}
+          <motion.div
+            key={slides[safeCurrentSlide].key}
+            className="h-full"
+            initial={{ opacity: 0, x: 18 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.24, ease: 'easeOut' }}
+          >
+            {slides[safeCurrentSlide].component}
+          </motion.div>
 
           <Button
             variant="ghost"

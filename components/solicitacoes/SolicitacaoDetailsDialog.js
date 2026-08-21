@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { motion } from 'motion/react'
 import { toast } from 'sonner'
 import { Copy } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -155,6 +156,36 @@ function CopyableReferenceLink({ href }) {
   )
 }
 
+function CopyableText({ value }) {
+  if (!value) return '-'
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(String(value))
+      toast.success('Descrição copiada!')
+    } catch {
+      toast.error('Não foi possível copiar a descrição.')
+    }
+  }
+
+  return (
+    <span className="flex min-w-0 items-start gap-2">
+      <span className="min-w-0 flex-1 whitespace-pre-line break-words">
+        {value}
+      </span>
+      <Button
+        type="button"
+        variant="ghost"
+        className="size-7 shrink-0 p-0"
+        aria-label="Copiar descrição do item"
+        title="Copiar descrição"
+        onClick={handleCopy}
+      >
+        <Copy className="size-4" />
+      </Button>
+    </span>
+  )
+}
 function Field({ label, children }) {
   return (
     <div className="min-w-0 rounded-lg border bg-card px-3 py-2.5 shadow-sm">
@@ -197,6 +228,7 @@ function StatusTimeline({ status }) {
   const steps = SOLICITACAO_STATUS_GERAL_OPTIONS.filter(
     (option) => option.value !== 'cancelada'
   )
+
   const currentOrder = steps.findIndex((option) => option.value === status)
   const isCanceled = status === 'cancelada'
   const currentOption = steps[currentOrder] || steps[0]
@@ -211,74 +243,62 @@ function StatusTimeline({ status }) {
           className="grid w-full animate-in fade-in-0 zoom-in-95 pb-1 duration-300"
           style={{ gridTemplateColumns: `repeat(${steps.length}, minmax(0, 1fr))` }}
         >
-        {steps.map((option, index) => {
-          const current = !isCanceled && option.value === status
-          const reached = !isCanceled && currentOrder >= 0 && index <= currentOrder
-          const dotColor = reached ? currentColor : neutralColor
-          const fillLeft = !isCanceled && currentOrder >= 0 && index > 0 && index <= currentOrder
-          const fillRight = !isCanceled && currentOrder >= 0 && index < currentOrder
-          const segmentDuration = 220
-          const rightDelay = `${index * segmentDuration * 2}ms`
-          const leftDelay = `${((index - 1) * segmentDuration * 2) + segmentDuration}ms`
-          const dotDelay = `${index * segmentDuration * 2}ms`
+          {steps.map((option, index) => {
+            const current = !isCanceled && option.value === status
+            const reached = !isCanceled && currentOrder >= 0 && index <= currentOrder
+            const fillLeft = !isCanceled && currentOrder >= 0 && index > 0 && index <= currentOrder
+            const fillRight = !isCanceled && currentOrder >= 0 && index < currentOrder
+            const segmentDuration = 0.28
+            const fillDelay = index * segmentDuration * 2
+            const previousFillDelay = ((index - 1) * segmentDuration * 2) + segmentDuration
 
-          return (
-            <div
-              key={option.value}
-              className="grid min-w-0 grid-rows-[1.5rem] content-start"
-              title={option.label}
-            >
-              <div className="grid min-w-0 grid-cols-[1fr_auto_1fr] items-center">
-                <span
-                  aria-hidden="true"
-                  className="relative h-1 min-w-0 overflow-hidden transition-colors duration-500"
-                  style={{ backgroundColor: index === 0 ? 'transparent' : neutralColor }}
-                >
-                  {fillLeft && (
-                    <span
-                      className="timeline-fill absolute inset-0 origin-left"
-                      style={{
-                        animation: `timeline-fill-x ${segmentDuration}ms ease-out forwards`,
-                        animationDelay: leftDelay,
-                        backgroundColor: currentColor,
-                        transform: 'scaleX(0)'
-                      }}
-                    />
-                  )}
-                </span>
-                <span
-                  className={`timeline-dot flex size-5 shrink-0 rounded-full border-[3px] bg-background transition-all duration-500 ${
-                    current ? 'scale-110 shadow-sm' : ''
-                  }`}
-                  style={{
-                    '--timeline-color': currentColor,
-                    animation: reached ? 'timeline-dot-fill 160ms ease-out forwards' : undefined,
-                    animationDelay: reached ? dotDelay : undefined,
-                    borderColor: reached ? neutralColor : dotColor
-                  }}
-                  aria-current={current ? 'step' : undefined}
-                />
-                <span
-                  aria-hidden="true"
-                  className="relative h-1 min-w-0 overflow-hidden transition-colors duration-500"
-                  style={{ backgroundColor: index === steps.length - 1 ? 'transparent' : neutralColor }}
-                >
-                  {fillRight && (
-                    <span
-                      className="timeline-fill absolute inset-0 origin-left"
-                      style={{
-                        animation: `timeline-fill-x ${segmentDuration}ms ease-out forwards`,
-                        animationDelay: rightDelay,
-                        backgroundColor: currentColor,
-                        transform: 'scaleX(0)'
-                      }}
-                    />
-                  )}
-                </span>
+            return (
+              <div
+                key={option.value}
+                className="grid min-w-0 grid-rows-[1.5rem] content-start"
+                title={option.label}
+              >
+                <div className="grid min-w-0 grid-cols-[1fr_auto_1fr] items-center">
+                  <span
+                    aria-hidden="true"
+                    className="relative z-0 h-1 min-w-0 self-center overflow-hidden transition-colors duration-500"
+                    style={{ backgroundColor: index === 0 ? 'transparent' : neutralColor }}
+                  >
+                    {fillLeft && (
+                      <motion.span
+                        className="timeline-fill absolute inset-0 origin-left" initial={{ scaleX: 0 }} animate={{ scaleX: 1 }} transition={{ duration: 0.28, delay: previousFillDelay, ease: "easeOut" }}
+                        style={{                          backgroundColor: currentColor,                        }}
+                      />
+                    )}
+                  </span>
+                  <motion.span
+                    className={`relative z-10 timeline-dot flex size-5 self-center shrink-0 rounded-full border-[3px] bg-background transition-all duration-500 ${
+                      ''
+                    }`}
+                                        initial={{ scale: 0.78, backgroundColor: neutralColor, borderColor: neutralColor }}
+                    animate={{ backgroundColor: reached ? currentColor : neutralColor, borderColor: current ? 'var(--card)' : (reached ? currentColor : neutralColor), boxShadow: current ? '0 0 0 2px var(--timeline-color)' : '0 0 0 0 transparent', scale: current ? 1.5 : 0.8 }}
+                    transition={{ duration: 0.2, delay: fillDelay, ease: "easeOut" }}
+style={{
+                      '--timeline-color': currentColor
+                    }}
+                    aria-current={current ? 'step' : undefined}
+                  />
+                  <span
+                    aria-hidden="true"
+                    className="relative z-0 h-1 min-w-0 self-center overflow-hidden transition-colors duration-500"
+                    style={{ backgroundColor: index === steps.length - 1 ? 'transparent' : neutralColor }}
+                  >
+                    {fillRight && (
+                      <motion.span
+                        className="timeline-fill absolute inset-0 origin-left" initial={{ scaleX: 0 }} animate={{ scaleX: 1 }} transition={{ duration: 0.28, delay: fillDelay, ease: "easeOut" }}
+                        style={{                          backgroundColor: currentColor,                        }}
+                      />
+                    )}
+                  </span>
+                </div>
               </div>
-            </div>
-          )
-        })}
+            )
+          })}
         </div>
       </div>
 
@@ -290,68 +310,56 @@ function StatusTimeline({ status }) {
           style={{ gridTemplateRows: `repeat(${steps.length}, minmax(0, 1fr))` }}
         >
         {steps.map((option, index) => {
-          const current = !isCanceled && option.value === status
-          const reached = !isCanceled && currentOrder >= 0 && index <= currentOrder
-          const dotColor = reached ? currentColor : neutralColor
-          const fillTop = !isCanceled && currentOrder >= 0 && index > 0 && index <= currentOrder
-          const fillBottom = !isCanceled && currentOrder >= 0 && index < currentOrder
-          const segmentDuration = 220
-          const bottomDelay = `${index * segmentDuration * 2}ms`
-          const topDelay = `${((index - 1) * segmentDuration * 2) + segmentDuration}ms`
-          const dotDelay = `${index * segmentDuration * 2}ms`
-          const isLast = index === steps.length - 1
+            const current = !isCanceled && option.value === status
+            const reached = !isCanceled && currentOrder >= 0 && index <= currentOrder
+            const fillTop = !isCanceled && currentOrder >= 0 && index > 0 && index <= currentOrder
+            const fillBottom = !isCanceled && currentOrder >= 0 && index < currentOrder
+            const segmentDuration = 0.28
+            const fillDelay = index * segmentDuration * 2
+            const previousFillDelay = ((index - 1) * segmentDuration * 2) + segmentDuration
+            const isLast = index === steps.length - 1
 
-          return (
-            <div key={option.value} className="grid min-h-0 grid-rows-[1fr_auto_1fr] justify-items-center" title={option.label}>
-              <span
-                aria-hidden="true"
-                className="relative w-1 overflow-hidden transition-colors duration-500"
-                style={{ backgroundColor: index === 0 ? 'transparent' : neutralColor }}
-              >
-                {fillTop && (
-                  <span
-                    className="timeline-fill absolute inset-0 origin-top"
-                    style={{
-                      animation: `timeline-fill-y ${segmentDuration}ms ease-out forwards`,
-                      animationDelay: topDelay,
-                      backgroundColor: currentColor,
-                      transform: 'scaleY(0)'
-                    }}
-                  />
-                )}
-              </span>
+            return (
+              <div key={option.value} className="grid min-h-0 grid-rows-[1fr_auto_1fr] justify-items-center" title={option.label}>
                 <span
-                  className={`timeline-dot flex size-4 shrink-0 rounded-full border-[3px] bg-background transition-all duration-500 ${
-                    current ? 'scale-110 shadow-sm' : ''
-                  }`}
-                  style={{
-                    '--timeline-color': currentColor,
-                    animation: reached ? 'timeline-dot-fill 160ms ease-out forwards' : undefined,
-                    animationDelay: reached ? dotDelay : undefined,
-                    borderColor: reached ? neutralColor : dotColor
-                  }}
-                  aria-current={current ? 'step' : undefined}
-                />
-              <span
-                aria-hidden="true"
-                className="relative w-1 overflow-hidden transition-colors duration-500"
-                style={{ backgroundColor: isLast ? 'transparent' : neutralColor }}
-              >
-                {fillBottom && (
-                  <span
-                    className="timeline-fill absolute inset-0 origin-top"
-                    style={{
-                      animation: `timeline-fill-y ${segmentDuration}ms ease-out forwards`,
-                      animationDelay: bottomDelay,
-                      backgroundColor: currentColor,
-                      transform: 'scaleY(0)'
+                  aria-hidden="true"
+                  className="relative z-0 w-1 self-center overflow-hidden transition-colors duration-500"
+                  style={{ backgroundColor: index === 0 ? 'transparent' : neutralColor }}
+                >
+                  {fillTop && (
+                    <motion.span
+                      className="timeline-fill absolute inset-0 origin-top" initial={{ scaleY: 0 }} animate={{ scaleY: 1 }} transition={{ duration: 0.28, delay: previousFillDelay, ease: "easeOut" }}
+                      style={{                        backgroundColor: currentColor,                      }}
+                    />
+                  )}
+                </span>
+                  <motion.span
+                    className={`relative z-10 timeline-dot flex size-4 self-center shrink-0 rounded-full border-[3px] bg-background transition-all duration-500 ${
+                      ''
+                    }`}
+                                        initial={{ scale: 0.78, backgroundColor: neutralColor, borderColor: neutralColor }}
+                    animate={{ backgroundColor: reached ? currentColor : neutralColor, borderColor: current ? 'var(--card)' : (reached ? currentColor : neutralColor), boxShadow: current ? '0 0 0 2px var(--timeline-color)' : '0 0 0 0 transparent', scale: current ? 1.5 : 0.8 }}
+                    transition={{ duration: 0.2, delay: fillDelay, ease: "easeOut" }}
+style={{
+                      '--timeline-color': currentColor
                     }}
+                    aria-current={current ? 'step' : undefined}
                   />
-                )}
-              </span>
-            </div>
-          )
-        })}
+                <span
+                  aria-hidden="true"
+                  className="relative z-0 w-1 self-center overflow-hidden transition-colors duration-500"
+                  style={{ backgroundColor: isLast ? 'transparent' : neutralColor }}
+                >
+                  {fillBottom && (
+                    <motion.span
+                      className="timeline-fill absolute inset-0 origin-top" initial={{ scaleY: 0 }} animate={{ scaleY: 1 }} transition={{ duration: 0.28, delay: fillDelay, ease: "easeOut" }}
+                      style={{                        backgroundColor: currentColor,                      }}
+                    />
+                  )}
+                </span>
+              </div>
+            )
+          })}
         </div>
       </div>
     </>
@@ -696,7 +704,7 @@ export function SolicitacaoDetailsDialog({
                 </div>
 
                 <InfoItem label="Nome do item" value={solicitacao?.nome_item} />
-                <InfoItem label="Descrição do item" value={solicitacao?.descricao} />
+                <InfoItem label="Descrição do item" value={<CopyableText value={solicitacao?.descricao} />} />
 
                 <div className="grid gap-3 sm:grid-cols-2">
                   <InfoItem label="Aplicação" value={solicitacao?.aplicacoes} />

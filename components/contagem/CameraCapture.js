@@ -4,6 +4,7 @@ import { useRef, useState, useCallback, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Spinner } from '@/components/ui/spinner'
 import { Camera, SwitchCamera, X, Check } from 'lucide-react'
+import { getCameraStream } from '@/lib/camera'
 
 export function CameraCapture({ onCapture, onClose, capturedCount, maxImages }) {
   const videoRef = useRef(null)
@@ -43,13 +44,10 @@ export function CameraCapture({ onCapture, onClose, capturedCount, maxImages }) 
         return
       }
 
-      const mediaStream = await navigator.mediaDevices.getUserMedia({
-        video: {
-          facingMode,
-          width: { ideal: 1280, max: 1280 },
-          height: { ideal: 720, max: 720 },
-          frameRate: { ideal: 24, max: 30 }
-        }
+      const mediaStream = await getCameraStream({
+        facingMode,
+        width: 1280,
+        height: 720
       })
 
       if (videoRef.current) {
@@ -172,6 +170,7 @@ export function CameraCapture({ onCapture, onClose, capturedCount, maxImages }) 
           <video
             ref={videoRef}
             autoPlay
+            muted
             playsInline
             className="h-full w-full object-cover"
           />

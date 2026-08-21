@@ -45,6 +45,7 @@ export default function CatalogoPublicoPage() {
     return makeCatalogFrameHtml(catalogProducts)
   }, [catalogProducts])
 
+
   return (
     <main className="h-screen w-full bg-muted">
       {isLoading ? (
@@ -62,7 +63,7 @@ export default function CatalogoPublicoPage() {
           srcDoc={frameHtml}
           title="Catalogo publico do almoxarifado"
           className="h-full w-full border-0 bg-white"
-        />
+          />
       )}
     </main>
   )

@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import { motion } from 'motion/react'
 import { useEffect, useMemo, useState } from 'react'
 import Image from 'next/image'
 import { CheckCircle2, Copy, LogIn, PackageSearch, Plus, Search, Send, X } from 'lucide-react'
@@ -200,13 +201,11 @@ function StatusGrid({ solicitacao }) {
           {steps.map((option, index) => {
             const current = !isCanceled && option.value === status
             const reached = !isCanceled && currentOrder >= 0 && index <= currentOrder
-            const dotColor = reached ? currentColor : neutralColor
             const fillLeft = !isCanceled && currentOrder >= 0 && index > 0 && index <= currentOrder
             const fillRight = !isCanceled && currentOrder >= 0 && index < currentOrder
-            const segmentDuration = 220
-            const rightDelay = `${index * segmentDuration * 2}ms`
-            const leftDelay = `${((index - 1) * segmentDuration * 2) + segmentDuration}ms`
-            const dotDelay = `${index * segmentDuration * 2}ms`
+            const segmentDuration = 0.28
+            const fillDelay = index * segmentDuration * 2
+            const previousFillDelay = ((index - 1) * segmentDuration * 2) + segmentDuration
 
             return (
               <div
@@ -217,47 +216,37 @@ function StatusGrid({ solicitacao }) {
                 <div className="grid min-w-0 grid-cols-[1fr_auto_1fr] items-center">
                   <span
                     aria-hidden="true"
-                    className="relative h-1 min-w-0 overflow-hidden transition-colors duration-500"
+                    className="relative z-0 h-1 min-w-0 self-center overflow-hidden transition-colors duration-500"
                     style={{ backgroundColor: index === 0 ? 'transparent' : neutralColor }}
                   >
                     {fillLeft && (
-                      <span
-                        className="timeline-fill absolute inset-0 origin-left"
-                        style={{
-                          animation: `timeline-fill-x ${segmentDuration}ms ease-out forwards`,
-                          animationDelay: leftDelay,
-                          backgroundColor: currentColor,
-                          transform: 'scaleX(0)'
-                        }}
+                      <motion.span
+                        className="timeline-fill absolute inset-0 origin-left" initial={{ scaleX: 0 }} animate={{ scaleX: 1 }} transition={{ duration: 0.28, delay: previousFillDelay, ease: "easeOut" }}
+                        style={{                          backgroundColor: currentColor,                        }}
                       />
                     )}
                   </span>
-                  <span
-                    className={`timeline-dot flex size-5 shrink-0 rounded-full border-[3px] bg-background transition-all duration-500 ${
-                      current ? 'scale-110 shadow-sm' : ''
+                  <motion.span
+                    className={`relative z-10 timeline-dot flex size-5 self-center shrink-0 rounded-full border-[3px] bg-background transition-all duration-500 ${
+                      ''
                     }`}
-                    style={{
-                      '--timeline-color': currentColor,
-                      animation: reached ? 'timeline-dot-fill 160ms ease-out forwards' : undefined,
-                      animationDelay: reached ? dotDelay : undefined,
-                      borderColor: reached ? neutralColor : dotColor
+                                        initial={{ scale: 0.78, backgroundColor: neutralColor, borderColor: neutralColor }}
+                    animate={{ backgroundColor: reached ? currentColor : neutralColor, borderColor: reached ? currentColor : neutralColor, scale: current ? 1.25 : 0.8 }}
+                    transition={{ duration: 0.2, delay: fillDelay, ease: "easeOut" }}
+style={{
+                      '--timeline-color': currentColor
                     }}
                     aria-current={current ? 'step' : undefined}
                   />
                   <span
                     aria-hidden="true"
-                    className="relative h-1 min-w-0 overflow-hidden transition-colors duration-500"
+                    className="relative z-0 h-1 min-w-0 self-center overflow-hidden transition-colors duration-500"
                     style={{ backgroundColor: index === steps.length - 1 ? 'transparent' : neutralColor }}
                   >
                     {fillRight && (
-                      <span
-                        className="timeline-fill absolute inset-0 origin-left"
-                        style={{
-                          animation: `timeline-fill-x ${segmentDuration}ms ease-out forwards`,
-                          animationDelay: rightDelay,
-                          backgroundColor: currentColor,
-                          transform: 'scaleX(0)'
-                        }}
+                      <motion.span
+                        className="timeline-fill absolute inset-0 origin-left" initial={{ scaleX: 0 }} animate={{ scaleX: 1 }} transition={{ duration: 0.28, delay: fillDelay, ease: "easeOut" }}
+                        style={{                          backgroundColor: currentColor,                        }}
                       />
                     )}
                   </span>
@@ -278,60 +267,48 @@ function StatusGrid({ solicitacao }) {
         {steps.map((option, index) => {
             const current = !isCanceled && option.value === status
             const reached = !isCanceled && currentOrder >= 0 && index <= currentOrder
-            const dotColor = reached ? currentColor : neutralColor
             const fillTop = !isCanceled && currentOrder >= 0 && index > 0 && index <= currentOrder
             const fillBottom = !isCanceled && currentOrder >= 0 && index < currentOrder
-            const segmentDuration = 220
-            const bottomDelay = `${index * segmentDuration * 2}ms`
-            const topDelay = `${((index - 1) * segmentDuration * 2) + segmentDuration}ms`
-            const dotDelay = `${index * segmentDuration * 2}ms`
+            const segmentDuration = 0.28
+            const fillDelay = index * segmentDuration * 2
+            const previousFillDelay = ((index - 1) * segmentDuration * 2) + segmentDuration
             const isLast = index === steps.length - 1
 
             return (
               <div key={option.value} className="grid min-h-0 grid-rows-[1fr_auto_1fr] justify-items-center" title={option.label}>
                 <span
                   aria-hidden="true"
-                  className="relative w-1 overflow-hidden transition-colors duration-500"
+                  className="relative z-0 w-1 self-center overflow-hidden transition-colors duration-500"
                   style={{ backgroundColor: index === 0 ? 'transparent' : neutralColor }}
                 >
                   {fillTop && (
-                    <span
-                      className="timeline-fill absolute inset-0 origin-top"
-                      style={{
-                        animation: `timeline-fill-y ${segmentDuration}ms ease-out forwards`,
-                        animationDelay: topDelay,
-                        backgroundColor: currentColor,
-                        transform: 'scaleY(0)'
-                      }}
+                    <motion.span
+                      className="timeline-fill absolute inset-0 origin-top" initial={{ scaleY: 0 }} animate={{ scaleY: 1 }} transition={{ duration: 0.28, delay: previousFillDelay, ease: "easeOut" }}
+                      style={{                        backgroundColor: currentColor,                      }}
                     />
                   )}
                 </span>
-                  <span
-                    className={`timeline-dot flex size-4 shrink-0 rounded-full border-[3px] bg-background transition-all duration-500 ${
-                      current ? 'scale-110 shadow-sm' : ''
+                  <motion.span
+                    className={`relative z-10 timeline-dot flex size-4 self-center shrink-0 rounded-full border-[3px] bg-background transition-all duration-500 ${
+                      ''
                     }`}
-                    style={{
-                      '--timeline-color': currentColor,
-                      animation: reached ? 'timeline-dot-fill 160ms ease-out forwards' : undefined,
-                      animationDelay: reached ? dotDelay : undefined,
-                      borderColor: reached ? neutralColor : dotColor
+                                        initial={{ scale: 0.78, backgroundColor: neutralColor, borderColor: neutralColor }}
+                    animate={{ backgroundColor: reached ? currentColor : neutralColor, borderColor: reached ? currentColor : neutralColor, scale: current ? 1.25 : 0.8 }}
+                    transition={{ duration: 0.2, delay: fillDelay, ease: "easeOut" }}
+style={{
+                      '--timeline-color': currentColor
                     }}
                     aria-current={current ? 'step' : undefined}
                   />
                 <span
                   aria-hidden="true"
-                  className="relative w-1 overflow-hidden transition-colors duration-500"
+                  className="relative z-0 w-1 self-center overflow-hidden transition-colors duration-500"
                   style={{ backgroundColor: isLast ? 'transparent' : neutralColor }}
                 >
                   {fillBottom && (
-                    <span
-                      className="timeline-fill absolute inset-0 origin-top"
-                      style={{
-                        animation: `timeline-fill-y ${segmentDuration}ms ease-out forwards`,
-                        animationDelay: bottomDelay,
-                        backgroundColor: currentColor,
-                        transform: 'scaleY(0)'
-                      }}
+                    <motion.span
+                      className="timeline-fill absolute inset-0 origin-top" initial={{ scaleY: 0 }} animate={{ scaleY: 1 }} transition={{ duration: 0.28, delay: fillDelay, ease: "easeOut" }}
+                      style={{                        backgroundColor: currentColor,                      }}
                     />
                   )}
                 </span>

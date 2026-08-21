@@ -134,7 +134,7 @@ export function getSolicitacaoPrazoSituacao(solicitacao = {}) {
 
   if (isSolicitacaoAtrasada(solicitacao)) {
     return {
-      label: 'ATRASADA!',
+      label: 'ATRASADA',
       className: 'border-[#f87171] bg-[#fee2e2] text-[#991b1b]'
     }
   }
@@ -158,6 +158,10 @@ export function getSolicitacaoStatusOrder(status) {
 }
 
 export function getSolicitacaoSituacao(solicitacao = {}) {
+  if (isSolicitacaoAtrasada(solicitacao)) {
+    return getSolicitacaoPrazoSituacao(solicitacao)
+  }
+
   const option = getSolicitacaoOption(SOLICITACAO_STATUS_GERAL_OPTIONS, solicitacao.status_geral)
 
   return {

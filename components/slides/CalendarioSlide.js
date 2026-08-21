@@ -6,6 +6,7 @@ import dayGridPlugin from '@fullcalendar/daygrid'
 import ptBrLocale from '@fullcalendar/core/locales/pt-br'
 import { CalendarDays } from 'lucide-react'
 import { useAutoScroll } from '@/lib/hooks/useAutoScroll'
+import { MotionScrollIndicator } from '@/components/animations/MotionScrollIndicator'
 
 export function CalendarioSlide({
   tarefas = [],
@@ -62,7 +63,8 @@ export function CalendarioSlide({
         <h2 className="text-4xl font-bold text-foreground">Calendario</h2>
       </div>
 
-      <div ref={ref} className="slide-scroll scrollbar-soft h-full w-full min-h-0 overflow-y-auto">
+      <div ref={ref} className="slide-scroll motion-scroll-container scrollbar-soft relative h-full w-full min-h-0 overflow-y-auto">
+        <MotionScrollIndicator targetRef={ref} />
         <div className="h-full min-h-[600px]">
           <FullCalendar
             plugins={[dayGridPlugin]}

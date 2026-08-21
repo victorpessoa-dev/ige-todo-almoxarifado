@@ -110,14 +110,14 @@ async function testAiRoutesRequireAuthenticatedUser() {
     readText('app/(admin)/analise-giro/page.js')
   ])
 
-  assert.match(apiAuth, /supabase\.auth\.getUser\(token\)/)
+  assert.match(apiAuth, /client\.auth\.getUser\(token\)/)
   assert.match(apiAuth, /status:\s*401/)
   assert.match(authenticatedFetch, /Authorization/)
   assert.match(authenticatedFetch, /session\.access_token/)
 
   for (const route of routes) {
-    assert.match(route, /authenticateApiRequest\(req\)/)
-    assert.match(route, /if \(!user\) return createUnauthorizedResponse\(\)/)
+    assert.match(route, /requireApiAuth\(req\)/)
+    assert.match(route, /if \(auth.response\) return auth.response/)
   }
 
   for (const caller of callers) {
@@ -151,5 +151,57 @@ await testAuditFilesStayOrganizedByUse()
 await testDomainFilesStayOrganizedByUse()
 await testAiRoutesRequireAuthenticatedUser()
 await testAiRateLimitIsDistributedAndUserScoped()
+
+
+
+async function testNotificationSoundsRespectInitialSnapshot() {
+  const adminLayout = await readText('app/(admin)/layout.js')
+  const dataContext = await readText('contexts/data-context.js')
+  const audioPlayer = await readText('components/notifications/AudioPlayer.js')
+
+  assert.ok(adminLayout.includes('notificationBaselineReadyRef'))
+  assert.ok(adminLayout.includes('isLoaded'))
+  assert.ok(adminLayout.includes('new_notifcation.mp3'))
+  assert.ok(!adminLayout.includes('new_notification.mp3'))
+
+  assert.ok(dataContext.includes('hasInitialProductsRef'))
+  assert.ok(dataContext.includes('previousLowStockRef'))
+  assert.ok(dataContext.includes('Number(produto.estoque || 0) <= Number(produto.min || 0)'))
+  assert.ok(dataContext.includes('new_prod_low.mp3'))
+
+  assert.ok(audioPlayer.includes("soundId = 'new_notifcation'"))
+}
+async function testOverdueRequestsOverrideSituationLabel() {
+  const config = await readText('constants/solicitacoes-config.js')
+
+  assert.match(config, /export function getSolicitacaoSituacao\(solicitacao = \{\}\)/)
+  assert.match(
+    config,
+    /getSolicitacaoSituacao[\s\S]*?if \(isSolicitacaoAtrasada\(solicitacao\)\)[\s\S]*?getSolicitacaoPrazoSituacao\(solicitacao\)/
+  )
+}
+
+async function testCiDoesNotDependOnVercel() {
+  const workflow = await readText('.github/workflows/ci-cd.yml')
+
+  assert.match(workflow, /npm run audit:app:smoke/)
+  assert.doesNotMatch(workflow, /Deploy to Vercel|vercel (pull|build|deploy)/i)
+}
+
+async function testAtomicStockMigrationIsPresent() {
+  const migration = await readText(
+    'database/migrations/20260821120000_atomic_stock_movement.sql'
+  )
+
+  assert.match(migration, /create or replace function public\.registrar_movimentacao_estoque/)
+  assert.match(migration, /for update/)
+  assert.match(migration, /insert into public\.movimentacoes_estoque/)
+  assert.match(migration, /update public\.produtos set estoque/)
+}
+
+await testNotificationSoundsRespectInitialSnapshot()
+await testOverdueRequestsOverrideSituationLabel()
+await testCiDoesNotDependOnVercel()
+await testAtomicStockMigrationIsPresent()
 
 console.log('audit contracts passed')
