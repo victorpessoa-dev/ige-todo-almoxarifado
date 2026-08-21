@@ -26,6 +26,15 @@ import {
 } from '@/lib/services/solicitacoes-service'
 import { toDateInputValue } from '@/lib/date/date-utils'
 import { invalidatePublicCatalogCache } from '@/lib/services/catalogo-service'
+import {
+  normalizeMovimentacao,
+  normalizeSolicitacao,
+  removeSorted,
+  sortByCreatedAtDesc,
+  sortProdutosByNomeAsc,
+  upsertSorted,
+  withRetry
+} from '@/lib/data/context-utils'
 
 const DataContext = createContext()
 
@@ -48,6 +57,8 @@ export function DataProvider({ children }) {
   const activeChannels = useRef([])
   const pendingOperations = useRef(new Map())
   const produtosRef = useRef([])
+  const previousLowStockRef = useRef(new Map())
+  const hasInitialProductsRef = useRef(false)
 
   useEffect(() => {
     produtosRef.current = produtos
@@ -229,6 +240,11 @@ export function DataProvider({ children }) {
         setLembretes(sortByCreatedAtDesc(lembretesData || []))
         setProdutos(nextProdutos)
         produtosRef.current = nextProdutos
+        previousLowStockRef.current = new Map(nextProdutos.map((produto) => [
+          produto.id,
+          Number(produto.estoque || 0) <= Number(produto.min || 0)
+        ]))
+        hasInitialProductsRef.current = true
         setMovimentacoes(
           sortByCreatedAtDesc((movimentacoesData || []).map((item) => normalizeMovimentacao(item, nextProdutos)))
         )
@@ -784,6 +800,7 @@ export function DataProvider({ children }) {
       loadData()
     })
 
+
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
         loadData()
@@ -836,6 +853,19 @@ export function DataProvider({ children }) {
           return nextProdutos
         })
         syncProdutoInMovimentacoes(payload.new)
+
+        const produto = payload.new
+        const wasLowStock = previousLowStockRef.current.get(produto.id) === true
+        const isLowStock =
+          Number(produto.estoque || 0) <= Number(produto.min || 0)
+
+        if (hasInitialProductsRef.current && isLowStock && !wasLowStock) {
+          const audio = new Audio('/sound/new_prod_low.mp3')
+          audio.currentTime = 0
+          audio.play().catch(() => {})
+        }
+
+        previousLowStockRef.current.set(produto.id, isLowStock)
       } else if (payload.eventType === 'DELETE') {
         setProdutos((prev) => {
           const nextProdutos = removeSorted(prev, payload.old.id, sortProdutosByNomeAsc)

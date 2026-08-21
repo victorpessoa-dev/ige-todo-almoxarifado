@@ -123,7 +123,7 @@ export function SolicitacoesSlide({ solicitacoes, active, onEnd }) {
   }, [active])
 
   return (
-    <div className="flex h-full flex-col overflow-hidden p-5 sm:p-8">
+    <div className="flex h-full min-h-0 flex-col overflow-hidden p-5 sm:p-8">
       <div className="mb-4 flex items-center justify-center gap-2 text-center sm:mb-6 sm:gap-3">
         <ShoppingCart className="h-8 w-8 text-primary sm:h-10 sm:w-10" />
         <h2 className="text-2xl font-bold text-foreground sm:text-3xl md:text-4xl">

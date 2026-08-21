@@ -16,12 +16,13 @@ import { MotionScrollIndicator } from '@/components/animations/MotionScrollIndic
 
 function AdminShell({ children }) {
   const { isAuthenticated, isLoading } = useAuth()
-  const { solicitacoesCompra = [] } = useData()
+  const { solicitacoesCompra = [], isLoaded } = useData()
   const router = useRouter()
   const pathname = usePathname()
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const shouldReduceMotion = useReducedMotion()
   const notifiedSolicitacoesRef = useRef(new Set())
+  const notificationBaselineReadyRef = useRef(false)
   const mainScrollRef = useRef(null)
 
   useEffect(() => {
@@ -53,34 +54,47 @@ function AdminShell({ children }) {
   }, [sidebarOpen])
 
   useEffect(() => {
-    if (!isAuthenticated || isLoading) return
+    if (!isAuthenticated || isLoading || !isLoaded) return
 
-    const novasSolicitacoes = solicitacoesCompra.filter(
-      (solicitacao) => solicitacao.status_geral === 'nova'
+    const currentSolicitacaoIds = new Set(
+      solicitacoesCompra
+        .map((solicitacao) => solicitacao.id || solicitacao.codigo)
+        .filter(Boolean)
     )
-    const solicitacoesNaoNotificadas = novasSolicitacoes.filter((solicitacao) => {
+
+    if (!notificationBaselineReadyRef.current) {
+      notifiedSolicitacoesRef.current = currentSolicitacaoIds
+      notificationBaselineReadyRef.current = true
+      return
+    }
+
+    const solicitacoesNaoNotificadas = solicitacoesCompra.filter((solicitacao) => {
       const key = solicitacao.id || solicitacao.codigo
-      return key && !notifiedSolicitacoesRef.current.has(key)
+      return (
+        solicitacao.status_geral === 'nova' &&
+        key &&
+        !notifiedSolicitacoesRef.current.has(key)
+      )
     })
+
+    currentSolicitacaoIds.forEach((key) => notifiedSolicitacoesRef.current.add(key))
 
     if (solicitacoesNaoNotificadas.length === 0) return
 
-    solicitacoesNaoNotificadas.forEach((solicitacao) => {
-      const key = solicitacao.id || solicitacao.codigo
-      notifiedSolicitacoesRef.current.add(key)
-    })
-
     const primeiraSolicitacao = solicitacoesNaoNotificadas[0]
     const total = solicitacoesNaoNotificadas.length
+    const audio = new Audio('/sound/new_notifcation.mp3')
+    audio.currentTime = 0
+    audio.play().catch(() => {})
 
     toast.info(
       total === 1
         ? 'Nova solicitação recebida'
-        : `${total} novas solicitações recebidas`,
+        : total + ' novas solicitações recebidas',
       {
         description:
           total === 1
-            ? `${primeiraSolicitacao.codigo || 'Sem código'} - ${formatSolicitacaoItem(primeiraSolicitacao) || 'Pedido sem descrição'}`
+            ? (primeiraSolicitacao.codigo || 'Sem código') + ' - ' + (formatSolicitacaoItem(primeiraSolicitacao) || 'Pedido sem descrição')
             : 'Existem novos pedidos aguardando aceite.',
         action: {
           label: 'Ver',
@@ -88,7 +102,7 @@ function AdminShell({ children }) {
         }
       }
     )
-  }, [isAuthenticated, isLoading, router, solicitacoesCompra])
+  }, [isAuthenticated, isLoaded, isLoading, router, solicitacoesCompra])
 
   if (isLoading) {
     return <LoadingState className="min-h-screen bg-background" />

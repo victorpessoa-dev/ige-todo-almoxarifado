@@ -53,12 +53,15 @@ export function MotionScrollIndicator({ targetRef, orientation = 'vertical' }) {
 
     element.addEventListener('scroll', update, { passive: true })
     window.addEventListener('resize', update)
+    window.addEventListener('scroll', update, { passive: true, capture: true })
 
     return () => {
       resizeObserver.disconnect()
+
       mutationObserver.disconnect()
       element.removeEventListener('scroll', update)
       window.removeEventListener('resize', update)
+      window.removeEventListener('scroll', update, true)
     }
   }, [isHorizontal, targetRef])
 
@@ -74,7 +77,7 @@ export function MotionScrollIndicator({ targetRef, orientation = 'vertical' }) {
       }
     : {
         position: 'fixed',
-        right: viewport.right + 4,
+        left: viewport.left + viewport.width - 12,
         top: viewport.top + 8,
         width: 4,
         height: Math.max(0, viewport.height - 16)
