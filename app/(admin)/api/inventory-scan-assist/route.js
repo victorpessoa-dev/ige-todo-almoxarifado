@@ -65,7 +65,7 @@ export async function POST(req) {
     const auth = await requireApiAuth(req)
     if (auth.response) return auth.response
 
-    const rateLimit = checkRateLimit(req, {
+    const rateLimit = await checkRateLimit(req, {
       keyPrefix: 'api:inventory-scan-assist',
       limit: 20,
       windowMs: 60_000

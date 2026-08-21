@@ -166,7 +166,7 @@ export async function POST(req) {
   try {
     const auth = await requireApiAuth(req)
     if (auth.response) return auth.response
-    const rateLimit = checkRateLimit(req, {
+    const rateLimit = await checkRateLimit(req, {
       keyPrefix: 'api:inventory-turnover-analysis',
       limit: 15,
       windowMs: 60_000
