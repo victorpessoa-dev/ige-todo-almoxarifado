@@ -22,6 +22,7 @@ import {
 } from '@/constants/solicitacoes-config'
 import { formatDateBR } from '@/lib/date/date-utils'
 import { useAutoScroll } from '@/lib/hooks/useAutoScroll'
+import { MotionScrollIndicator } from '@/components/animations/MotionScrollIndicator'
 import {
   formatSolicitacaoItem,
   getSolicitacaoCentroCusto,
@@ -135,7 +136,8 @@ export function SolicitacoesSlide({ solicitacoes, active, onEnd }) {
           Nenhuma solicitação em aberto.
         </div>
       ) : (
-        <div ref={ref} className="slide-scroll scrollbar-soft min-h-0 flex-1 overflow-auto rounded-xl border bg-card shadow-sm">
+        <div ref={ref} className="slide-scroll motion-scroll-container scrollbar-soft relative min-h-0 flex-1 overflow-auto rounded-xl border bg-card shadow-sm">
+          <MotionScrollIndicator targetRef={ref} />
           <Table
             className="w-full table-fixed"
           >

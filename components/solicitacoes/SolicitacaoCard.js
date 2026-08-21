@@ -1,5 +1,6 @@
-﻿'use client'
+'use client'
 
+import { motion } from 'motion/react'
 import { Card, CardContent } from '@/components/ui/card'
 
 export function SolicitacaoCard({ label, value, tone = 'default' }) {
@@ -11,13 +12,18 @@ export function SolicitacaoCard({ label, value, tone = 'default' }) {
   }[tone]
 
   return (
-    <Card>
-      <CardContent className="p-4">
-        <p className="truncate text-xs font-medium uppercase tracking-wide text-muted-foreground" title={label}>
-          {label}
-        </p>
-        <p className={`mt-1 text-2xl font-bold ${toneClass}`}>{value}</p>
-      </CardContent>
-    </Card>
+    <motion.div
+      whileHover={{ y: -2 }}
+      transition={{ type: 'spring', stiffness: 320, damping: 22 }}
+    >
+      <Card>
+        <CardContent className="p-4">
+          <p className="truncate text-xs font-medium uppercase tracking-wide text-muted-foreground" title={label}>
+            {label}
+          </p>
+          <p className={`mt-1 text-2xl font-bold ${toneClass}`}>{value}</p>
+        </CardContent>
+      </Card>
+    </motion.div>
   )
 }

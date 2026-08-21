@@ -1,5 +1,6 @@
 import { callAI } from '@/lib/server/ai-providers'
 import { checkRateLimit, createRateLimitResponse } from '@/lib/server/rate-limit'
+import { requireApiAuth } from '@/lib/server/api-auth'
 
 /**
  * Endpoint de assistencia ao scanner de inventario.
@@ -61,6 +62,9 @@ function cleanText(value, maxLength = MAX_TEXT_LENGTH) {
  */
 export async function POST(req) {
   try {
+    const auth = await requireApiAuth(req)
+    if (auth.response) return auth.response
+
     const rateLimit = checkRateLimit(req, {
       keyPrefix: 'api:inventory-scan-assist',
       limit: 20,

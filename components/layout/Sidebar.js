@@ -1,10 +1,12 @@
 'use client'
 
 import Link from 'next/link'
+import { useRef } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import { useAuth } from '@/contexts/auth-context'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
+import { MotionScrollIndicator } from '@/components/animations/MotionScrollIndicator'
 import Image from 'next/image'
 import {
   CalendarDays,
@@ -35,6 +37,7 @@ export function Sidebar({ onNavigate }) {
   const pathname = usePathname()
   const router = useRouter()
   const { logout } = useAuth()
+  const navRef = useRef(null)
 
   const handleLogout = () => {
     logout()
@@ -68,7 +71,7 @@ export function Sidebar({ onNavigate }) {
         </Link>
       </div>
 
-      <nav className="sidebar-scroll flex-1 overflow-y-auto px-4 pb-4">
+      <nav ref={navRef} className="sidebar-scroll motion-scroll-container relative flex-1 overflow-y-auto px-4 pb-4">
         <ul className="flex flex-col gap-2">
           {menuItems.map((item) => {
             const Icon = item.icon
@@ -93,6 +96,7 @@ export function Sidebar({ onNavigate }) {
             )
           })}
         </ul>
+        <MotionScrollIndicator targetRef={navRef} />
       </nav>
 
       <div className="border-t border-sidebar-border px-4 py-4">

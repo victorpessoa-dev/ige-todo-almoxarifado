@@ -103,4 +103,37 @@ await testCatalogSummaryDoesNotRenderLinks()
 await testAuditFilesStayOrganizedByUse()
 await testDomainFilesStayOrganizedByUse()
 
+
+async function testOverdueRequestsOverrideSituationLabel() {
+  const config = await readText('constants/solicitacoes-config.js')
+
+  assert.match(config, /export function getSolicitacaoSituacao\(solicitacao = \{\}\)/)
+  assert.match(
+    config,
+    /getSolicitacaoSituacao[\s\S]*?if \(isSolicitacaoAtrasada\(solicitacao\)\)[\s\S]*?getSolicitacaoPrazoSituacao\(solicitacao\)/
+  )
+}
+
+async function testCiDoesNotDependOnVercel() {
+  const workflow = await readText('.github/workflows/ci-cd.yml')
+
+  assert.match(workflow, /npm run audit:app:smoke/)
+  assert.doesNotMatch(workflow, /Deploy to Vercel|vercel (pull|build|deploy)/i)
+}
+
+async function testAtomicStockMigrationIsPresent() {
+  const migration = await readText(
+    'database/migrations/20260821120000_atomic_stock_movement.sql'
+  )
+
+  assert.match(migration, /create or replace function public\.registrar_movimentacao_estoque/)
+  assert.match(migration, /for update/)
+  assert.match(migration, /insert into public\.movimentacoes_estoque/)
+  assert.match(migration, /update public\.produtos set estoque/)
+}
+
+await testOverdueRequestsOverrideSituationLabel()
+await testCiDoesNotDependOnVercel()
+await testAtomicStockMigrationIsPresent()
+
 console.log('audit contracts passed')

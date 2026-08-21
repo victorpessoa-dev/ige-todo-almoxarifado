@@ -1,5 +1,6 @@
 'use client'
 
+import { MotionReveal } from '@/components/animations/Motion'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -33,7 +34,8 @@ export function ProductList({
   }
 
   return (
-    <Card className="border-primary/20">
+    <MotionReveal>
+      <Card className="border-primary/20">
       <CardHeader className="flex flex-col gap-3 pb-2 sm:flex-row sm:items-center sm:justify-between">
         <CardTitle className="text-lg text-primary">
           Estoque ({products.length} produtos, {totalItems} itens)
@@ -146,6 +148,7 @@ export function ProductList({
           </div>
         ))}
       </CardContent>
-    </Card>
+      </Card>
+    </MotionReveal>
   )
 }

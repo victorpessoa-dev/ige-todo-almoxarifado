@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { MotionReveal } from '@/components/animations/Motion'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -333,7 +334,8 @@ export default function ProductTable({
   )
 
   return (
-    <Card className="rounded-none border-0 bg-transparent shadow-none">
+    <MotionReveal className="min-w-0">
+      <Card className="rounded-none border-0 bg-transparent shadow-none">
       <CardHeader className="gap-4 border-b px-4 py-4 sm:px-6">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <div className="space-y-1">
@@ -705,6 +707,7 @@ export default function ProductTable({
           </div>
         </DialogContent>
       </Dialog>
-    </Card>
+      </Card>
+    </MotionReveal>
   )
 }

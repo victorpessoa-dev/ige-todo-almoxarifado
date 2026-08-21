@@ -19,11 +19,13 @@ import {
   listCentrosCusto,
   listSolicitacoesCompra,
   listSolicitantesCompra,
+  invalidatePublicSolicitacaoCaches,
   updateCentroCusto,
   updateSolicitacaoCompra,
   updateSolicitanteCompra
 } from '@/lib/services/solicitacoes-service'
 import { toDateInputValue } from '@/lib/date/date-utils'
+import { invalidatePublicCatalogCache } from '@/lib/services/catalogo-service'
 
 const DataContext = createContext()
 
@@ -439,6 +441,7 @@ export function DataProvider({ children }) {
         .eq('id', id)
 
       if (deleteError) throw deleteError
+      invalidatePublicCatalogCache()
     }
 
     try {
@@ -529,6 +532,7 @@ export function DataProvider({ children }) {
         .eq('id', id)
 
       if (deleteError) throw deleteError
+      invalidatePublicCatalogCache()
     }
 
     try {
@@ -576,6 +580,7 @@ export function DataProvider({ children }) {
         .single()
 
       if (insertError) throw insertError
+      invalidatePublicCatalogCache()
 
       setProdutos((prev) => {
         const nextProdutos = upsertSorted(prev, data, sortProdutosByNomeAsc)
@@ -614,6 +619,7 @@ export function DataProvider({ children }) {
         .single()
 
       if (updateError) throw updateError
+      invalidatePublicCatalogCache()
 
       setProdutos((prev) => {
         const nextProdutos = upsertSorted(prev, data, sortProdutosByNomeAsc)
@@ -651,6 +657,7 @@ export function DataProvider({ children }) {
         .eq('id', id)
 
       if (deleteError) throw deleteError
+      invalidatePublicCatalogCache()
     }
 
     try {
@@ -689,36 +696,18 @@ export function DataProvider({ children }) {
 
       const user = await requireAuth()
 
-      const { data: movimentacaoData, error: movError } = await supabase
-        .from('movimentacoes_estoque')
-        .insert({
-          user_id: user.id,
-          produto_id: id,
-          tipo: 'entrada',
-          quantidade,
-          motivo
-        })
-        .select(`
-          *,
-          produtos (
-            nome,
-            cod
-          )
-        `)
-        .single()
+      const { data: operationData, error: operationError } = await supabase.rpc('registrar_movimentacao_estoque', {
+        p_produto_id: id,
+        p_tipo: 'entrada',
+        p_quantidade: quantidade,
+        p_motivo: motivo
+      })
 
-      if (movError) throw movError
+      if (operationError) throw operationError
 
-      const novoEstoque = produto.estoque + quantidade
-
-      const { data: produtoAtualizado, error: updateError } = await supabase
-        .from('produtos')
-        .update({ estoque: novoEstoque })
-        .eq('id', id)
-        .select()
-        .single()
-
-      if (updateError) throw updateError
+      const movimentacaoData = operationData?.movimentacao
+      const produtoAtualizado = operationData?.produto
+      if (!movimentacaoData || !produtoAtualizado) throw new Error('Resposta invalida da operacao de estoque.')
 
       const movimentacaoNormalizada = normalizeMovimentacao(movimentacaoData, [produtoAtualizado])
 
@@ -763,36 +752,18 @@ export function DataProvider({ children }) {
 
       const user = await requireAuth()
 
-      const { data: movimentacaoData, error: movError } = await supabase
-        .from('movimentacoes_estoque')
-        .insert({
-          user_id: user.id,
-          produto_id: id,
-          tipo: 'saida',
-          quantidade,
-          motivo
-        })
-        .select(`
-          *,
-          produtos (
-            nome,
-            cod
-          )
-        `)
-        .single()
+      const { data: operationData, error: operationError } = await supabase.rpc('registrar_movimentacao_estoque', {
+        p_produto_id: id,
+        p_tipo: 'entrada',
+        p_quantidade: quantidade,
+        p_motivo: motivo
+      })
 
-      if (movError) throw movError
+      if (operationError) throw operationError
 
-      const novoEstoque = produto.estoque - quantidade
-
-      const { data: produtoAtualizado, error: updateError } = await supabase
-        .from('produtos')
-        .update({ estoque: novoEstoque })
-        .eq('id', id)
-        .select()
-        .single()
-
-      if (updateError) throw updateError
+      const movimentacaoData = operationData?.movimentacao
+      const produtoAtualizado = operationData?.produto
+      if (!movimentacaoData || !produtoAtualizado) throw new Error('Resposta invalida da operacao de estoque.')
 
       const movimentacaoNormalizada = normalizeMovimentacao(movimentacaoData, [produtoAtualizado])
 
@@ -965,6 +936,7 @@ export function DataProvider({ children }) {
     })
 
     const produtosChannel = createChannel('realtime:produtos', 'produtos', (payload) => {
+      invalidatePublicCatalogCache()
       if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
         setProdutos((prev) => {
           const nextProdutos = upsertSorted(prev, payload.new, sortProdutosByNomeAsc)
@@ -1000,6 +972,7 @@ export function DataProvider({ children }) {
     })
 
     const solicitacoesChannel = createChannel('realtime:solicitacoes_compra', 'solicitacoes_compra', async (payload) => {
+      invalidatePublicSolicitacaoCaches()
       if (payload.eventType === 'DELETE') {
         setSolicitacoesCompra((prev) => removeSorted(prev, payload.old.id, sortByCreatedAtDesc))
         return
@@ -1017,6 +990,7 @@ export function DataProvider({ children }) {
     })
 
     const solicitantesChannel = createChannel('realtime:solicitantes_compra', 'solicitantes_compra', (payload) => {
+      invalidatePublicSolicitacaoCaches()
       if (payload.eventType === 'DELETE') {
         setSolicitantesCompra((prev) => prev.filter((item) => item.id !== payload.old.id))
         return
@@ -1030,6 +1004,7 @@ export function DataProvider({ children }) {
     })
 
     const centrosCustoChannel = createChannel('realtime:centros_custo', 'centros_custo', (payload) => {
+      invalidatePublicSolicitacaoCaches()
       if (payload.eventType === 'DELETE') {
         setCentrosCusto((prev) => prev.filter((item) => item.id !== payload.old.id))
         return

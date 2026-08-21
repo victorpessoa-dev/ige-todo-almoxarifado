@@ -4,6 +4,7 @@ import { useMemo, useRef, useEffect } from 'react'
 import { AlertTriangle } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { useAutoScroll } from '@/lib/hooks/useAutoScroll'
+import { MotionScrollIndicator } from '@/components/animations/MotionScrollIndicator'
 
 function getNivel(produto) {
   const { estoque, min } = produto
@@ -77,8 +78,9 @@ export default function InventarioSlide({ produtos, active, onEnd }) {
 
       <div
         ref={ref}
-        className="slide-scroll scrollbar-soft flex-1 overflow-y-auto rounded-2xl border bg-card/70"
+        className="slide-scroll motion-scroll-container scrollbar-soft relative flex-1 overflow-y-auto rounded-2xl border bg-card/70"
       >
+        <MotionScrollIndicator targetRef={ref} />
         <div className="sticky top-0 z-10 grid grid-cols-[minmax(0,1.4fr)_auto_auto_auto] gap-3 border-b bg-card/95 px-4 py-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground backdrop-blur sm:px-5 sm:text-sm">
           <span>Produto</span>
           <span>Estoque</span>

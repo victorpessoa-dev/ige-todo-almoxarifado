@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import { motion, useReducedMotion } from 'motion/react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { toast } from 'sonner'
@@ -11,6 +12,7 @@ import { LoadingState } from '@/components/ui/spinner'
 import { Menu } from 'lucide-react'
 import Image from 'next/image'
 import { formatSolicitacaoItem } from '@/lib/solicitacoes/format'
+import { MotionScrollIndicator } from '@/components/animations/MotionScrollIndicator'
 
 function AdminShell({ children }) {
   const { isAuthenticated, isLoading } = useAuth()
@@ -18,7 +20,9 @@ function AdminShell({ children }) {
   const router = useRouter()
   const pathname = usePathname()
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const shouldReduceMotion = useReducedMotion()
   const notifiedSolicitacoesRef = useRef(new Set())
+  const mainScrollRef = useRef(null)
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -136,10 +140,17 @@ function AdminShell({ children }) {
           <div className="w-6" aria-hidden="true" />
         </div>
 
-        <div className="admin-main-scroll scrollbar-soft flex-1 overflow-y-auto overflow-x-hidden px-3 py-3 sm:px-5 sm:py-5 md:px-6 md:py-5 lg:px-8 lg:py-6">
-          {children}
-        </div>
-      </main>
+        <div ref={mainScrollRef} className="admin-main-scroll motion-scroll-container scrollbar-soft relative flex-1 overflow-y-auto overflow-x-hidden px-3 py-3 sm:px-5 sm:py-5 md:px-6 md:py-5 lg:px-8 lg:py-6">
+          <motion.div
+            key={pathname}
+            initial={shouldReduceMotion ? false : { opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={shouldReduceMotion ? { duration: 0 } : { duration: 0.24, ease: 'easeOut' }}
+          >
+            {children}
+          </motion.div>
+          <MotionScrollIndicator targetRef={mainScrollRef} />
+        </div>      </main>
     </div>
   )
 }

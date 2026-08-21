@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { StickyNote, User } from 'lucide-react'
 import { useAutoScroll } from '@/lib/hooks/useAutoScroll'
+import { MotionScrollIndicator } from '@/components/animations/MotionScrollIndicator'
 
 function getStatusInfo(status) {
     return STATUS_OPTIONS.find(s => s.value === status) || STATUS_OPTIONS[0]
@@ -93,8 +94,9 @@ export function LembretesSlide({ lembretes, onEnd, active }) {
             ) : (
                 <div
                     ref={ref}
-                    className="slide-scroll scrollbar-soft w-full flex-1 overflow-auto px-2"
+                    className="slide-scroll motion-scroll-container scrollbar-soft relative w-full flex-1 overflow-auto px-2"
                 >
+                    <MotionScrollIndicator targetRef={ref} />
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
                         {pendentes.map((lembrete) => (
                             <LembreteCard

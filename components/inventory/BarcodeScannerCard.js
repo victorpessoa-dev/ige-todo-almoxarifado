@@ -1,4 +1,5 @@
 'use client'
+import { getApiAuthHeaders } from '@/lib/supabase/client'
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { BrowserCodeReader, BrowserMultiFormatOneDReader } from '@zxing/browser'
@@ -10,6 +11,7 @@ import { Label } from '@/components/ui/label'
 import { Slider } from '@/components/ui/slider'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Barcode, Camera, CameraOff, Sparkles, ZoomIn } from 'lucide-react'
+import { createCameraConstraints, findRearCameraDevice } from '@/lib/camera'
 
 const CAMERA_HELP = 'No celular, permita o acesso a câmera para escanear.'
 const DEFAULT_CAMERA_ZOOM = 2
@@ -445,21 +447,42 @@ export default function BarcodeScannerCard({
         throw new Error('Não foi possível preparar a câmera agora.')
       }
 
-      const constraints = {
-        audio: false,
-        video: {
-          facingMode: { ideal: 'environment' },
-          width: { ideal: SCANNER_FRAME_WIDTH, max: SCANNER_FRAME_WIDTH },
-          height: { ideal: SCANNER_FRAME_HEIGHT, max: SCANNER_FRAME_HEIGHT },
-          frameRate: { ideal: 24, max: 30 }
-        }
-      }
+      let constraints = createCameraConstraints({
+        facingMode: 'environment',
+        width: SCANNER_FRAME_WIDTH,
+        height: SCANNER_FRAME_HEIGHT
+      })
 
-      controlsRef.current = await codeReaderRef.current.decodeFromConstraints(
-        constraints,
-        videoRef.current,
-        handleScanResult
-      )
+      try {
+        controlsRef.current = await codeReaderRef.current.decodeFromConstraints(
+          constraints,
+          videoRef.current,
+          handleScanResult
+        )
+      } catch (rearFacingError) {
+        console.warn(
+          'A câmera traseira não aceitou a restrição exata; tentando identificar o dispositivo:',
+          rearFacingError
+        )
+
+        controlsRef.current?.stop?.()
+        controlsRef.current = null
+
+        const rearCamera = await findRearCameraDevice()
+        if (!rearCamera?.deviceId) throw rearFacingError
+
+        constraints = createCameraConstraints({
+          deviceId: rearCamera.deviceId,
+          width: SCANNER_FRAME_WIDTH,
+          height: SCANNER_FRAME_HEIGHT
+        })
+
+        controlsRef.current = await codeReaderRef.current.decodeFromConstraints(
+          constraints,
+          videoRef.current,
+          handleScanResult
+        )
+      }
 
       await optimizeCameraTrack(videoRef.current.srcObject)
       setIsCameraOpen(true)
@@ -533,7 +556,7 @@ export default function BarcodeScannerCard({
       const image = canvas.toDataURL('image/jpeg', 0.92)
       const response = await fetch('/api/inventory-scan-assist', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...(await getApiAuthHeaders()) },
         body: JSON.stringify({
           image,
           produtos: produtos.map((produto) => ({

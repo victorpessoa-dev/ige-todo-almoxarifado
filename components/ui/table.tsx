@@ -1,15 +1,20 @@
 'use client'
 
 import * as React from 'react'
+import { MotionScrollIndicator } from '@/components/animations/MotionScrollIndicator'
 
 import { cn } from '@/lib/utils'
 
 function Table({ className, ...props }: React.ComponentProps<'table'>) {
+  const scrollRef = React.useRef<HTMLDivElement>(null)
+
   return (
     <div
+      ref={scrollRef}
       data-slot="table-container"
-      className="ige-scrollbar inventory-table-scroll relative w-full overflow-x-auto"
+      className="motion-scroll-container relative w-full overflow-x-auto"
     >
+      <MotionScrollIndicator targetRef={scrollRef} orientation="horizontal" />
       <table
         data-slot="table"
         className={cn('w-full caption-bottom text-sm', className)}
