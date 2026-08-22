@@ -46,11 +46,12 @@ async function createLabelImage(produto, model) {
     ctx.restore()
   }
 
+
   ctx.fillStyle = '#000'
   ctx.textAlign = 'center'
 
   const maxWidth = widthPx * 0.9
-  let fontSize = heightPx * 0.3 * scale
+  let fontSize = heightPx * 0.22 * scale
   const minFont = 10
 
   while (fontSize > minFont) {
@@ -61,8 +62,8 @@ async function createLabelImage(produto, model) {
 
   ctx.lineWidth = Math.max(1, Math.round(fontSize * 0.08))
   ctx.strokeStyle = '#ffffff'
-  ctx.strokeText(String(produto.nome || ''), widthPx / 2, heightPx * 0.35)
-  ctx.fillText(String(produto.nome || ''), widthPx / 2, heightPx * 0.35)
+  ctx.strokeText(String(produto.nome || ''), widthPx / 2, heightPx * 0.36)
+  ctx.fillText(String(produto.nome || ''), widthPx / 2, heightPx * 0.36)
 
   const barcodeCanvas = document.createElement('canvas')
   JsBarcode(barcodeCanvas, String(produto.cod || produto.cod_barra || produto.id), {
@@ -77,8 +78,15 @@ async function createLabelImage(produto, model) {
 
   ctx.save()
   ctx.imageSmoothingEnabled = false
-  ctx.drawImage(barcodeCanvas, widthPx * 0.1, heightPx * 0.5, widthPx * 0.8, heightPx * 0.4)
+  ctx.drawImage(barcodeCanvas, widthPx * 0.1, heightPx * 0.48, widthPx * 0.8, heightPx * 0.34)
   ctx.restore()
+
+
+  ctx.font = `bold ${Math.max(10, Math.round(heightPx * 0.08 * scale))}px monospace`
+  ctx.textAlign = 'right'
+  ctx.fillText(String(produto.cod || ''), widthPx * 0.95, heightPx * 0.95)
+
+
 
   return canvas
 }
@@ -303,7 +311,7 @@ export default function PrintDialogContent({
 }) {
   const canvasRef = useRef(null)
   const [image, setImage] = useState(null)
-  const [model, setModel] = useState('A4256')
+  const [model, setModel] = useState('A4263')
   const [isDownloading, setIsDownloading] = useState(false)
 
   const selectedProducts = useMemo(() => {
@@ -399,9 +407,9 @@ export default function PrintDialogContent({
       <canvas ref={canvasRef} className="hidden" />
 
       {image && (
-        <div className="flex justify-center rounded border bg-white p-4">
+        <div className="flex justify-center rounded border bg-slate-100 p-4">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={image} alt="Prévia da etiqueta" />
+          <img src={image} alt="PrÃ©via da etiqueta" />
         </div>
       )}
 
