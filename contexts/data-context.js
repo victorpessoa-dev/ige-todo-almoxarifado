@@ -662,7 +662,7 @@ export function DataProvider({ children }) {
 
       const { data: operationData, error: operationError } = await supabase.rpc('registrar_movimentacao_estoque', {
         p_produto_id: id,
-        p_tipo: 'entrada',
+        p_tipo: 'saida',
         p_quantidade: quantidade,
         p_motivo: motivo
       })
