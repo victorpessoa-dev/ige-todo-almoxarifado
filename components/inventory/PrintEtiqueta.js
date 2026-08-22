@@ -44,16 +44,13 @@ export default function PrintEtiqueta({ produto, copies = 1 }) {
       }
 
       ctx.fillStyle = '#000'
-      ctx.font = 'bold 20px monospace'
-      ctx.textAlign = 'right'
-      ctx.fillText(String(produto.cod || ''), 590, 30)
 
-      ctx.font = 'bold 22px Arial'
+      ctx.font = 'bold 20px Arial'
       ctx.textAlign = 'center'
       ctx.lineWidth = 2
       ctx.strokeStyle = '#ffffff'
-      ctx.strokeText(String(produto.nome || ''), 300, 90)
-      ctx.fillText(String(produto.nome || ''), 300, 90)
+      ctx.strokeText(String(produto.nome || ''), 300, 70)
+      ctx.fillText(String(produto.nome || ''), 300, 70)
 
       const barcodeCanvas = document.createElement('canvas')
       JsBarcode(barcodeCanvas, String(produto.cod || produto.cod_barra || produto.id), {
@@ -68,8 +65,14 @@ export default function PrintEtiqueta({ produto, copies = 1 }) {
 
       ctx.save()
       ctx.imageSmoothingEnabled = false
-      ctx.drawImage(barcodeCanvas, 50, 110, 500, 80)
+      ctx.drawImage(barcodeCanvas, 50, 85, 500, 90)
       ctx.restore()
+
+
+      ctx.font = 'bold 22px monospace'
+      ctx.textAlign = 'right'
+      ctx.fillText(String(produto.cod || ''), 590, 205)
+
 
       setImage({ productKey, url: canvas.toDataURL('image/png') })
     }
