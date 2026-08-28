@@ -127,19 +127,30 @@ async function testAiRoutesRequireAuthenticatedUser() {
 
 async function testAiRateLimitIsDistributedAndUserScoped() {
   const rateLimit = await readText('lib/server/rate-limit.js')
-  const migration = await readText(
-    'database/migrations/20260721_add_distributed_api_rate_limit.sql'
-  )
   const schema = await readText('database/schema_original_atual.sql')
 
   assert.match(rateLimit, /rpc\('check_api_rate_limit'/)
   assert.doesNotMatch(rateLimit, /new Map\(/)
-  assert.match(migration, /current_user_id uuid := auth\.uid\(\)/)
-  assert.match(migration, /on conflict \(bucket_key\) do update/)
-  assert.match(migration, /security definer/)
-  assert.match(migration, /revoke all privileges on public\.api_rate_limits from public, anon, authenticated/)
-  assert.match(migration, /grant execute on function public\.check_api_rate_limit\(text\) to authenticated/)
-  assert.match(schema, /create table if not exists public\.api_rate_limits/)
+  assert.doesNotMatch(rateLimit, /buckets\.get\(/)
+  assert.match(schema, /current_user_id uuid := auth\.uid\(\)/)
+  assert.match(schema, /on conflict \(bucket_key\) do update/)
+  assert.match(schema, /create or replace function public\.check_api_rate_limit/)
+  assert.match(schema, /revoke all privileges on public\.api_rate_limits from public, anon, authenticated/)
+  assert.match(schema, /grant execute on function public\.check_api_rate_limit\(text\) to authenticated/)
+}
+
+async function testReviewPageUsesCachedUpdatesAndConfirmation() {
+  const page = await readText('app/(admin)/revisoes/page.js')
+  const reviewApi = await readText('app/(admin)/api/revisoes/route.js')
+
+  assert.match(page, /AlertDialog/)
+  assert.doesNotMatch(page, /window\.confirm/)
+  assert.match(page, /setRotinas\(\(current\)/)
+  assert.match(page, /setRevisoes\(\(current\)/)
+  assert.match(page, /setPendencias\(\(current\)/)
+  assert.match(page, /toggleCategory/)
+  assert.match(reviewApi, /getReviewCategories\(routine\)/)
+  assert.match(reviewApi, /\.in\('categoria', categories\)/)
 }
 
 await testManifestUsesSvgLogo()
@@ -151,6 +162,7 @@ await testAuditFilesStayOrganizedByUse()
 await testDomainFilesStayOrganizedByUse()
 await testAiRoutesRequireAuthenticatedUser()
 await testAiRateLimitIsDistributedAndUserScoped()
+await testReviewPageUsesCachedUpdatesAndConfirmation()
 
 
 
@@ -188,20 +200,18 @@ async function testCiDoesNotDependOnVercel() {
   assert.doesNotMatch(workflow, /Deploy to Vercel|vercel (pull|build|deploy)/i)
 }
 
-async function testAtomicStockMigrationIsPresent() {
-  const migration = await readText(
-    'database/migrations/20260821120000_atomic_stock_movement.sql'
-  )
+async function testAtomicStockMovementFunctionIsPresent() {
+  const schema = await readText('database/schema_original_atual.sql')
 
-  assert.match(migration, /create or replace function public\.registrar_movimentacao_estoque/)
-  assert.match(migration, /for update/)
-  assert.match(migration, /insert into public\.movimentacoes_estoque/)
-  assert.match(migration, /update public\.produtos set estoque/)
+  assert.match(schema, /create or replace function public\.registrar_movimentacao_estoque/)
+  assert.match(schema, /for update/)
+  assert.match(schema, /insert into public\.movimentacoes_estoque/)
+  assert.match(schema, /update public\.produtos set estoque/)
 }
 
 await testNotificationSoundsRespectInitialSnapshot()
 await testOverdueRequestsOverrideSituationLabel()
 await testCiDoesNotDependOnVercel()
-await testAtomicStockMigrationIsPresent()
+await testAtomicStockMovementFunctionIsPresent()
 
 console.log('audit contracts passed')

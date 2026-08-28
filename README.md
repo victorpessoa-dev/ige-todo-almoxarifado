@@ -89,3 +89,8 @@ docs/technical-audit.md
 ```
 
 Esse arquivo concentra observacoes internas sobre seguranca, arquitetura, versionamento, banco de dados e proximas melhorias tecnicas.
+
+
+## Web Push
+
+O Web Push usa diretamente o protocolo gratuito dos navegadores, sem Firebase, OneSignal ou cadastro em serviço externo. Gere as chaves VAPID localmente com `npx web-push generate-vapid-keys` e configure `WEB_PUSH_SUBJECT`, `WEB_PUSH_VAPID_PUBLIC_KEY` e `WEB_PUSH_VAPID_PRIVATE_KEY` no ambiente do backend. A inscrição é mantida apenas no navegador que concedeu a permissão; o projeto não cria tabelas nem grava subscriptions no banco.

@@ -1,240 +1,97 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import FullCalendar from '@fullcalendar/react'
-import timeGridPlugin from '@fullcalendar/timegrid'
 import dayGridPlugin from '@fullcalendar/daygrid'
 import interactionPlugin from '@fullcalendar/interaction'
 import ptBrLocale from '@fullcalendar/core/locales/pt-br'
-import { CalendarDays } from 'lucide-react'
 import { toast } from 'sonner'
-import { getUserMessage } from '@/lib/messaging/user-messages'
-import { toDateInputValue } from '@/lib/date/date-utils'
+import { Button } from '@/components/ui/button'
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { listRevisoesCalendario } from '@/lib/services/revisoes-service'
 
-import { useData } from '@/contexts/data-context'
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import EventForm from '@/components/events/EventForm'
+const PAST_COLOR = '#64748b'
+const FUTURE_COLOR = '#2563eb'
 
-const defaultForm = {
-  type: 'tarefa',
-  titulo: '',
-  descricao: '',
-  conteudo: '',
-  responsavel: '',
-  destinatario: '',
-  data: '',
-  status: 'a_fazer',
-  prioridade: 'medio'
+function dayKey(value) {
+  const date = new Date(value)
+  const offset = date.getTimezoneOffset() * 60_000
+  return new Date(date.getTime() - offset).toISOString().slice(0, 10)
 }
 
-function formatDateForInput(value) {
-  return toDateInputValue(value)
+function formatDay(value) {
+  return new Date(value + 'T00:00:00').toLocaleDateString('pt-BR', {
+    weekday: 'long',
+    day: '2-digit',
+    month: 'long'
+  })
 }
 
 export default function CalendarPage() {
-  const {
-    tarefas,
-    lembretes,
-    addTarefa,
-    addLembrete,
-    updateTarefa,
-    updateLembrete,
-    deleteTarefa,
-    deleteLembrete
-  } = useData()
-
+  const router = useRouter()
+  const [revisoes, setRevisoes] = useState([])
+  const [selectedDate, setSelectedDate] = useState(null)
   const [dialogOpen, setDialogOpen] = useState(false)
-  const [selectedEvent, setSelectedEvent] = useState(null)
-  const [form, setForm] = useState(defaultForm)
+  const [now] = useState(() => Date.now())
 
-  const events = useMemo(() => {
-    const tarefaEvents = tarefas
-      .filter((tarefa) => tarefa.status !== 'concluido')
-      .map((tarefa) => ({
-      id: `tarefa-${tarefa.id}`,
-      title: tarefa.titulo || 'Tarefa sem titulo',
-      start: tarefa.data || null,
-      backgroundColor: '#028358',
-      borderColor: '#028358',
-      textColor: '#ffffff',
-      extendedProps: {
-        type: 'tarefa',
-        originalId: tarefa.id
-      }
-      }))
+  useEffect(() => {
+    let active = true
+    listRevisoesCalendario()
+      .then((data) => active && setRevisoes(data))
+      .catch((error) => toast.error(error?.message || 'Não foi possível carregar o calendário.'))
+    return () => { active = false }
+  }, [])
 
-    const lembreteEvents = lembretes
-      .filter((lembrete) => lembrete.status !== 'concluido')
-      .map((lembrete) => ({
-      id: `lembrete-${lembrete.id}`,
-      title: lembrete.titulo || 'Lembrete sem titulo',
-      start: lembrete.data || null,
-      backgroundColor: '#6442b1',
-      borderColor: '#6442b1',
-      textColor: '#ffffff',
-      extendedProps: {
-        type: 'lembrete',
-        originalId: lembrete.id
-      }
-      }))
+  const events = useMemo(() => revisoes
+    .filter((revisao) => revisao.agendada_para)
+    .map((revisao) => {
+      const isPast = new Date(revisao.agendada_para).getTime() < now
+      const color = isPast ? PAST_COLOR : FUTURE_COLOR
+      const rotina = revisao.rotinas_revisao?.nome || 'Revisão de estoque'
+      const total = revisao.revisoes_estoque_itens?.length || 0
+      return { id: revisao.id, title: rotina + ' · ' + total + ' itens', start: revisao.agendada_para, backgroundColor: color, borderColor: color, textColor: '#fff' }
+    }), [revisoes, now])
 
-    return [...tarefaEvents, ...lembreteEvents].filter((event) => !!event.start)
-  }, [tarefas, lembretes])
+  const selectedReviews = useMemo(() => {
+    if (!selectedDate) return []
+    return revisoes.filter((revisao) => revisao.agendada_para && dayKey(revisao.agendada_para) === selectedDate)
+  }, [revisoes, selectedDate])
 
-  const openNewEventDialog = (dateStr = formatDateForInput(new Date())) => {
-    setSelectedEvent(null)
-    setForm({ ...defaultForm, data: dateStr })
-    setDialogOpen(true)
-  }
-
-  const openEditEventDialog = (event) => {
-    const { type, originalId } = event.extendedProps
-    const item =
-      type === 'tarefa'
-        ? tarefas.find((tarefa) => tarefa.id === originalId)
-        : lembretes.find((lembrete) => lembrete.id === originalId)
-
-    if (!item) return
-
-    setSelectedEvent({ type, id: originalId })
-    setForm({
-      type,
-      titulo: item.titulo || '',
-      descricao: item.descricao || '',
-      conteudo: item.conteudo || '',
-      responsavel: item.responsavel || '',
-      destinatario: item.destinatario || '',
-      data: formatDateForInput(item.data),
-      status: item.status || 'a_fazer',
-      prioridade: item.prioridade || 'medio'
-    })
-    setDialogOpen(true)
-  }
-
-  const handleDateClick = (arg) => {
-    openNewEventDialog(arg.dateStr)
-  }
-
-  const handleEventClick = (arg) => {
-    openEditEventDialog(arg.event)
-  }
-
-  const resetForm = () => {
-    setSelectedEvent(null)
-    setForm(defaultForm)
-  }
-
-  const handleOpenChange = (open) => {
-    setDialogOpen(open)
-    if (!open) resetForm()
-  }
-
-  const handleSubmit = async (event) => {
-    event.preventDefault()
-
-    const payload = {
-      titulo: form.titulo.trim(),
-      data: form.data || null,
-      status: form.status,
-      prioridade: form.prioridade
-    }
-
-    if (form.type === 'tarefa') {
-      payload.descricao = form.descricao
-      payload.responsavel = form.responsavel
-    } else {
-      payload.conteudo = form.conteudo
-      payload.destinatario = form.destinatario
-    }
-
-    try {
-      if (selectedEvent) {
-        if (selectedEvent.type === 'tarefa') {
-          await updateTarefa(selectedEvent.id, payload)
-          toast.success('Tarefa atualizada com sucesso!')
-        } else {
-          await updateLembrete(selectedEvent.id, payload)
-          toast.success('Lembrete atualizado com sucesso!')
-        }
-      } else if (form.type === 'tarefa') {
-        await addTarefa(payload)
-        toast.success('Tarefa criada com sucesso!')
-      } else {
-        await addLembrete(payload)
-        toast.success('Lembrete criado com sucesso!')
-      }
-
-      setDialogOpen(false)
-    } catch (error) {
-      toast.error(getUserMessage(error, 'Não foi possível salvar o evento.'))
-    }
-  }
-
-  const handleDelete = async () => {
-    if (!selectedEvent) return
-
-    try {
-      if (selectedEvent.type === 'tarefa') {
-        await deleteTarefa(selectedEvent.id)
-        toast.success('Tarefa removida com sucesso!')
-      } else {
-        await deleteLembrete(selectedEvent.id)
-        toast.success('Lembrete removido com sucesso!')
-      }
-
-      setDialogOpen(false)
-    } catch (error) {
-      toast.error(getUserMessage(error, 'Não foi possível excluir o evento.'))
-    }
-  }
+  const openReview = (reviewId) => router.push('/revisoes?revisao=' + reviewId)
 
   return (
-    <div className="flex min-h-full flex-col gap-4 pb-4 sm:pb-6">
-      <div className="rounded-2xl border bg-card/70 p-4 shadow-sm sm:p-5">
-        <div className="space-y-1">
-          <h1 className="flex items-center gap-3 text-xl font-bold sm:text-2xl md:text-3xl">
-            <CalendarDays className="h-7 w-7 text-primary" />
-            Calendario
-          </h1>
-        </div>
+    <div className="mx-auto min-h-full w-full max-w-7xl pb-6">
+      <div className="review-calendar min-h-[calc(100dvh-7rem)] overflow-x-auto rounded-2xl border bg-card p-2 shadow-sm sm:p-4">
+        <FullCalendar
+          plugins={[dayGridPlugin, interactionPlugin]}
+          initialView="dayGridMonth"
+          locale={ptBrLocale}
+          headerToolbar={{ left: 'prev,next', center: 'title', right: 'today' }}
+          buttonText={{ today: 'Hoje' }}
+          events={events}
+          dayMaxEvents={3}
+          displayEventTime={false}
+          eventClassNames={({ event }) => event.start && event.start.getTime() < now ? ['review-calendar__event--past'] : ['review-calendar__event--upcoming']}
+          dateClick={({ dateStr }) => { setSelectedDate(dateStr); setDialogOpen(true) }}
+          eventClick={({ event }) => openReview(event.id)}
+          height="auto"
+        />
       </div>
-
-      <div className="rounded-2xl border bg-card p-3 shadow-sm sm:p-4">
-        <div className="min-h-[620px] rounded-xl border bg-background p-2 sm:min-h-[700px] sm:p-4">
-          <FullCalendar
-            plugins={[timeGridPlugin, dayGridPlugin, interactionPlugin]}
-            initialView="dayGridMonth"
-            locale={ptBrLocale}
-            headerToolbar={{
-              left: 'prev,next',
-              center: 'title',
-              right: 'today'
-            }}
-            buttonText={{
-              today: 'Hoje'
-            }}
-            events={events}
-            dateClick={handleDateClick}
-            eventClick={handleEventClick}
-            height="auto"
-          />
-        </div>
-      </div>
-
-      <Dialog open={dialogOpen} onOpenChange={handleOpenChange}>
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{selectedEvent ? 'Editar evento' : 'Criar evento'}</DialogTitle>
+            <DialogTitle>{selectedDate ? 'Revisões de ' + formatDay(selectedDate) : 'Revisões'}</DialogTitle>
+            <DialogDescription>Selecione uma revisão para abrir e marcar seus itens.</DialogDescription>
           </DialogHeader>
-
-          <EventForm
-            form={form}
-            setForm={setForm}
-            onSubmit={handleSubmit}
-            typeLocked={null}
-            isEditing={!!selectedEvent}
-            onDelete={handleDelete}
-          />
+          <div className="space-y-3">
+            {selectedReviews.length === 0 ? <p className="text-sm text-muted-foreground">Não há revisões agendadas para este dia.</p> : selectedReviews.map((review) => (
+              <div key={review.id} className="flex items-center justify-between gap-3 rounded-lg border p-3">
+                <div><p className="font-medium">{review.rotinas_revisao?.nome || 'Revisão de estoque'}</p><p className="text-sm text-muted-foreground">{review.revisoes_estoque_itens?.length || 0} itens · {review.status}</p></div>
+                <Button size="sm" onClick={() => openReview(review.id)}>Marcar revisão</Button>
+              </div>
+            ))}
+          </div>
         </DialogContent>
       </Dialog>
     </div>

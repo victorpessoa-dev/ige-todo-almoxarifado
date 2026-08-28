@@ -14,17 +14,15 @@ import {
   Camera,
   ChartColumn,
   LayoutDashboard,
-  ListTodo,
+  ClipboardCheck,
   LogOut,
   Package,
   ShoppingCart,
-  StickyNote
 } from 'lucide-react'
 
 const menuItems = [
   { href: '/painel', label: 'Painel', icon: LayoutDashboard, desktopOnly: true },
-  { href: '/tarefas', label: 'Tarefas', icon: ListTodo },
-  { href: '/lembretes', label: 'Lembretes', icon: StickyNote },
+  { href: '/revisoes', label: 'Revisoes', icon: ClipboardCheck },
   { href: '/calendario', label: 'Calendario', icon: CalendarDays },
   { href: '/inventario', label: 'Inventario', icon: Package },
   { href: '/catalogo', label: 'Catalogo', icon: BookOpen },

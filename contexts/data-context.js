@@ -2,7 +2,7 @@
  * Contexto de dados administrativos.
  *
  * Mantem estado local, sincronizacao realtime e operacoes Supabase para
- * tarefas, lembretes, inventario, movimentacoes e solicitacoes de compra.
+ * inventario, movimentacoes e solicitacoes de compra.
  */
 'use client'
 
@@ -26,6 +26,7 @@ import {
 } from '@/lib/services/solicitacoes-service'
 import { toDateInputValue } from '@/lib/date/date-utils'
 import { invalidatePublicCatalogCache } from '@/lib/services/catalogo-service'
+import { notifyPush } from '@/lib/services/push-service'
 import {
   normalizeMovimentacao,
   normalizeSolicitacao,
@@ -42,8 +43,6 @@ const DataContext = createContext()
  * Provedor dos dados administrativos compartilhados.
  */
 export function DataProvider({ children }) {
-  const [tarefas, setTarefas] = useState([])
-  const [lembretes, setLembretes] = useState([])
   const [produtos, setProdutos] = useState([])
   const [movimentacoes, setMovimentacoes] = useState([])
   const [solicitacoesCompra, setSolicitacoesCompra] = useState([])
@@ -179,22 +178,12 @@ export function DataProvider({ children }) {
 
     try {
       const [
-        { data: tarefasData, error: tarefasError },
-        { data: lembretesData, error: lembretesError },
         { data: produtosData, error: produtosError },
         { data: movimentacoesData, error: movimentacoesError },
         solicitacoesResult,
         solicitantesResult,
         centrosCustoResult
       ] = await Promise.all([
-        supabase
-          .from('tarefas')
-          .select('*')
-          .order('created_at', { ascending: false }),
-        supabase
-          .from('lembretes')
-          .select('*')
-          .order('created_at', { ascending: false }),
         supabase
           .from('produtos')
           .select('*')
@@ -219,9 +208,6 @@ export function DataProvider({ children }) {
           .then((data) => ({ data, error: null }))
           .catch((error) => ({ data: [], error }))
       ])
-
-      if (tarefasError) throw tarefasError
-      if (lembretesError) throw lembretesError
       if (produtosError) throw produtosError
       if (movimentacoesError) throw movimentacoesError
       if (solicitacoesResult.error) {
@@ -236,8 +222,6 @@ export function DataProvider({ children }) {
 
       if (isMounted.current) {
         const nextProdutos = sortProdutosByNomeAsc(produtosData || [])
-        setTarefas(sortByCreatedAtDesc(tarefasData || []))
-        setLembretes(sortByCreatedAtDesc(lembretesData || []))
         setProdutos(nextProdutos)
         produtosRef.current = nextProdutos
         previousLowStockRef.current = new Map(nextProdutos.map((produto) => [
@@ -271,189 +255,7 @@ export function DataProvider({ children }) {
       }
     }
   }, [])
-
-  /**
-   * Cria tarefa administrativa para o usuario autenticado.
-   */
-  async function addTarefa(form) {
-    if (!form?.titulo?.trim()) {
-      throw new Error('Título é obrigatório')
-    }
-
-    const user = await requireAuth()
-
-    const operation = async () => {
-      const { data, error: insertError } = await supabase
-        .from('tarefas')
-        .insert({
-          user_id: user.id,
-          titulo: form.titulo.trim(),
-          descricao: form.descricao?.trim() || null,
-          responsavel: form.responsavel?.trim() || null,
-          status: form.status || 'a_fazer',
-          prioridade: form.prioridade || 'medio',
-          data: toDateInputValue(form.data) || null
-        })
-        .select()
-        .single()
-
-      if (insertError) throw insertError
-      setTarefas((prev) => upsertSorted(prev, data, sortByCreatedAtDesc))
-      return data
-    }
-
-    return withRetry(operation)
-  }
-
-  /**
-   * Atualiza tarefa mantendo estado local sincronizado.
-   */
-  async function updateTarefa(id, updates) {
-    if (!id) throw new Error('ID é obrigatório')
-
-    const operation = async () => {
-      const { data, error: updateError } = await supabase
-        .from('tarefas')
-        .update({
-          ...updates,
-          titulo: updates.titulo?.trim() || updates.titulo,
-          descricao: updates.descricao?.trim() || updates.descricao,
-          responsavel: updates.responsavel?.trim() || updates.responsavel,
-          ...('data' in updates ? { data: toDateInputValue(updates.data) || null } : {})
-        })
-        .eq('id', id)
-        .select()
-        .single()
-
-      if (updateError) throw updateError
-      setTarefas((prev) => upsertSorted(prev, data, sortByCreatedAtDesc))
-      return data
-    }
-
-    return withRetry(operation)
-  }
-
-  /**
-   * Remove tarefa com rollback local em caso de falha remota.
-   */
-  async function deleteTarefa(id) {
-    if (!id) throw new Error('ID é obrigatório')
-
-    const previousTarefas = tarefas
-    setTarefas((prev) => removeSorted(prev, id, sortByCreatedAtDesc))
-
-    const operation = async () => {
-      const { error: deleteError } = await supabase
-        .from('tarefas')
-        .delete()
-        .eq('id', id)
-
-      if (deleteError) throw deleteError
-      invalidatePublicCatalogCache()
-    }
-
-    try {
-      await withRetry(operation)
-    } catch (deleteError) {
-      logger.error('Erro ao deletar tarefa:', deleteError)
-      if (isMounted.current) {
-        setTarefas(previousTarefas)
-      }
-      throw deleteError
-    }
-  }
-
-  /**
-   * Cria lembrete administrativo para o usuario autenticado.
-   */
-  async function addLembrete(form) {
-    if (!form?.titulo?.trim()) {
-      throw new Error('Título é obrigatório')
-    }
-
-    const user = await requireAuth()
-
-    const operation = async () => {
-      const { data, error: insertError } = await supabase
-        .from('lembretes')
-        .insert({
-          user_id: user.id,
-          titulo: form.titulo.trim(),
-          conteudo: form.conteudo?.trim() || null,
-          destinatario: form.destinatario?.trim() || null,
-          status: form.status || 'a_fazer',
-          prioridade: form.prioridade || 'medio',
-          data: toDateInputValue(form.data) || null
-        })
-        .select()
-        .single()
-
-      if (insertError) throw insertError
-      setLembretes((prev) => upsertSorted(prev, data, sortByCreatedAtDesc))
-      return data
-    }
-
-    return withRetry(operation)
-  }
-
-  /**
-   * Atualiza lembrete mantendo estado local sincronizado.
-   */
-  async function updateLembrete(id, updates) {
-    if (!id) throw new Error('ID é obrigatório')
-
-    const operation = async () => {
-      const { data, error: updateError } = await supabase
-        .from('lembretes')
-        .update({
-          ...updates,
-          titulo: updates.titulo?.trim() || updates.titulo,
-          conteudo: updates.conteudo?.trim() || updates.conteudo,
-          destinatario: updates.destinatario?.trim() || updates.destinatario,
-          ...('data' in updates ? { data: toDateInputValue(updates.data) || null } : {})
-        })
-        .eq('id', id)
-        .select()
-        .single()
-
-      if (updateError) throw updateError
-      setLembretes((prev) => upsertSorted(prev, data, sortByCreatedAtDesc))
-      return data
-    }
-
-    return withRetry(operation)
-  }
-
-  /**
-   * Remove lembrete com rollback local em caso de falha remota.
-   */
-  async function deleteLembrete(id) {
-    if (!id) throw new Error('ID é obrigatório')
-
-    const previousLembretes = lembretes
-    setLembretes((prev) => removeSorted(prev, id, sortByCreatedAtDesc))
-
-    const operation = async () => {
-      const { error: deleteError } = await supabase
-        .from('lembretes')
-        .delete()
-        .eq('id', id)
-
-      if (deleteError) throw deleteError
-      invalidatePublicCatalogCache()
-    }
-
-    try {
-      await withRetry(operation)
-    } catch (deleteError) {
-      logger.error('Erro ao deletar lembrete:', deleteError)
-      if (isMounted.current) {
-        setLembretes(previousLembretes)
-      }
-      throw deleteError
-    }
-  }
-
+
   /**
    * Cria produto de inventario vinculado ao usuario autenticado.
    */
@@ -827,23 +629,6 @@ export function DataProvider({ children }) {
 
       return channel
     }
-
-    const tarefasChannel = createChannel('realtime:tarefas', 'tarefas', (payload) => {
-      if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
-        setTarefas((prev) => upsertSorted(prev, payload.new, sortByCreatedAtDesc))
-      } else if (payload.eventType === 'DELETE') {
-        setTarefas((prev) => removeSorted(prev, payload.old.id, sortByCreatedAtDesc))
-      }
-    })
-
-    const lembretesChannel = createChannel('realtime:lembretes', 'lembretes', (payload) => {
-      if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
-        setLembretes((prev) => upsertSorted(prev, payload.new, sortByCreatedAtDesc))
-      } else if (payload.eventType === 'DELETE') {
-        setLembretes((prev) => removeSorted(prev, payload.old.id, sortByCreatedAtDesc))
-      }
-    })
-
     const produtosChannel = createChannel('realtime:produtos', 'produtos', (payload) => {
       invalidatePublicCatalogCache()
       if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
@@ -863,6 +648,7 @@ export function DataProvider({ children }) {
           const audio = new Audio('/sound/new_prod_low.mp3')
           audio.currentTime = 0
           audio.play().catch(() => {})
+          notifyPush({ title: 'Estoque baixo', body: produto.nome + ' atingiu o estoque mínimo.', url: '/inventario' }).catch(() => {})
         }
 
         previousLowStockRef.current.set(produto.id, isLowStock)
@@ -895,6 +681,9 @@ export function DataProvider({ children }) {
 
     const solicitacoesChannel = createChannel('realtime:solicitacoes_compra', 'solicitacoes_compra', async (payload) => {
       invalidatePublicSolicitacaoCaches()
+      if (payload.eventType === 'INSERT' && payload.new) {
+        notifyPush({ title: 'Nova solicitação de compra', body: payload.new.nome_item || 'Uma nova solicitação foi criada.', url: '/solicitacoes' }).catch(() => {})
+      }
       if (payload.eventType === 'DELETE') {
         setSolicitacoesCompra((prev) => removeSorted(prev, payload.old.id, sortByCreatedAtDesc))
         return
@@ -940,8 +729,6 @@ export function DataProvider({ children }) {
     })
 
     activeChannels.current = [
-      tarefasChannel,
-      lembretesChannel,
       produtosChannel,
       movimentacoesChannel,
       solicitacoesChannel,
@@ -961,8 +748,6 @@ export function DataProvider({ children }) {
 
   return (
     <DataContext.Provider value={{
-      tarefas,
-      lembretes,
       produtos,
       movimentacoes,
       solicitacoesCompra,
@@ -971,12 +756,6 @@ export function DataProvider({ children }) {
       isLoaded,
       isLoading,
       error,
-      addTarefa,
-      updateTarefa,
-      deleteTarefa,
-      addLembrete,
-      updateLembrete,
-      deleteLembrete,
       addProduto,
       updateProduto,
       deleteProduto,
