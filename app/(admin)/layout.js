@@ -13,6 +13,7 @@ import { Menu } from 'lucide-react'
 import Image from 'next/image'
 import { formatSolicitacaoItem } from '@/lib/solicitacoes/format'
 import { MotionScrollIndicator } from '@/components/animations/MotionScrollIndicator'
+import { ReviewNotification } from '@/components/revisoes/ReviewNotification'
 
 function AdminShell({ children }) {
   const { isAuthenticated, isLoading } = useAuth()
@@ -172,6 +173,7 @@ function AdminShell({ children }) {
 export default function AdminLayout({ children }) {
   return (
     <DataProvider>
+      <ReviewNotification />
       <AdminShell>{children}</AdminShell>
     </DataProvider>
   )

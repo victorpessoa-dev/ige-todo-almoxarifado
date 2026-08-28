@@ -5,11 +5,10 @@ import { useState, useEffect, useCallback } from 'react'
 import { useData } from '@/contexts/data-context'
 import { Button } from '@/components/ui/button'
 import { LoadingState } from '@/components/ui/spinner'
-import { CalendarioSlide } from '@/components/slides/CalendarioSlide'
-import { TarefasSlide } from '@/components/slides/TarefasSlide'
-import { LembretesSlide } from '@/components/slides/LembretesSlide'
 import { SolicitacoesSlide } from '@/components/slides/SolicitacoesSlide'
 import InventarioSlide from '@/components/slides/InventarioSlide'
+import { CalendarioSlide } from '@/components/slides/CalendarioSlide'
+import { listRevisoesCalendario } from '@/lib/services/revisoes-service'
 import { Clock, Maximize2, Minimize2, Monitor } from 'lucide-react'
 import { isSolicitacaoEncerrada } from '@/constants/solicitacoes-config'
 
@@ -82,31 +81,25 @@ function RelogioSlide({ onEnd }) {
 }
 
 export default function PainelPage() {
-  const { tarefas, lembretes, produtos, solicitacoesCompra, isLoaded } = useData()
+  const { produtos, solicitacoesCompra, isLoaded } = useData()
   const [currentSlide, setCurrentSlide] = useState(0)
   const [cycleKey, setCycleKey] = useState(0)
   const [isFullscreen, setIsFullscreen] = useState(false)
+  const [revisoes, setRevisoes] = useState([])
+  useEffect(() => { if (isLoaded) listRevisoesCalendario().then(setRevisoes).catch(() => setRevisoes([])) }, [isLoaded])
 
-  const tarefasPendentes = tarefas.filter((tarefa) => tarefa.status !== 'concluido')
-  const lembretesPendentes = lembretes.filter((lembrete) => lembrete.status !== 'concluido')
   const hasProdutosBaixos = produtos.some((produto) => produto.estoque <= produto.min)
   const hasSolicitacoesAbertas = solicitacoesCompra.some(
     (solicitacao) => !isSolicitacaoEncerrada(solicitacao)
   )
   const slideDefinitions = [
-    ...(tarefasPendentes.length > 0
-      ? [{ key: 'tarefas', label: 'Tarefas' }]
-      : []),
-    ...(lembretesPendentes.length > 0
-      ? [{ key: 'lembretes', label: 'Lembretes' }]
-      : []),
-    { key: 'calendario', label: 'Calendario' },
     ...(hasProdutosBaixos
       ? [{ key: 'inventario', label: 'Inventario' }]
       : []),
     ...(hasSolicitacoesAbertas
       ? [{ key: 'solicitacoes', label: 'Solicitacoes' }]
       : []),
+    { key: 'calendario', label: 'Calendário' },
     { key: 'relogio', label: 'Relogio' }
   ]
 
@@ -124,49 +117,6 @@ export default function PainelPage() {
   }, [slideCount])
 
   const slides = slideDefinitions.map((slide, index) => {
-    if (slide.key === 'tarefas') {
-      return {
-        ...slide,
-        component: (
-          <TarefasSlide
-            key={`tarefas-${cycleKey}`}
-            tarefas={tarefas}
-            onEnd={nextSlide}
-            active={safeCurrentSlide === index}
-          />
-        )
-      }
-    }
-
-    if (slide.key === 'lembretes') {
-      return {
-        ...slide,
-        component: (
-          <LembretesSlide
-            key={`lembretes-${cycleKey}`}
-            lembretes={lembretes}
-            onEnd={nextSlide}
-            active={safeCurrentSlide === index}
-          />
-        )
-      }
-    }
-
-    if (slide.key === 'calendario') {
-      return {
-        ...slide,
-        component: (
-          <CalendarioSlide
-            key={`calendario-${cycleKey}`}
-            tarefas={tarefas}
-            lembretes={lembretes}
-            active={safeCurrentSlide === index}
-            onEnd={nextSlide}
-          />
-        )
-      }
-    }
-
     if (slide.key === 'inventario') {
       return {
         ...slide,
@@ -193,6 +143,10 @@ export default function PainelPage() {
           />
         )
       }
+    }
+
+    if (slide.key === 'calendario') {
+      return { ...slide, component: <CalendarioSlide key={'calendario-' + cycleKey} revisoes={revisoes} onEnd={nextSlide} active={safeCurrentSlide === index} /> }
     }
 
     return {

@@ -3,6 +3,7 @@ const scriptSrc = ["'self'", "'unsafe-inline'", ...(isDevelopment ? ["'unsafe-ev
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  output: 'standalone',
   poweredByHeader: false,
   turbopack: {
     root: process.cwd(),
