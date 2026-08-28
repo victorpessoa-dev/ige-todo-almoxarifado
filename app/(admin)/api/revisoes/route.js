@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 import { requireApiAuth } from '@/lib/server/api-auth'
+import { getReviewCategories } from '@/lib/revisoes/categories'
 
 function createUserClient(token) {
   return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY, {
@@ -40,7 +41,7 @@ async function processReviews(client, userId) {
       if (reviewError) throw reviewError
       let items = []
       if (routine.tipo === 'produtos') {
-        const categories = Array.isArray(routine.categorias) && routine.categorias.length ? routine.categorias : [routine.categoria].filter(Boolean)
+        const categories = getReviewCategories(routine)
         const { data: products, error: productsError } = await client.from('produtos').select('id, nome, estoque, min').in('categoria', categories)
         if (productsError) throw productsError
         items = (products || [])

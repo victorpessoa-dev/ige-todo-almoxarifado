@@ -30,6 +30,7 @@ import {
 } from '@/lib/services/revisoes-service'
 import { getUserMessage } from '@/lib/messaging/user-messages'
 import { sortReviewItems } from '@/lib/revisoes/priority'
+import { getReviewCategories } from '@/lib/revisoes/categories'
 
 const initialForm = {
   nome: '', tipo: 'produtos', categoria: '', categorias: [], horario: '09:00', frequencia: 'diaria', intervalo_dias: 1,
@@ -41,10 +42,6 @@ function formatDate(value) {
   return value ? new Date(value).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }) : '-'
 }
 
-function getRoutineCategories(routine) {
-  const categories = Array.isArray(routine?.categorias) ? routine.categorias : []
-  return [...new Set((categories.length ? categories : [routine?.categoria]).map((category) => String(category || '').trim()).filter(Boolean))]
-}
 
 export default function RevisoesPage() {
   const { produtos, solicitacoesCompra, solicitantesCompra, centrosCusto, isLoaded } = useData()
@@ -66,7 +63,7 @@ export default function RevisoesPage() {
 
   const getRoutineProducts = (routine) => {
     if (routine.tipo !== 'produtos') return []
-    const selectedCategories = new Set(getRoutineCategories(routine).map((category) => category.toLocaleLowerCase('pt-BR')))
+    const selectedCategories = new Set(getReviewCategories(routine).map((category) => category.toLocaleLowerCase('pt-BR')))
     return produtos.filter((product) => selectedCategories.has(String(product.categoria || '').trim().toLocaleLowerCase('pt-BR')))
   }
 
@@ -117,7 +114,7 @@ export default function RevisoesPage() {
   }
   const editRoutine = (routine) => {
     setEditingId(routine.id)
-    setForm({ ...initialForm, ...routine, categorias: getRoutineCategories(routine), dias_bloqueados: routine.dias_bloqueados || [] })
+    setForm({ ...initialForm, ...routine, categorias: getReviewCategories(routine), dias_bloqueados: routine.dias_bloqueados || [] })
     setChecklist((routine.itens_checklist_revisao || []).sort((a, b) => a.ordem - b.ordem))
     setRoutineDialogOpen(true)
   }
