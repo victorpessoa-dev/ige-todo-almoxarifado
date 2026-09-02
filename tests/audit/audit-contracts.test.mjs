@@ -170,10 +170,13 @@ async function testNotificationSoundsRespectInitialSnapshot() {
   const adminLayout = await readText('app/(admin)/layout.js')
   const dataContext = await readText('contexts/data-context.js')
   const audioPlayer = await readText('components/notifications/AudioPlayer.js')
+  const notificationSound = await readText('lib/notifications/sound.js')
 
   assert.ok(adminLayout.includes('notificationBaselineReadyRef'))
   assert.ok(adminLayout.includes('isLoaded'))
-  assert.ok(adminLayout.includes('new_notifcation.mp3'))
+  assert.ok(adminLayout.includes('playNotificationSound'))
+  assert.ok(notificationSound.includes('new_notifcation.mp3'))
+  assert.ok(!notificationSound.includes('new_notification.mp3'))
   assert.ok(!adminLayout.includes('new_notification.mp3'))
 
   assert.ok(dataContext.includes('hasInitialProductsRef'))
