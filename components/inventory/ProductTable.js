@@ -281,8 +281,8 @@ export default function ProductTable({
         align="end"
         onClick={(event) => event.stopPropagation()}
       >
-        <DropdownMenuLabel>{produto.nome}</DropdownMenuLabel>
-        <DropdownMenuSeparator />
+        <DropdownMenuLabel className="pb-2">{produto.nome}</DropdownMenuLabel>
+        <DropdownMenuSeparator className="mb-2" />
 
         <DropdownMenuItem
           onClick={() => openMovimentoDialog(produto, 'entrada', 1)}

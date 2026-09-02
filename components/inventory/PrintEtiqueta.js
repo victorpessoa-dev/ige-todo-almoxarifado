@@ -45,7 +45,7 @@ export default function PrintEtiqueta({ produto, copies = 1 }) {
 
       ctx.fillStyle = '#000'
 
-      ctx.font = 'bold 20px Arial'
+      ctx.font = 'bold 30px Arial'
       ctx.textAlign = 'center'
       ctx.lineWidth = 2
       ctx.strokeStyle = '#ffffff'
@@ -69,7 +69,7 @@ export default function PrintEtiqueta({ produto, copies = 1 }) {
       ctx.restore()
 
 
-      ctx.font = 'bold 22px monospace'
+      ctx.font = 'bold 26px monospace'
       ctx.textAlign = 'right'
       ctx.fillText(String(produto.cod || ''), 590, 205)
 
