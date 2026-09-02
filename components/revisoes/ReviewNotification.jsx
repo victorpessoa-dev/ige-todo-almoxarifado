@@ -1,10 +1,11 @@
-'use client'
+﻿'use client'
 
 import { useEffect, useRef } from 'react'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
 import { adiarRevisao, listRevisoesAbertas, registrarNotificacaoRevisao } from '@/lib/services/revisoes-service'
 import { notifyPush } from '@/lib/services/push-service'
+import { playNotificationSound } from '@/lib/notifications/sound'
 
 export function ReviewNotification() {
   const router = useRouter()
@@ -23,13 +24,14 @@ export function ReviewNotification() {
           const repeat = review.rotinas_revisao?.repetir_notificacao_minutos || 10
           await registrarNotificacaoRevisao(review.id, repeat)
           notifyPush({
-            title: 'Revisão de estoque disponível',
-            body: `${review.rotinas_revisao?.nome || 'Rotina'} possui ${(review.revisoes_estoque_itens || []).length} itens aguardando revisão.`,
+            title: 'RevisÃ£o de estoque disponÃ­vel',
+            body: `${review.rotinas_revisao?.nome || 'Rotina'} possui ${(review.revisoes_estoque_itens || []).length} itens aguardando revisÃ£o.`,
             url: `/revisoes?revisao=${review.id}`
           }).catch(() => {})
-          toast.info('Revisão de estoque disponível', {
+          playNotificationSound()
+          toast.info('RevisÃ£o de estoque disponÃ­vel', {
             id: `review-${review.id}`,
-            description: `${review.rotinas_revisao?.nome || 'Rotina'} possui ${(review.revisoes_estoque_itens || []).length} itens aguardando revisão.`,
+            description: `${review.rotinas_revisao?.nome || 'Rotina'} possui ${(review.revisoes_estoque_itens || []).length} itens aguardando revisÃ£o.`,
             duration: Infinity,
             action: { label: 'Revisar', onClick: () => router.push('/revisoes') },
             cancel: { label: 'Adiar 10 min', onClick: () => adiarRevisao(review.id, 10) },

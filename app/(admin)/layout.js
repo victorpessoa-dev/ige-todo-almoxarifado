@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useEffect, useRef, useState } from 'react'
 import { motion, useReducedMotion } from 'motion/react'
@@ -14,6 +14,7 @@ import Image from 'next/image'
 import { formatSolicitacaoItem } from '@/lib/solicitacoes/format'
 import { MotionScrollIndicator } from '@/components/animations/MotionScrollIndicator'
 import { ReviewNotification } from '@/components/revisoes/ReviewNotification'
+import { playNotificationSound } from '@/lib/notifications/sound'
 
 function AdminShell({ children }) {
   const { isAuthenticated, isLoading } = useAuth()
@@ -84,18 +85,16 @@ function AdminShell({ children }) {
 
     const primeiraSolicitacao = solicitacoesNaoNotificadas[0]
     const total = solicitacoesNaoNotificadas.length
-    const audio = new Audio('/sound/new_notifcation.mp3')
-    audio.currentTime = 0
-    audio.play().catch(() => {})
+    playNotificationSound()
 
     toast.info(
       total === 1
-        ? 'Nova solicitação recebida'
-        : total + ' novas solicitações recebidas',
+        ? 'Nova solicitaÃ§Ã£o recebida'
+        : total + ' novas solicitaÃ§Ãµes recebidas',
       {
         description:
           total === 1
-            ? (primeiraSolicitacao.codigo || 'Sem código') + ' - ' + (formatSolicitacaoItem(primeiraSolicitacao) || 'Pedido sem descrição')
+            ? (primeiraSolicitacao.codigo || 'Sem cÃ³digo') + ' - ' + (formatSolicitacaoItem(primeiraSolicitacao) || 'Pedido sem descriÃ§Ã£o')
             : 'Existem novos pedidos aguardando aceite.',
         action: {
           label: 'Ver',
