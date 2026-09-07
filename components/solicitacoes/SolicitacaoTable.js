@@ -1,6 +1,8 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
+import { toast } from 'sonner'
+import { getUserMessage } from '@/lib/messaging/user-messages'
 import {
   Table,
   TableBody,
@@ -39,7 +41,7 @@ const SOLICITACAO_TABLE_COLUMNS = [
   { key: 'solicitante', width: 140, minWidth: 100 },
   { key: 'centro_custo', width: 130, minWidth: 90 },
   { key: 'prioridade', width: 120, minWidth: 100 },
-  { key: 'situacao', width: 120, minWidth: 100 },
+  { key: 'situacao', width: 180, minWidth: 140 },
   { key: 'valor_total', width: 110, minWidth: 90 },
   { key: 'created_at', width: 120, minWidth: 100 },
   { key: 'previsao_entrega', width: 120, minWidth: 100 },
@@ -158,12 +160,61 @@ function PublicVisibilityToggle({ checked, disabled, onChange }) {
   )
 }
 
+function StatusSelect({ solicitacao, disabled, onChange }) {
+  const option = SOLICITACAO_STATUS_GERAL_OPTIONS.find((item) => item.value === solicitacao.status_geral)
+  const situacao = getSolicitacaoSituacao(solicitacao)
+
+  return (
+    <div className="min-w-0 space-y-1">
+      <select
+        value={solicitacao.status_geral || ''}
+        disabled={disabled}
+        aria-label={`Situação da solicitação ${solicitacao.codigo || solicitacao.id}`}
+        aria-busy={disabled}
+        title={disabled ? 'Salvando situação…' : option?.label}
+        className={`h-9 w-full min-w-0 cursor-pointer rounded-md border px-2 text-xs font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-wait disabled:opacity-60 ${option?.className || 'bg-background text-foreground'}`}
+        onClick={(event) => event.stopPropagation()}
+        onKeyDown={(event) => event.stopPropagation()}
+        onChange={(event) => onChange(event.target.value)}
+      >
+        {!option && <option value="" disabled>Selecionar situação</option>}
+        {SOLICITACAO_STATUS_GERAL_OPTIONS.map((item) => (
+          <option key={item.value} value={item.value} className="bg-background text-foreground">{item.label}</option>
+        ))}
+      </select>
+      {situacao.label && situacao.label !== option?.label && (
+        <span className={`block rounded border px-2 py-1 text-xs font-semibold ${situacao.className}`}>
+          {situacao.label}
+        </span>
+      )}
+    </div>
+  )
+}
+
 export function SolicitacaoTable({
   solicitacoes,
   onOpen,
+  onChangeStatus,
   onTogglePublic
 }) {
   const [updatingPublicIds, setUpdatingPublicIds] = useState([])
+  const [updatingStatusIds, setUpdatingStatusIds] = useState([])
+  const pendingStatusIds = useRef(new Set())
+
+  const handleStatusChange = async (solicitacao, status) => {
+    if (!onChangeStatus || status === solicitacao.status_geral || pendingStatusIds.current.has(solicitacao.id)) return
+    pendingStatusIds.current.add(solicitacao.id)
+    setUpdatingStatusIds((current) => [...current, solicitacao.id])
+    try {
+      await onChangeStatus(solicitacao, status)
+      toast.success('Situação atualizada com sucesso.')
+    } catch (error) {
+      toast.error(getUserMessage(error, 'Não foi possível atualizar a situação. Tente novamente.'))
+    } finally {
+      pendingStatusIds.current.delete(solicitacao.id)
+      setUpdatingStatusIds((current) => current.filter((id) => id !== solicitacao.id))
+    }
+  }
   const [currentPage, setCurrentPage] = useState(1)
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE)
   const [sortConfig, setSortConfig] = useState({
@@ -202,6 +253,7 @@ export function SolicitacaoTable({
   }
 
   const handleCardKeyDown = (event, solicitacao) => {
+    if (event.target !== event.currentTarget) return
     if (event.key !== 'Enter' && event.key !== ' ') return
 
     event.preventDefault()
@@ -281,7 +333,6 @@ export function SolicitacaoTable({
           </div>
         ) : (
           paginatedSolicitacoes.map((solicitacao) => {
-            const situacao = getSolicitacaoSituacao(solicitacao)
 
             return (
               <div
@@ -320,14 +371,11 @@ export function SolicitacaoTable({
                     type="prioridade"
                     value={solicitacao.prioridade}
                   />
-                  {situacao.label && (
-                    <span
-                      className={`block max-w-full truncate rounded-[4px] border px-2 py-1.5 text-xs font-bold uppercase leading-none ${situacao.className}`}
-                      title={situacao.label}
-                    >
-                      {situacao.label}
-                    </span>
-                  )}
+                  <StatusSelect
+                    solicitacao={solicitacao}
+                    disabled={!onChangeStatus || updatingStatusIds.includes(solicitacao.id)}
+                    onChange={(status) => handleStatusChange(solicitacao, status)}
+                  />
                 </div>
 
                 <div className="mt-3 grid gap-1 text-xs text-muted-foreground">
@@ -472,8 +520,7 @@ export function SolicitacaoTable({
                 </TableRow>
               ) : (
                 paginatedSolicitacoes.map((solicitacao) => {
-                  const situacao = getSolicitacaoSituacao(solicitacao)
-
+      
                   return (
                     <TableRow
                       key={solicitacao.id}
@@ -508,16 +555,11 @@ export function SolicitacaoTable({
                         />
                       </TableCell>
                       <TableCell>
-                        {situacao.label ? (
-                          <span
-                            className={`block w-full truncate rounded-[4px] border px-2 py-1.5 text-xs font-bold uppercase leading-none ${situacao.className}`}
-                            title={situacao.label}
-                          >
-                            {situacao.label}
-                          </span>
-                        ) : (
-                          '-'
-                        )}
+                        <StatusSelect
+                          solicitacao={solicitacao}
+                          disabled={!onChangeStatus || updatingStatusIds.includes(solicitacao.id)}
+                          onChange={(status) => handleStatusChange(solicitacao, status)}
+                        />
                       </TableCell>
                       <TableCell>
                         <p className="truncate" title={formatCurrency(solicitacao.valor_total)}>

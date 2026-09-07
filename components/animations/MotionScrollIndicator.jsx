@@ -22,6 +22,7 @@ export function MotionScrollIndicator({ targetRef, orientation = 'vertical' }) {
     const element = targetRef?.current
     if (!element) return undefined
 
+    let frame = null
     const update = () => {
       const rect = element.getBoundingClientRect()
       const hasOverflow = isHorizontal
@@ -33,35 +34,48 @@ export function MotionScrollIndicator({ targetRef, orientation = 'vertical' }) {
         return
       }
 
-      setViewport({
+      const nextViewport = {
         left: rect.left,
         top: rect.top,
         width: rect.width,
         height: rect.height,
         right: window.innerWidth - rect.right,
         bottom: window.innerHeight - rect.bottom
-      })
+      }
+      setViewport((current) => current && Object.keys(nextViewport).every((key) => current[key] === nextViewport[key]) ? current : nextViewport)
     }
 
+    const scheduleUpdate = () => {
+      if (frame !== null) return
+      frame = requestAnimationFrame(() => { frame = null; update() })
+    }
     update()
-    const resizeObserver = new ResizeObserver(update)
-    resizeObserver.observe(element)
-    Array.from(element.children).forEach((child) => resizeObserver.observe(child))
+    const resizeObserver = new ResizeObserver(scheduleUpdate)
+    const observeChildren = () => {
+      resizeObserver.disconnect()
+      resizeObserver.observe(element)
+      Array.from(element.children).forEach((child) => resizeObserver.observe(child))
+    }
+    observeChildren()
 
-    const mutationObserver = new MutationObserver(update)
+    const mutationObserver = new MutationObserver(() => {
+      observeChildren()
+      scheduleUpdate()
+    })
     mutationObserver.observe(element, { childList: true, subtree: true })
 
-    element.addEventListener('scroll', update, { passive: true })
-    window.addEventListener('resize', update)
-    window.addEventListener('scroll', update, { passive: true, capture: true })
+
+    window.addEventListener('resize', scheduleUpdate)
+    window.addEventListener('scroll', scheduleUpdate, { passive: true, capture: true })
 
     return () => {
+      if (frame !== null) cancelAnimationFrame(frame)
       resizeObserver.disconnect()
 
       mutationObserver.disconnect()
-      element.removeEventListener('scroll', update)
-      window.removeEventListener('resize', update)
-      window.removeEventListener('scroll', update, true)
+
+      window.removeEventListener('resize', scheduleUpdate)
+      window.removeEventListener('scroll', scheduleUpdate, true)
     }
   }, [isHorizontal, targetRef])
 
@@ -86,7 +100,7 @@ export function MotionScrollIndicator({ targetRef, orientation = 'vertical' }) {
   return createPortal(
     <span
       aria-hidden="true"
-      className="motion-scroll-indicator pointer-events-none z-[100] overflow-hidden rounded-full bg-foreground/10"
+      className="motion-scroll-indicator pointer-events-none z-40 overflow-hidden rounded-full bg-foreground/10"
       style={style}
     >
       <motion.span

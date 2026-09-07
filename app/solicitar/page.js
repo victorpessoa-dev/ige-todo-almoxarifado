@@ -1,5 +1,6 @@
 'use client'
 
+import { PublicFooter } from '@/components/layout/Copyright'
 import Link from 'next/link'
 import { motion } from 'motion/react'
 import { useEffect, useMemo, useState } from 'react'
@@ -1169,6 +1170,7 @@ export default function SolicitarPage() {
           }}
         />
       </div>
+      <PublicFooter />
     </main>
   )
 }

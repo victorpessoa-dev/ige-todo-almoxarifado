@@ -409,7 +409,7 @@ export default function PrintDialogContent({
       {image && (
         <div className="flex justify-center rounded border bg-slate-100 p-4">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={image} alt="PrÃ©via da etiqueta" />
+          <img src={image} alt="Prévia da etiqueta" />
         </div>
       )}
 

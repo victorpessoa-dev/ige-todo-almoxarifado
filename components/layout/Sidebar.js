@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import { Copyright } from '@/components/layout/Copyright'
 import { useRef } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import { useAuth } from '@/contexts/auth-context'
@@ -22,11 +23,11 @@ import {
 
 const menuItems = [
   { href: '/painel', label: 'Painel', icon: LayoutDashboard, desktopOnly: true },
-  { href: '/revisoes', label: 'Revisoes', icon: ClipboardCheck },
-  { href: '/calendario', label: 'Calendario', icon: CalendarDays },
-  { href: '/inventario', label: 'Inventario', icon: Package },
-  { href: '/catalogo', label: 'Catalogo', icon: BookOpen },
-  { href: '/solicitacoes', label: 'Solicitacoes', icon: ShoppingCart },
+  { href: '/revisoes', label: 'Revisões', icon: ClipboardCheck },
+  { href: '/calendario', label: 'Calendário', icon: CalendarDays },
+  { href: '/inventario', label: 'Inventário', icon: Package },
+  { href: '/catalogo', label: 'Catálogo', icon: BookOpen },
+  { href: '/solicitacoes', label: 'Solicitações', icon: ShoppingCart },
   { href: '/contagem', label: 'Contagem', icon: Camera },
   { href: '/analise-giro', label: 'Análise de Giro', icon: ChartColumn }
 ]
@@ -69,7 +70,7 @@ export function Sidebar({ onNavigate }) {
         </Link>
       </div>
 
-      <nav ref={navRef} className="sidebar-scroll motion-scroll-container relative flex-1 overflow-y-auto px-4 pb-4">
+      <nav ref={navRef} className="sidebar-scroll motion-scroll-container relative min-h-0 flex-1 overflow-y-auto px-4 pb-4">
         <ul className="flex flex-col gap-2">
           {menuItems.map((item) => {
             const Icon = item.icon
@@ -97,7 +98,7 @@ export function Sidebar({ onNavigate }) {
         <MotionScrollIndicator targetRef={navRef} />
       </nav>
 
-      <div className="border-t border-sidebar-border px-4 py-4">
+      <div className="shrink-0 border-t border-sidebar-border px-4 py-4">
         <Button
           variant="ghost"
           className="w-full justify-start gap-3 bg-white text-red-600 hover:bg-red-50 hover:text-red-700"
@@ -106,6 +107,7 @@ export function Sidebar({ onNavigate }) {
           <LogOut className="h-5 w-5" />
           <span>Sair</span>
         </Button>
+        <Copyright className="mt-4 leading-relaxed text-sidebar-foreground/60" />
       </div>
     </aside>
   )
