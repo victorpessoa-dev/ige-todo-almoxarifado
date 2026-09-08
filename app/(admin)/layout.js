@@ -18,7 +18,7 @@ import { playNotificationSound } from '@/lib/notifications/sound'
 
 function AdminShell({ children }) {
   const { isAuthenticated, isLoading } = useAuth()
-  const { solicitacoesCompra = [], isLoaded } = useData()
+  const { solicitacoesCompra = [], isLoaded, error, loadData } = useData()
   const router = useRouter()
   const pathname = usePathname()
   const [sidebarOpen, setSidebarOpen] = useState(false)
@@ -89,12 +89,12 @@ function AdminShell({ children }) {
 
     toast.info(
       total === 1
-        ? 'Nova solicitaÃ§Ã£o recebida'
-        : total + ' novas solicitaÃ§Ãµes recebidas',
+        ? 'Nova solicitação recebida'
+        : total + ' novas solicitações recebidas',
       {
         description:
           total === 1
-            ? (primeiraSolicitacao.codigo || 'Sem cÃ³digo') + ' - ' + (formatSolicitacaoItem(primeiraSolicitacao) || 'Pedido sem descriÃ§Ã£o')
+            ? (primeiraSolicitacao.codigo || 'Sem código') + ' - ' + (formatSolicitacaoItem(primeiraSolicitacao) || 'Pedido sem descrição')
             : 'Existem novos pedidos aguardando aceite.',
         action: {
           label: 'Ver',
@@ -131,7 +131,7 @@ function AdminShell({ children }) {
         </div>
       )}
 
-      <main className="flex min-w-0 flex-1 flex-col overflow-hidden">
+      <main className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
         <div className="sticky top-0 z-30 flex items-center justify-between border-b bg-background/95 px-4 py-4 backdrop-blur supports-[backdrop-filter]:bg-background/80 lg:hidden">
           <button
             type="button"
@@ -141,7 +141,7 @@ function AdminShell({ children }) {
             <Menu className="h-6 w-6" />
           </button>
 
-          <Link href="/solicitacoes" aria-label="Ir para solicitacoes">
+          <Link href="/solicitacoes" aria-label="Ir para solicitações">
             <Image
               src="/ige-supergesso.svg"
               alt="Logo"
@@ -154,14 +154,25 @@ function AdminShell({ children }) {
           <div className="w-6" aria-hidden="true" />
         </div>
 
-        <div ref={mainScrollRef} className="admin-main-scroll motion-scroll-container scrollbar-soft relative flex-1 overflow-y-auto overflow-x-hidden px-3 py-3 sm:px-5 sm:py-5 md:px-6 md:py-5 lg:px-8 lg:py-6">
+        <div ref={mainScrollRef} className="admin-main-scroll motion-scroll-container scrollbar-soft relative min-h-0 flex-1 overflow-y-auto overflow-x-hidden px-3 py-3 sm:px-5 sm:py-5 md:px-6 md:py-5 lg:px-8 lg:py-6">
           <motion.div
             key={pathname}
             initial={shouldReduceMotion ? false : { opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={shouldReduceMotion ? { duration: 0 } : { duration: 0.24, ease: 'easeOut' }}
           >
-            {children}
+            {error && !isLoaded ? (
+              <div role="alert" className="rounded-lg border border-destructive/30 bg-card p-6 text-center">
+                <p className="text-sm text-muted-foreground">{error}</p>
+                <button
+                  type="button"
+                  className="mt-4 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  onClick={() => { void loadData().catch(() => {}) }}
+                >
+                  Tentar novamente
+                </button>
+              </div>
+            ) : children}
           </motion.div>
           <MotionScrollIndicator targetRef={mainScrollRef} />
         </div>      </main>
@@ -170,6 +181,16 @@ function AdminShell({ children }) {
 }
 
 export default function AdminLayout({ children }) {
+  const { isAuthenticated, isLoading } = useAuth()
+  const router = useRouter()
+
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated) router.replace('/login')
+  }, [isLoading, isAuthenticated, router])
+
+  if (isLoading) return <LoadingState className="min-h-screen bg-background" />
+  if (!isAuthenticated) return null
+
   return (
     <DataProvider>
       <ReviewNotification />

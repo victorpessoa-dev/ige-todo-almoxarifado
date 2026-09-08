@@ -24,14 +24,14 @@ export function ReviewNotification() {
           const repeat = review.rotinas_revisao?.repetir_notificacao_minutos || 10
           await registrarNotificacaoRevisao(review.id, repeat)
           notifyPush({
-            title: 'RevisÃ£o de estoque disponÃ­vel',
-            body: `${review.rotinas_revisao?.nome || 'Rotina'} possui ${(review.revisoes_estoque_itens || []).length} itens aguardando revisÃ£o.`,
+            title: 'Revisão de estoque disponível',
+            body: `${review.rotinas_revisao?.nome || 'Rotina'} possui ${(review.revisoes_estoque_itens || []).length} itens aguardando revisão.`,
             url: `/revisoes?revisao=${review.id}`
           }).catch(() => {})
           playNotificationSound()
-          toast.info('RevisÃ£o de estoque disponÃ­vel', {
+          toast.info('Revisão de estoque disponível', {
             id: `review-${review.id}`,
-            description: `${review.rotinas_revisao?.nome || 'Rotina'} possui ${(review.revisoes_estoque_itens || []).length} itens aguardando revisÃ£o.`,
+            description: `${review.rotinas_revisao?.nome || 'Rotina'} possui ${(review.revisoes_estoque_itens || []).length} itens aguardando revisão.`,
             duration: Infinity,
             action: { label: 'Revisar', onClick: () => router.push('/revisoes') },
             cancel: { label: 'Adiar 10 min', onClick: () => adiarRevisao(review.id, 10) },

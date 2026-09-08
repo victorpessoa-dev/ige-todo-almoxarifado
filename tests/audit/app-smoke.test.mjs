@@ -9,7 +9,8 @@ const ROUTES = [
   '/solicitar',
   '/catalogo-publico',
   '/manifest.json',
-  '/sw.js'
+  '/sw.js',
+  '/offline.html'
 ]
 
 async function fetchRoute(path) {
@@ -30,6 +31,10 @@ async function fetchRoute(path) {
     if (expectProductionCsp) {
       assert.doesNotMatch(csp, /unsafe-eval/)
     }
+  }
+
+  if (path === '/sw.js') {
+    assert.match(response.headers.get('cache-control') || '', /no-store/)
   }
 
   return response
