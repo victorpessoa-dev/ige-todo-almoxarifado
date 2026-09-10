@@ -115,3 +115,51 @@ export function MotionScrollIndicator({ targetRef, orientation = 'vertical' }) {
     document.body
   )
 }
+
+export function MotionWindowScrollIndicator() {
+  const shouldReduceMotion = useReducedMotion()
+  const [hasOverflow, setHasOverflow] = useState(false)
+  const { scrollYProgress } = useScroll()
+  const progress = useSpring(
+    scrollYProgress,
+    shouldReduceMotion
+      ? { stiffness: 1000, damping: 100 }
+      : { stiffness: 260, damping: 30, mass: 0.2 }
+  )
+
+  useEffect(() => {
+    const update = () => {
+      const page = document.documentElement
+      setHasOverflow(page.scrollHeight > window.innerHeight + 1)
+    }
+
+    update()
+    const resizeObserver = new ResizeObserver(update)
+    resizeObserver.observe(document.documentElement)
+    resizeObserver.observe(document.body)
+
+    window.addEventListener('resize', update)
+    window.addEventListener('scroll', update, { passive: true })
+
+    return () => {
+      resizeObserver.disconnect()
+      window.removeEventListener('resize', update)
+      window.removeEventListener('scroll', update)
+    }
+  }, [])
+
+  if (!hasOverflow || typeof document === 'undefined') return null
+
+  return createPortal(
+    <span
+      aria-hidden="true"
+      className="motion-scroll-indicator pointer-events-none fixed top-2 right-2 z-[100] h-[calc(100dvh-1rem)] w-1 overflow-hidden rounded-full bg-foreground/10"
+    >
+      <motion.span
+        className="absolute inset-0 rounded-full bg-primary"
+        style={{ scaleY: progress, transformOrigin: 'center top' }}
+      />
+    </span>,
+    document.body
+  )
+}

@@ -1,7 +1,7 @@
-'use client'
+"use client";
 
-import { useEffect, useMemo, useRef } from 'react'
-import { ShoppingCart } from 'lucide-react'
+import { useEffect, useMemo, useRef } from "react";
+import { ShoppingCart } from "lucide-react";
 
 import {
   Table,
@@ -9,8 +9,8 @@ import {
   TableCell,
   TableHead,
   TableHeader,
-  TableRow
-} from '@/components/ui/table'
+  TableRow,
+} from "@/components/ui/table";
 import {
   SOLICITACAO_PRIORIDADE_OPTIONS,
   getSolicitacaoOption,
@@ -18,46 +18,46 @@ import {
   getSolicitacaoSituacao,
   getSolicitacaoStatusDotClass,
   isSolicitacaoAtrasada,
-  isSolicitacaoEncerrada
-} from '@/constants/solicitacoes-config'
-import { formatDateBR } from '@/lib/date/date-utils'
-import { useAutoScroll } from '@/lib/hooks/useAutoScroll'
-import { MotionScrollIndicator } from '@/components/animations/MotionScrollIndicator'
+  isSolicitacaoEncerrada,
+} from "@/constants/solicitacoes-config";
+import { formatDateBR } from "@/lib/date/date-utils";
+import { useAutoScroll } from "@/lib/hooks/useAutoScroll";
+import { MotionScrollIndicator } from "@/components/animations/MotionScrollIndicator";
 import {
   formatSolicitacaoItem,
   getSolicitacaoCentroCusto,
-  getSolicitacaoSolicitante
-} from '@/lib/solicitacoes/format'
+  getSolicitacaoSolicitante,
+} from "@/lib/solicitacoes/format";
 
 const SLIDE_SOLICITACAO_TABLE_COLUMNS = [
-  { key: 'codigo', width: 92 },
-  { key: 'item', width: 260 },
-  { key: 'solicitante', width: 160 },
-  { key: 'centro', width: 230 },
-  { key: 'prioridade', width: 110 },
-  { key: 'situacao', width: 210 },
-  { key: 'previsao', width: 120 }
-]
+  { key: "codigo", width: 92 },
+  { key: "item", width: 260 },
+  { key: "solicitante", width: 160 },
+  { key: "centro", width: 230 },
+  { key: "prioridade", width: 110 },
+  { key: "situacao", width: 210 },
+  { key: "previsao", width: 120 },
+];
 
 const SLIDE_SOLICITACAO_TABLE_WIDTH = SLIDE_SOLICITACAO_TABLE_COLUMNS.reduce(
   (total, column) => total + column.width,
-  0
-)
+  0,
+);
 
 function getColumnWidthPercent(width) {
-  return `${(width / SLIDE_SOLICITACAO_TABLE_WIDTH) * 100}%`
+  return `${(width / SLIDE_SOLICITACAO_TABLE_WIDTH) * 100}%`;
 }
 
 function formatDate(value) {
-  return formatDateBR(value, '-')
+  return formatDateBR(value, "-");
 }
 
 function getStatusDotClass(status) {
-  return getSolicitacaoStatusDotClass(status)
+  return getSolicitacaoStatusDotClass(status);
 }
 
 function PrioridadeBadge({ value }) {
-  const option = getSolicitacaoOption(SOLICITACAO_PRIORIDADE_OPTIONS, value)
+  const option = getSolicitacaoOption(SOLICITACAO_PRIORIDADE_OPTIONS, value);
 
   return (
     <span
@@ -66,13 +66,13 @@ function PrioridadeBadge({ value }) {
     >
       {option.label}
     </span>
-  )
+  );
 }
 
 function SituacaoBadge({ solicitacao }) {
-  const situacao = getSolicitacaoSituacao(solicitacao)
+  const situacao = getSolicitacaoSituacao(solicitacao);
 
-  if (!situacao.label) return <span className="text-muted-foreground">-</span>
+  if (!situacao.label) return <span className="text-muted-foreground">-</span>;
 
   return (
     <span
@@ -81,7 +81,7 @@ function SituacaoBadge({ solicitacao }) {
     >
       {situacao.label}
     </span>
-  )
+  );
 }
 
 function StatusDot({ solicitacao }) {
@@ -90,37 +90,37 @@ function StatusDot({ solicitacao }) {
       aria-hidden="true"
       className={`h-2.5 w-2.5 shrink-0 rounded-full ${getStatusDotClass(solicitacao.status_geral)}`}
     />
-  )
+  );
 }
 
 export function SolicitacoesSlide({ solicitacoes, active, onEnd }) {
-  const ref = useRef(null)
+  const ref = useRef(null);
   const abertas = useMemo(() => {
     return solicitacoes
       .filter((item) => !isSolicitacaoEncerrada(item))
       .sort((a, b) => {
-        const aAtrasada = isSolicitacaoAtrasada(a) ? 1 : 0
-        const bAtrasada = isSolicitacaoAtrasada(b) ? 1 : 0
-        if (aAtrasada !== bAtrasada) return bAtrasada - aAtrasada
+        const aAtrasada = isSolicitacaoAtrasada(a) ? 1 : 0;
+        const bAtrasada = isSolicitacaoAtrasada(b) ? 1 : 0;
+        if (aAtrasada !== bAtrasada) return bAtrasada - aAtrasada;
 
         const priorityDiff =
           getSolicitacaoPrioridadeOrder(a.prioridade) -
-          getSolicitacaoPrioridadeOrder(b.prioridade)
-        if (priorityDiff !== 0) return priorityDiff
+          getSolicitacaoPrioridadeOrder(b.prioridade);
+        if (priorityDiff !== 0) return priorityDiff;
 
-        const aDate = a.created_at ? new Date(a.created_at).getTime() : 0
-        const bDate = b.created_at ? new Date(b.created_at).getTime() : 0
-        return bDate - aDate
-      })
-  }, [solicitacoes])
+        const aDate = a.created_at ? new Date(a.created_at).getTime() : 0;
+        const bDate = b.created_at ? new Date(b.created_at).getTime() : 0;
+        return bDate - aDate;
+      });
+  }, [solicitacoes]);
 
-  useAutoScroll(ref, abertas.length > 0 ? onEnd : undefined, active)
+  useAutoScroll(ref, abertas.length > 0 ? onEnd : undefined, active);
 
   useEffect(() => {
     if (active && ref.current) {
-      ref.current.scrollTo({ top: 0 })
+      ref.current.scrollTop = 0;
     }
-  }, [active])
+  }, [active]);
 
   return (
     <div className="flex h-full min-h-0 flex-col overflow-hidden p-5 sm:p-8">
@@ -136,54 +136,74 @@ export function SolicitacoesSlide({ solicitacoes, active, onEnd }) {
           Nenhuma solicitação em aberto.
         </div>
       ) : (
-        <div ref={ref} className="slide-scroll motion-scroll-container scrollbar-soft relative min-h-0 flex-1 overflow-auto rounded-xl border bg-card shadow-sm">
+        <div
+          ref={ref}
+          className="slide-scroll motion-scroll-container scrollbar-soft relative min-h-0 flex-1 overflow-auto rounded-xl border bg-card shadow-sm"
+        >
           <MotionScrollIndicator targetRef={ref} />
-          <Table
-            className="w-full table-fixed"
-          >
+          <Table className="w-full table-fixed">
             <colgroup>
               {SLIDE_SOLICITACAO_TABLE_COLUMNS.map((column) => (
-                <col key={column.key} style={{ width: getColumnWidthPercent(column.width) }} />
+                <col
+                  key={column.key}
+                  style={{ width: getColumnWidthPercent(column.width) }}
+                />
               ))}
             </colgroup>
             <TableHeader>
               <TableRow className="hover:bg-transparent">
                 <TableHead className="h-12 px-3 text-base">Código</TableHead>
                 <TableHead className="h-12 px-3 text-base">Item</TableHead>
-                <TableHead className="h-12 px-3 text-base">Solicitante</TableHead>
+                <TableHead className="h-12 px-3 text-base">
+                  Solicitante
+                </TableHead>
                 <TableHead className="h-12 px-3 text-base">Centro</TableHead>
-                <TableHead className="h-12 px-3 text-base">Prioridade</TableHead>
+                <TableHead className="h-12 px-3 text-base">
+                  Prioridade
+                </TableHead>
                 <TableHead className="h-12 px-3 text-base">Situação</TableHead>
                 <TableHead className="h-12 px-3 text-base">Previsão</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {abertas.map((solicitacao) => {
-                const previsao = formatDate(solicitacao.previsao_entrega)
+                const previsao = formatDate(solicitacao.previsao_entrega);
 
                 return (
                   <TableRow key={solicitacao.id} className="hover:bg-muted/30">
                     <TableCell className="px-3 py-3 font-semibold tabular-nums">
                       <div className="flex min-w-0 items-center gap-2">
                         <StatusDot solicitacao={solicitacao} />
-                        <p className="truncate" title={solicitacao.codigo || '-'}>
-                          {solicitacao.codigo || '-'}
+                        <p
+                          className="truncate"
+                          title={solicitacao.codigo || "-"}
+                        >
+                          {solicitacao.codigo || "-"}
                         </p>
                       </div>
                     </TableCell>
                     <TableCell className="px-3 py-3">
-                      <p className="truncate font-medium" title={formatSolicitacaoItem(solicitacao) || '-'}>
-                        {formatSolicitacaoItem(solicitacao) || '-'}
+                      <p
+                        className="truncate font-medium"
+                        title={formatSolicitacaoItem(solicitacao) || "-"}
+                      >
+                        {formatSolicitacaoItem(solicitacao) || "-"}
                       </p>
                     </TableCell>
                     <TableCell className="px-3 py-3">
-                      <p className="truncate" title={getSolicitacaoSolicitante(solicitacao) || '-'}>
-                        {getSolicitacaoSolicitante(solicitacao) || '-'}
+                      <p
+                        className="truncate"
+                        title={getSolicitacaoSolicitante(solicitacao) || "-"}
+                      >
+                        {getSolicitacaoSolicitante(solicitacao) || "-"}
                       </p>
                     </TableCell>
                     <TableCell className="px-3 py-3">
-                      <p className="truncate" title={getSolicitacaoCentroCusto(solicitacao) || '-'}>
-                        {getSolicitacaoCentroCusto(solicitacao) || '-'}
+                      <p
+                        className="truncate"
+                        title={getSolicitacaoCentroCusto(solicitacao) || "-"}
+                      >
+                        {getSolicitacaoCentroCusto(solicitacao) || "-"}
                       </p>
                     </TableCell>
                     <TableCell className="px-3 py-3">
@@ -198,12 +218,12 @@ export function SolicitacoesSlide({ solicitacoes, active, onEnd }) {
                       </p>
                     </TableCell>
                   </TableRow>
-                )
+                );
               })}
             </TableBody>
           </Table>
         </div>
       )}
     </div>
-  )
+  );
 }

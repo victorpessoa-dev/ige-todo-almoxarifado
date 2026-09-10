@@ -1,8 +1,8 @@
-'use client'
+﻿'use client'
 
 import { useEffect, useState } from 'react'
 import { Bell, BellOff } from 'lucide-react'
-import { toast } from 'sonner'
+import { toast } from '@/lib/notifications/toast'
 import { Button } from '@/components/ui/button'
 import { clearStoredPushSubscription, storePushSubscription } from '@/lib/services/push-service'
 

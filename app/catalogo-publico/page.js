@@ -1,8 +1,8 @@
-'use client'
+﻿'use client'
 
 import { PublicFooter } from '@/components/layout/Copyright'
 import { useEffect, useMemo, useState } from 'react'
-import { toast } from 'sonner'
+import { toast } from '@/lib/notifications/toast'
 
 import { filterAndSortCatalogProducts, makeCatalogFrameHtml } from '@/lib/catalogo/catalogo-html'
 import { listPublicCatalogProducts } from '@/lib/services/catalogo-service'

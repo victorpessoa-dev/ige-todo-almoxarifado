@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 import { getApiAuthHeaders } from '@/lib/supabase/client'
 
 import { useMemo, useState } from 'react'
@@ -13,7 +13,7 @@ import {
   YAxis
 } from 'recharts'
 import { BarChart3, Sparkles } from 'lucide-react'
-import { toast } from 'sonner'
+import { toast } from '@/lib/notifications/toast'
 
 import { useData } from '@/contexts/data-context'
 import { getUserMessage } from '@/lib/messaging/user-messages'

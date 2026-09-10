@@ -1,7 +1,7 @@
-'use client'
+﻿'use client'
 
 import { useState } from 'react'
-import { toast } from 'sonner'
+import { toast } from '@/lib/notifications/toast'
 import { Pencil, Plus, Trash2, UserRound, WalletCards } from 'lucide-react'
 
 import { Badge } from '@/components/ui/badge'

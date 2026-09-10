@@ -2,7 +2,13 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import { importSourceModule } from './source-module-loader.mjs'
 
-const { calculateNextReviewDay, calculateNextReviewExecution, getStockReviewPriority, sortReviewItems } = await importSourceModule('lib/revisoes/priority.js')
+const {
+  calculateNextReviewDay,
+  calculateNextReviewExecution,
+  clampReviewDateToBusinessHours,
+  getStockReviewPriority,
+  sortReviewItems
+} = await importSourceModule('lib/revisoes/priority.js')
 
 test('prioriza produto em falta antes de estoque baixo e normal', () => {
   const items = sortReviewItems([
@@ -37,4 +43,18 @@ test('move revisao para o proximo dia permitido', () => {
   })
   assert.equal(next.getDay(), 1)
   assert.equal(next.getHours(), 10)
+})
+
+test('limita revisoes a janela operacional entre 8h e 17h', () => {
+  assert.equal(clampReviewDateToBusinessHours(new Date('2026-08-24T06:30:00')).getHours(), 8)
+  assert.equal(clampReviewDateToBusinessHours(new Date('2026-08-24T18:30:00')).getHours(), 17)
+
+  const next = calculateNextReviewExecution({
+    base: new Date('2026-08-24T17:30:00'),
+    horario: '18:00',
+    intervaloDias: 1
+  })
+
+  assert.equal(next.getDate(), 25)
+  assert.equal(next.getHours(), 17)
 })

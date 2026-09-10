@@ -1,11 +1,11 @@
-'use client'
+﻿'use client'
 
 import { PublicFooter } from '@/components/layout/Copyright'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import { Eye, EyeOff, Lock, Mail } from 'lucide-react'
-import { toast } from 'sonner'
+import { toast } from '@/lib/notifications/toast'
 
 import { useAuth } from '@/contexts/auth-context'
 import { Button } from '@/components/ui/button'

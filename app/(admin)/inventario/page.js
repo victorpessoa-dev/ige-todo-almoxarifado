@@ -1,142 +1,144 @@
-'use client'
+﻿"use client";
 
-import { useMemo, useState } from 'react'
-import { supabase } from '@/lib/supabase/client'
-import { useData } from '@/contexts/data-context'
-import { Button } from '@/components/ui/button'
-import { Checkbox } from '@/components/ui/checkbox'
-import { CheckboxFilter } from '@/components/ui/checkbox-filter'
-import { Input } from '@/components/ui/input'
+import { useMemo, useState } from "react";
+import { supabase } from "@/lib/supabase/client";
+import { useData } from "@/contexts/data-context";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { CheckboxFilter } from "@/components/ui/checkbox-filter";
+import { Input } from "@/components/ui/input";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger
-} from '@/components/ui/dialog'
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue
-} from '@/components/ui/select'
-import { Package, Plus, ShoppingCart } from 'lucide-react'
-import { useForm } from 'react-hook-form'
-import { toast } from 'sonner'
+  SelectValue,
+} from "@/components/ui/select";
+import { Package, Plus, Search, ShoppingCart } from "lucide-react";
+import { useForm } from "react-hook-form";
+import { toast } from "@/lib/notifications/toast";
 
-import BarcodeScannerCard from '@/components/inventory/BarcodeScannerCard'
-import ImportExportProdutos from '@/components/inventory/ImportExportProdutos'
-import ProductTable from '@/components/inventory/ProductTable'
-import ProductFormFields from '@/components/inventory/ProductFormFields'
-import MovementFormFields from '@/components/inventory/MovementFormFields'
-import PrintDialogContent from '@/components/inventory/PrintDialogContent'
-import { getUserMessage } from '@/lib/messaging/user-messages'
+import BarcodeScannerCard from "@/components/inventory/BarcodeScannerCard";
+import ImportExportProdutos from "@/components/inventory/ImportExportProdutos";
+import ProductTable from "@/components/inventory/ProductTable";
+import ProductFormFields from "@/components/inventory/ProductFormFields";
+import MovementFormFields from "@/components/inventory/MovementFormFields";
+import PrintDialogContent from "@/components/inventory/PrintDialogContent";
+import { getUserMessage } from "@/lib/messaging/user-messages";
 import {
   getCompraQuantidade,
   getInventoryCategory,
   isSolicitacaoAberta,
   makeReposicaoLine,
   makeReposicaoTitle,
-  normalizeCategory
-} from '@/lib/inventory/replenishment'
+  normalizeCategory,
+} from "@/lib/inventory/replenishment";
 
-const normalizeRequestText = normalizeCategory
+const normalizeRequestText = normalizeCategory;
 
 const EMPTY_PRODUCT_FORM = {
-  cod: '',
-  nome: '',
-  cod_barra: '',
-  categoria: '',
-  aplicacao: '',
-  medidas: '',
-  marcas: '',
-  img_url: '',
+  cod: "",
+  nome: "",
+  cod_barra: "",
+  categoria: "",
+  aplicacao: "",
+  medidas: "",
+  marcas: "",
+  img_url: "",
   max: 0,
   min: 0,
-  estoque: 0
-}
+  estoque: 0,
+};
 
 function makeReposicaoBlocks(items, maxLength = 500) {
-  const categoryGroups = new Map()
+  const categoryGroups = new Map();
 
   items.forEach((item) => {
-    const category = getInventoryCategory(item.produto)
+    const category = getInventoryCategory(item.produto);
 
     if (!categoryGroups.has(category)) {
-      categoryGroups.set(category, [])
+      categoryGroups.set(category, []);
     }
 
     categoryGroups.get(category).push({
       ...item,
-      line: makeReposicaoLine(item)
-    })
-  })
+      line: makeReposicaoLine(item),
+    });
+  });
 
-  const blocks = []
+  const blocks = [];
 
   categoryGroups.forEach((groupItems, category) => {
-    let currentItems = []
-    let currentDescription = ''
+    let currentItems = [];
+    let currentDescription = "";
 
     groupItems
       .sort((a, b) =>
-        String(a.produto.nome || '').localeCompare(String(b.produto.nome || ''), 'pt-BR')
+        String(a.produto.nome || "").localeCompare(
+          String(b.produto.nome || ""),
+          "pt-BR",
+        ),
       )
       .forEach((item) => {
-        const line = item.line.slice(0, maxLength)
+        const line = item.line.slice(0, maxLength);
         const candidate = currentDescription
           ? `${currentDescription}\n${line}`
-          : line
+          : line;
 
         if (candidate.length > maxLength && currentItems.length > 0) {
           blocks.push({
             category,
             items: currentItems,
-            descricao: currentDescription
-          })
+            descricao: currentDescription,
+          });
 
-          currentItems = [item]
-          currentDescription = line
-          return
+          currentItems = [item];
+          currentDescription = line;
+          return;
         }
 
-        currentItems.push(item)
-        currentDescription = candidate.slice(0, maxLength)
-      })
+        currentItems.push(item);
+        currentDescription = candidate.slice(0, maxLength);
+      });
 
     if (currentItems.length > 0) {
       blocks.push({
         category,
         items: currentItems,
-        descricao: currentDescription
-      })
+        descricao: currentDescription,
+      });
     }
-  })
+  });
 
-  return blocks
+  return blocks;
 }
 
 function hasProdutoInSolicitacao(solicitacao, produto) {
-  if (solicitacao.produto_id === produto.id) return true
+  if (solicitacao.produto_id === produto.id) return true;
 
-  const normalizedCode = normalizeRequestText(produto.cod)
-  const normalizedName = normalizeRequestText(produto.nome)
-  const requestLines = normalizeRequestText([
-    solicitacao.descricao,
-    solicitacao.aplicacoes
-  ].filter(Boolean).join('\n')).split('\n')
+  const normalizedCode = normalizeRequestText(produto.cod);
+  const normalizedName = normalizeRequestText(produto.nome);
+  const requestLines = normalizeRequestText(
+    [solicitacao.descricao, solicitacao.aplicacoes].filter(Boolean).join("\n"),
+  ).split("\n");
 
   return requestLines.some((line) => {
     if (normalizedCode) {
       return (
         line.startsWith(`${normalizedCode} -`) ||
         line.includes(`${normalizedCode} - ${normalizedName}`)
-      )
+      );
     }
 
-    return normalizedName && line.startsWith(`${normalizedName} -`)
-  })
+    return normalizedName && line.startsWith(`${normalizedName} -`);
+  });
 }
 
 export default function InventarioPage() {
@@ -150,435 +152,486 @@ export default function InventarioPage() {
     addSolicitacao,
     solicitacoesCompra,
     solicitantesCompra,
-    centrosCusto
-  } = useData()
+    centrosCusto,
+  } = useData();
 
   const [deleteDialog, setDeleteDialog] = useState({
     open: false,
-    produto: null
-  })
+    produto: null,
+  });
 
   const [duplicateDialog, setDuplicateDialog] = useState({
     open: false,
-    cod: ''
-  })
+    cod: "",
+  });
 
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
-  const [editingProduto, setEditingProduto] = useState(null)
-  const [selectedProductIds, setSelectedProductIds] = useState([])
-  const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false)
-  const [bulkSaidaDialogOpen, setBulkSaidaDialogOpen] = useState(false)
-  const [bulkSaidaQuantidade, setBulkSaidaQuantidade] = useState(1)
-  const [bulkActionError, setBulkActionError] = useState('')
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [editingProduto, setEditingProduto] = useState(null);
+  const [selectedProductIds, setSelectedProductIds] = useState([]);
+  const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false);
+  const [bulkSaidaDialogOpen, setBulkSaidaDialogOpen] = useState(false);
+  const [bulkSaidaQuantidade, setBulkSaidaQuantidade] = useState(1);
+  const [bulkActionError, setBulkActionError] = useState("");
   const [compraDialog, setCompraDialog] = useState({
     open: false,
     produto: null,
-    quantidade: 0
-  })
-  const [selectedCompraProductIds, setSelectedCompraProductIds] = useState([])
+    quantidade: 0,
+  });
+  const [selectedCompraProductIds, setSelectedCompraProductIds] = useState([]);
   const [compraForm, setCompraForm] = useState({
-    centro_custo_id: '',
-    solicitante_id: ''
-  })
-  const [isSolicitandoCompra, setIsSolicitandoCompra] = useState(false)
+    centro_custo_id: "",
+    solicitante_id: "",
+  });
+  const [isSolicitandoCompra, setIsSolicitandoCompra] = useState(false);
 
   const [movimentoDialog, setMovimentoDialog] = useState({
     open: false,
     produto: null,
-    tipo: null
-  })
+    tipo: null,
+  });
 
   const [printDialog, setPrintDialog] = useState({
     open: false,
     produto: null,
     produtos: [],
-    bulk: false
-  })
+    bulk: false,
+  });
 
-  const [barcodeInput, setBarcodeInput] = useState('')
-  const [barcodeProduct, setBarcodeProduct] = useState(null)
-  const [scanQuantity, setScanQuantity] = useState(1)
-  const [selectedCategories, setSelectedCategories] = useState([])
-  const { register, handleSubmit, reset, setValue, watch } = useForm()
+  const [barcodeInput, setBarcodeInput] = useState("");
+  const [barcodeProduct, setBarcodeProduct] = useState(null);
+  const [scanQuantity, setScanQuantity] = useState(1);
+  const [selectedCategories, setSelectedCategories] = useState([]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const { register, handleSubmit, reset, setValue, watch } = useForm();
 
   const categoryOptions = useMemo(() => {
-    const categories = new Map()
+    const categories = new Map();
 
     produtos.forEach((produto) => {
-      const categoria = getInventoryCategory(produto)
-      const key = normalizeCategory(categoria)
+      const categoria = getInventoryCategory(produto);
+      const key = normalizeCategory(categoria);
 
       if (key && !categories.has(key)) {
-        categories.set(key, categoria)
+        categories.set(key, categoria);
       }
-    })
+    });
 
-    return Array.from(categories.values()).sort((a, b) => a.localeCompare(b, 'pt-BR'))
-  }, [produtos])
+    return Array.from(categories.values()).sort((a, b) =>
+      a.localeCompare(b, "pt-BR"),
+    );
+  }, [produtos]);
 
   const filteredProducts = useMemo(() => {
-    if (selectedCategories.length === 0) return produtos
+    const query = normalizeRequestText(searchQuery);
 
-    return produtos.filter(
-      (produto) =>
-        selectedCategories.includes(normalizeCategory(getInventoryCategory(produto)))
-    )
-  }, [produtos, selectedCategories])
+    return produtos.filter((produto) => {
+      const matchesCategory =
+        selectedCategories.length === 0 ||
+        selectedCategories.includes(
+          normalizeCategory(getInventoryCategory(produto)),
+        );
+
+      if (!matchesCategory) return false;
+      if (!query) return true;
+
+      return [
+        produto.cod,
+        produto.nome,
+        produto.cod_barra,
+        produto.categoria,
+        produto.aplicacao,
+        produto.medidas,
+        produto.marcas,
+      ]
+        .filter(Boolean)
+        .some((value) => normalizeRequestText(value).includes(query));
+    });
+  }, [produtos, searchQuery, selectedCategories]);
 
   const selectedProducts = produtos.filter((produto) =>
-    selectedProductIds.includes(produto.id)
-  )
+    selectedProductIds.includes(produto.id),
+  );
   const lowStockProducts = produtos.filter(
     (produto) =>
       Number(produto.estoque || 0) <= Number(produto.min || 0) &&
-      Number(produto.max || 0) > Number(produto.estoque || 0)
-  )
+      Number(produto.max || 0) > Number(produto.estoque || 0),
+  );
   const requestedLowStockProductIds = useMemo(() => {
-    const openSolicitacoes = solicitacoesCompra.filter(isSolicitacaoAberta)
+    const openSolicitacoes = solicitacoesCompra.filter(isSolicitacaoAberta);
 
     return new Set(
       lowStockProducts
         .filter((produto) => {
-          const normalizedName = normalizeRequestText(produto.nome)
-          const normalizedCode = normalizeRequestText(produto.cod)
+          const normalizedName = normalizeRequestText(produto.nome);
+          const normalizedCode = normalizeRequestText(produto.cod);
 
           return openSolicitacoes.some((solicitacao) => {
             return hasProdutoInSolicitacao(solicitacao, {
               ...produto,
               cod: normalizedCode || produto.cod,
-              nome: normalizedName || produto.nome
-            })
-          })
+              nome: normalizedName || produto.nome,
+            });
+          });
         })
-        .map((produto) => produto.id)
-    )
-  }, [lowStockProducts, solicitacoesCompra])
+        .map((produto) => produto.id),
+    );
+  }, [lowStockProducts, solicitacoesCompra]);
   const availableLowStockProducts = useMemo(
-    () => lowStockProducts.filter((produto) => !requestedLowStockProductIds.has(produto.id)),
-    [lowStockProducts, requestedLowStockProductIds]
-  )
+    () =>
+      lowStockProducts.filter(
+        (produto) => !requestedLowStockProductIds.has(produto.id),
+      ),
+    [lowStockProducts, requestedLowStockProductIds],
+  );
 
-  const activeSolicitantes = solicitantesCompra.filter((item) => item.ativo !== false)
-  const activeCentrosCusto = centrosCusto.filter((item) => item.ativo !== false)
+  const activeSolicitantes = solicitantesCompra.filter(
+    (item) => item.ativo !== false,
+  );
+  const activeCentrosCusto = centrosCusto.filter(
+    (item) => item.ativo !== false,
+  );
 
   const getCentroCustoLabel = (centroCusto) => {
-    if (!centroCusto) return ''
-    return [centroCusto.codigo, centroCusto.nome].filter(Boolean).join(' - ')
-  }
+    if (!centroCusto) return "";
+    return [centroCusto.codigo, centroCusto.nome].filter(Boolean).join(" - ");
+  };
 
   const getSolicitanteCentroCusto = (solicitante) => {
-    if (!solicitante?.centro_custo_id) return null
+    if (!solicitante?.centro_custo_id) return null;
 
     return (
-      activeCentrosCusto.find((item) => item.id === solicitante.centro_custo_id) ||
+      activeCentrosCusto.find(
+        (item) => item.id === solicitante.centro_custo_id,
+      ) ||
       solicitante.centros_custo ||
       null
-    )
-  }
+    );
+  };
 
   const openCompraDialog = (produto = null) => {
-    const availableIds = availableLowStockProducts.map((item) => item.id)
+    const availableIds = availableLowStockProducts.map((item) => item.id);
     const initialSelectedIds =
       produto && availableIds.includes(produto.id)
         ? [produto.id]
-        : availableIds
+        : availableIds;
 
-    setSelectedCompraProductIds(initialSelectedIds)
-    setCompraDialog({ open: true, produto: null, quantidade: 0 })
-    setCompraForm({ centro_custo_id: '', solicitante_id: '' })
-  }
+    setSelectedCompraProductIds(initialSelectedIds);
+    setCompraDialog({ open: true, produto: null, quantidade: 0 });
+    setCompraForm({ centro_custo_id: "", solicitante_id: "" });
+  };
 
   const updateCompraField = (field, value) => {
     setCompraForm((prev) => {
-      const nextForm = { ...prev, [field]: value }
+      const nextForm = { ...prev, [field]: value };
 
-      if (field === 'solicitante_id') {
-        const solicitante = activeSolicitantes.find((item) => item.id === value)
-        const centroCusto = getSolicitanteCentroCusto(solicitante)
+      if (field === "solicitante_id") {
+        const solicitante = activeSolicitantes.find(
+          (item) => item.id === value,
+        );
+        const centroCusto = getSolicitanteCentroCusto(solicitante);
 
         if (centroCusto) {
-          nextForm.centro_custo_id = centroCusto.id
+          nextForm.centro_custo_id = centroCusto.id;
         }
       }
 
-      return nextForm
-    })
-  }
+      return nextForm;
+    });
+  };
 
   const handleSolicitarCompra = async () => {
     const selectedItems = availableLowStockProducts
       .filter((produto) => selectedCompraProductIds.includes(produto.id))
       .map((produto) => ({
         produto,
-        quantidade: getCompraQuantidade(produto)
+        quantidade: getCompraQuantidade(produto),
       }))
-      .filter((item) => item.quantidade > 0)
+      .filter((item) => item.quantidade > 0);
 
     if (!compraForm.centro_custo_id || !compraForm.solicitante_id) {
-      toast.error('Selecione o centro de custo e o solicitante.')
-      return
+      toast.error("Selecione o centro de custo e o solicitante.");
+      return;
     }
 
     if (selectedItems.length === 0) {
-      toast.error('Selecione ao menos um produto para solicitar compra.')
-      return
+      toast.error("Selecione ao menos um produto para solicitar compra.");
+      return;
     }
 
-    setIsSolicitandoCompra(true)
+    setIsSolicitandoCompra(true);
 
     try {
-      const reposicaoBlocks = makeReposicaoBlocks(selectedItems, 500)
-      const solicitacoesCriadas = []
+      const reposicaoBlocks = makeReposicaoBlocks(selectedItems, 500);
+      const solicitacoesCriadas = [];
 
       for (const block of reposicaoBlocks) {
         const quantidadeTotal = block.items.reduce(
           (total, item) => total + item.quantidade,
-          0
-        )
+          0,
+        );
 
         const solicitacao = await addSolicitacao({
           nome_item: makeReposicaoTitle(block.category),
           descricao: block.descricao,
           quantidade: quantidadeTotal,
-          prioridade: 'media',
+          prioridade: "media",
           centro_custo_id: compraForm.centro_custo_id,
           solicitante_id: compraForm.solicitante_id,
-          aplicacoes: 'Reposicao de estoque baixo.'
-        })
+          aplicacoes: "Reposicao de estoque baixo.",
+        });
 
-        solicitacoesCriadas.push(solicitacao)
+        solicitacoesCriadas.push(solicitacao);
       }
 
-      setCompraDialog({ open: false, produto: null, quantidade: 0 })
-      setCompraForm({ centro_custo_id: '', solicitante_id: '' })
-      setSelectedCompraProductIds([])
+      setCompraDialog({ open: false, produto: null, quantidade: 0 });
+      setCompraForm({ centro_custo_id: "", solicitante_id: "" });
+      setSelectedCompraProductIds([]);
       toast.success(
         solicitacoesCriadas.length === 1
-          ? `Solicitação ${solicitacoesCriadas[0]?.codigo || ''} criada com sucesso!`
-          : `${solicitacoesCriadas.length} solicitações criadas com sucesso!`
-      )
+          ? `Solicitação ${solicitacoesCriadas[0]?.codigo || ""} criada com sucesso!`
+          : `${solicitacoesCriadas.length} solicitações criadas com sucesso!`,
+      );
     } catch (error) {
-      toast.error(getUserMessage(error, 'Não foi possível criar a solicitação de compra.'))
+      toast.error(
+        getUserMessage(
+          error,
+          "Não foi possível criar a solicitação de compra.",
+        ),
+      );
     } finally {
-      setIsSolicitandoCompra(false)
+      setIsSolicitandoCompra(false);
     }
-  }
+  };
 
   const handleAddDialogOpenChange = (open) => {
-    setIsAddDialogOpen(open)
+    setIsAddDialogOpen(open);
 
     if (open) {
-      setEditingProduto(null)
-      reset(EMPTY_PRODUCT_FORM)
-      return
+      setEditingProduto(null);
+      reset(EMPTY_PRODUCT_FORM);
+      return;
     }
 
     if (!editingProduto) {
-      reset(EMPTY_PRODUCT_FORM)
+      reset(EMPTY_PRODUCT_FORM);
     }
-  }
+  };
 
   const handleEditDialogOpenChange = (open) => {
-    if (open) return
+    if (open) return;
 
-    setEditingProduto(null)
-    reset(EMPTY_PRODUCT_FORM)
-  }
+    setEditingProduto(null);
+    reset(EMPTY_PRODUCT_FORM);
+  };
 
   const checkCodigoExists = async (cod, ignoreId = null) => {
     const { data, error } = await supabase
-      .from('produtos')
-      .select('id')
-      .eq('cod', cod)
-      .maybeSingle()
+      .from("produtos")
+      .select("id")
+      .eq("cod", cod)
+      .maybeSingle();
 
-    if (error) throw error
-    if (!data) return false
-    if (ignoreId && data.id === ignoreId) return false
+    if (error) throw error;
+    if (!data) return false;
+    if (ignoreId && data.id === ignoreId) return false;
 
-    return true
-  }
+    return true;
+  };
 
   const onSubmit = async (data) => {
     try {
-      const exists = await checkCodigoExists(data.cod, editingProduto?.id)
+      const exists = await checkCodigoExists(data.cod, editingProduto?.id);
 
       if (exists) {
         setDuplicateDialog({
           open: true,
-          cod: data.cod
-        })
-        return
+          cod: data.cod,
+        });
+        return;
       }
 
       const payload = {
         ...data,
-        cod_barra: String(data.cod)
-      }
+        cod_barra: String(data.cod),
+      };
 
       if (editingProduto) {
-        await updateProduto(editingProduto.id, payload)
-        setEditingProduto(null)
-        reset(EMPTY_PRODUCT_FORM)
-        toast.success('Produto atualizado com sucesso!')
+        await updateProduto(editingProduto.id, payload);
+        setEditingProduto(null);
+        reset(EMPTY_PRODUCT_FORM);
+        toast.success("Produto atualizado com sucesso!");
       } else {
-        await addProduto(payload)
-        setIsAddDialogOpen(false)
-        reset(EMPTY_PRODUCT_FORM)
-        toast.success('Produto criado com sucesso!')
+        await addProduto(payload);
+        setIsAddDialogOpen(false);
+        reset(EMPTY_PRODUCT_FORM);
+        toast.success("Produto criado com sucesso!");
       }
-
     } catch (error) {
-      toast.error(getUserMessage(error, 'Não foi possível salvar o produto.'))
+      toast.error(getUserMessage(error, "Não foi possível salvar o produto."));
     }
-  }
+  };
 
   const handleEdit = (produto) => {
-    setEditingProduto(produto)
+    setEditingProduto(produto);
 
     reset({
       cod: produto.cod,
       nome: produto.nome,
       cod_barra: produto.cod_barra,
-      categoria: produto.categoria || '',
-      aplicacao: produto.aplicacao || '',
-      medidas: produto.medidas || '',
-      marcas: produto.marcas || '',
-      img_url: produto.img_url || '',
+      categoria: produto.categoria || "",
+      aplicacao: produto.aplicacao || "",
+      medidas: produto.medidas || "",
+      marcas: produto.marcas || "",
+      img_url: produto.img_url || "",
       max: produto.max,
       min: produto.min,
-      estoque: produto.estoque
-    })
-  }
+      estoque: produto.estoque,
+    });
+  };
 
   const openMovimentoDialog = (produto, tipo, quantidade = 1) => {
-    setMovimentoDialog({ open: true, produto, tipo })
-    setValue('quantidade', quantidade)
-  }
+    setMovimentoDialog({ open: true, produto, tipo });
+    setValue("quantidade", quantidade);
+  };
 
   const handleMovimento = async (quantidade) => {
-    if (!movimentoDialog.produto) return
+    if (!movimentoDialog.produto) return;
 
-    const amount = Number(quantidade)
-    if (!amount || amount <= 0) return
+    const amount = Number(quantidade);
+    if (!amount || amount <= 0) return;
 
     try {
-      if (movimentoDialog.tipo === 'entrada') {
-        await entradaProduto(movimentoDialog.produto.id, amount)
-        toast.success('Entrada registrada com sucesso!')
+      if (movimentoDialog.tipo === "entrada") {
+        await entradaProduto(movimentoDialog.produto.id, amount);
+        toast.success("Entrada registrada com sucesso!");
       } else {
-        await saidaProduto(movimentoDialog.produto.id, amount)
-        toast.success('Saída registrada com sucesso!')
+        await saidaProduto(movimentoDialog.produto.id, amount);
+        toast.success("Saída registrada com sucesso!");
       }
 
-      setMovimentoDialog({ open: false, produto: null, tipo: null })
-      setBarcodeProduct(null)
-      setBarcodeInput('')
-      setScanQuantity(1)
+      setMovimentoDialog({ open: false, produto: null, tipo: null });
+      setBarcodeProduct(null);
+      setBarcodeInput("");
+      setScanQuantity(1);
     } catch (error) {
-      toast.error(getUserMessage(error, 'Não foi possível registrar a movimentacao.'))
+      toast.error(
+        getUserMessage(error, "Não foi possível registrar a movimentacao."),
+      );
     }
-  }
+  };
 
   const handleBarcodeScan = (event) => {
-    const scannedCode = event.target.value
-    setBarcodeInput(scannedCode)
+    const scannedCode = event.target.value;
+    setBarcodeInput(scannedCode);
 
     const produto = produtos.find(
-      (p) => p.cod_barra === scannedCode || p.cod === scannedCode
-    )
+      (p) => p.cod_barra === scannedCode || p.cod === scannedCode,
+    );
 
-    setBarcodeProduct(produto || null)
-  }
+    setBarcodeProduct(produto || null);
+  };
 
   const handleBarcodeKeyDown = (event) => {
-    if (event.key === 'Enter') {
-      event.preventDefault()
+    if (event.key === "Enter") {
+      event.preventDefault();
 
       const produto = produtos.find(
-        (p) => p.cod_barra === barcodeInput || p.cod === barcodeInput
-      )
+        (p) => p.cod_barra === barcodeInput || p.cod === barcodeInput,
+      );
 
       if (produto) {
-        openMovimentoDialog(produto, 'saida', scanQuantity)
+        openMovimentoDialog(produto, "saida", scanQuantity);
       }
     }
-  }
+  };
 
   const toggleProductSelection = (id) => {
     setSelectedProductIds((prev) =>
       prev.includes(id)
         ? prev.filter((itemId) => itemId !== id)
-        : [...prev, id]
-    )
-  }
+        : [...prev, id],
+    );
+  };
 
-  const toggleSelectAllProducts = (checked, visibleProducts = filteredProducts) => {
-    const visibleIds = visibleProducts.map((produto) => produto.id)
+  const toggleSelectAllProducts = (
+    checked,
+    visibleProducts = filteredProducts,
+  ) => {
+    const visibleIds = visibleProducts.map((produto) => produto.id);
 
     setSelectedProductIds((prev) => {
       if (!checked) {
-        return prev.filter((id) => !visibleIds.includes(id))
+        return prev.filter((id) => !visibleIds.includes(id));
       }
 
-      return Array.from(new Set([...prev, ...visibleIds]))
-    })
-  }
+      return Array.from(new Set([...prev, ...visibleIds]));
+    });
+  };
 
   const clearSelection = () => {
-    setSelectedProductIds([])
-  }
+    setSelectedProductIds([]);
+  };
 
   const handleBulkDelete = async () => {
     try {
       for (const produto of selectedProducts) {
-        await deleteProduto(produto.id)
+        await deleteProduto(produto.id);
       }
 
-      setBulkDeleteDialogOpen(false)
-      setBulkActionError('')
-      clearSelection()
-      toast.success('Produtos removidos com sucesso!')
+      setBulkDeleteDialogOpen(false);
+      setBulkActionError("");
+      clearSelection();
+      toast.success("Produtos removidos com sucesso!");
     } catch (error) {
-      setBulkActionError(getUserMessage(error, 'Não foi possível excluir os produtos selecionados.'))
+      setBulkActionError(
+        getUserMessage(
+          error,
+          "Não foi possível excluir os produtos selecionados.",
+        ),
+      );
     }
-  }
+  };
 
   const handleBulkSaida = async () => {
-    const quantidade = Number(bulkSaidaQuantidade)
+    const quantidade = Number(bulkSaidaQuantidade);
 
     if (!quantidade || quantidade <= 0) {
-      setBulkActionError('Informe uma quantidade válida.')
-      return
+      setBulkActionError("Informe uma quantidade válida.");
+      return;
     }
 
     const insuficientes = selectedProducts.filter(
-      (produto) => produto.estoque < quantidade
-    )
+      (produto) => produto.estoque < quantidade,
+    );
 
     if (insuficientes.length > 0) {
       setBulkActionError(
         `Sem estoque suficiente para: ${insuficientes
           .map((produto) => produto.nome)
-          .join(', ')}.`
-      )
-      return
+          .join(", ")}.`,
+      );
+      return;
     }
 
     try {
       for (const produto of selectedProducts) {
-        await saidaProduto(produto.id, quantidade)
+        await saidaProduto(produto.id, quantidade);
       }
 
-      setBulkSaidaDialogOpen(false)
-      setBulkSaidaQuantidade(1)
-      setBulkActionError('')
-      clearSelection()
-      toast.success('Baixa registrada com sucesso!')
+      setBulkSaidaDialogOpen(false);
+      setBulkSaidaQuantidade(1);
+      setBulkActionError("");
+      clearSelection();
+      toast.success("Baixa registrada com sucesso!");
     } catch (error) {
-      setBulkActionError(getUserMessage(error, 'Não foi possível concluir a baixa dos produtos.'))
+      setBulkActionError(
+        getUserMessage(
+          error,
+          "Não foi possível concluir a baixa dos produtos.",
+        ),
+      );
     }
-  }
+  };
 
   return (
     <div className="mx-auto flex w-full max-w-7xl flex-col gap-4 pb-4 sm:gap-6 sm:pb-6">
@@ -596,24 +649,29 @@ export default function InventarioPage() {
             variant="outline"
             onClick={() => {
               if (availableLowStockProducts.length === 0) {
-                toast.info('Nenhum produto com estoque baixo sem solicitação aberta.')
-                return
+                toast.info(
+                  "Nenhum produto com estoque baixo sem solicitação aberta.",
+                );
+                return;
               }
 
-              openCompraDialog()
+              openCompraDialog();
             }}
           >
             <ShoppingCart className="mr-2 h-4 w-4" />
             Solicitar Compra
           </Button>
 
-          <Dialog open={isAddDialogOpen} onOpenChange={handleAddDialogOpenChange}>
+          <Dialog
+            open={isAddDialogOpen}
+            onOpenChange={handleAddDialogOpenChange}
+          >
             <DialogTrigger asChild>
               <Button
                 className="w-full sm:w-auto md:px-6"
                 onClick={() => {
-                  setEditingProduto(null)
-                  reset(EMPTY_PRODUCT_FORM)
+                  setEditingProduto(null);
+                  reset(EMPTY_PRODUCT_FORM);
                 }}
               >
                 <Plus className="mr-2 h-4 w-4" />
@@ -668,45 +726,61 @@ export default function InventarioPage() {
             onToggleSelectAll={toggleSelectAllProducts}
             onClearSelection={clearSelection}
             onBulkDelete={() => {
-              setBulkActionError('')
-              setBulkDeleteDialogOpen(true)
+              setBulkActionError("");
+              setBulkDeleteDialogOpen(true);
             }}
             onBulkSaida={() => {
-              setBulkActionError('')
-              setBulkSaidaQuantidade(1)
-              setBulkSaidaDialogOpen(true)
+              setBulkActionError("");
+              setBulkSaidaQuantidade(1);
+              setBulkSaidaDialogOpen(true);
             }}
             onBulkDownload={() =>
               setPrintDialog({
                 open: true,
                 produto: null,
                 produtos: selectedProducts,
-                bulk: true
+                bulk: true,
               })
             }
             onSolicitarCompra={(produto) => {
               if (requestedLowStockProductIds.has(produto.id)) {
-                toast.info('Este produto ja possui solicitacao de compra aberta.')
-                return
+                toast.info(
+                  "Este produto ja possui solicitacao de compra aberta.",
+                );
+                return;
               }
 
-              openCompraDialog(produto)
+              openCompraDialog(produto);
             }}
             headerActions={
-              <CheckboxFilter
-                label="categoria"
-                allLabel="Todas as categorias"
-                options={categoryOptions.map((categoria) => ({
-                  value: normalizeCategory(categoria),
-                  label: categoria
-                }))}
-                value={selectedCategories}
-                onChange={(value) => {
-                  setSelectedCategories(value)
-                  clearSelection()
-                }}
-                className="sm:w-[240px]"
-              />
+              <>
+                <div className="relative min-w-0">
+                  <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    value={searchQuery}
+                    onChange={(event) => {
+                      setSearchQuery(event.target.value);
+                      clearSelection();
+                    }}
+                    placeholder="Buscar na planilha"
+                    className="pl-9"
+                  />
+                </div>
+                <CheckboxFilter
+                  label="categoria"
+                  allLabel="Todas as categorias"
+                  options={categoryOptions.map((categoria) => ({
+                    value: normalizeCategory(categoria),
+                    label: categoria,
+                  }))}
+                  value={selectedCategories}
+                  onChange={(value) => {
+                    setSelectedCategories(value);
+                    clearSelection();
+                  }}
+                  className="w-full sm:w-[240px]"
+                />
+              </>
             }
             deleteProduto={(produto) =>
               setDeleteDialog({ open: true, produto })
@@ -725,8 +799,11 @@ export default function InventarioPage() {
           </DialogHeader>
 
           <p className="min-w-0 text-sm text-muted-foreground">
-            Deseja realmente excluir o produto{' '}
-            <strong className="break-words">{deleteDialog.produto?.nome}</strong>?
+            Deseja realmente excluir o produto{" "}
+            <strong className="break-words">
+              {deleteDialog.produto?.nome}
+            </strong>
+            ?
           </p>
 
           <div className="mt-4 flex flex-col justify-end gap-2 sm:flex-row">
@@ -741,11 +818,16 @@ export default function InventarioPage() {
               variant="destructive"
               onClick={async () => {
                 try {
-                  await deleteProduto(deleteDialog.produto.id)
-                  setDeleteDialog({ open: false, produto: null })
-                  toast.success('Produto removido com sucesso!')
+                  await deleteProduto(deleteDialog.produto.id);
+                  setDeleteDialog({ open: false, produto: null });
+                  toast.success("Produto removido com sucesso!");
                 } catch (error) {
-                  toast.error(getUserMessage(error, 'Não foi possível excluir o produto.'))
+                  toast.error(
+                    getUserMessage(
+                      error,
+                      "Não foi possível excluir o produto.",
+                    ),
+                  );
                 }
               }}
             >
@@ -758,9 +840,9 @@ export default function InventarioPage() {
       <Dialog
         open={bulkDeleteDialogOpen}
         onOpenChange={(open) => {
-          setBulkDeleteDialogOpen(open)
+          setBulkDeleteDialogOpen(open);
           if (!open) {
-            setBulkActionError('')
+            setBulkActionError("");
           }
         }}
       >
@@ -775,7 +857,11 @@ export default function InventarioPage() {
 
           <div className="ige-scrollbar max-h-52 overflow-y-auto rounded-lg border bg-muted/20 p-3 text-sm">
             {selectedProducts.map((produto) => (
-              <div key={produto.id} className="truncate py-1" title={produto.nome || '-'}>
+              <div
+                key={produto.id}
+                className="truncate py-1"
+                title={produto.nome || "-"}
+              >
                 {produto.nome}
               </div>
             ))}
@@ -806,7 +892,7 @@ export default function InventarioPage() {
 
       <Dialog
         open={duplicateDialog.open}
-        onOpenChange={() => setDuplicateDialog({ open: false, cod: '' })}
+        onOpenChange={() => setDuplicateDialog({ open: false, cod: "" })}
       >
         <DialogContent className="w-[95vw] max-w-[420px] p-4 sm:p-6">
           <DialogHeader>
@@ -818,17 +904,16 @@ export default function InventarioPage() {
           </p>
 
           <div className="mt-4 flex justify-end">
-            <Button onClick={() => setDuplicateDialog({ open: false, cod: '' })}>
+            <Button
+              onClick={() => setDuplicateDialog({ open: false, cod: "" })}
+            >
               Entendi
             </Button>
           </div>
         </DialogContent>
       </Dialog>
 
-      <Dialog
-        open={!!editingProduto}
-        onOpenChange={handleEditDialogOpenChange}
-      >
+      <Dialog open={!!editingProduto} onOpenChange={handleEditDialogOpenChange}>
         <DialogContent className="ige-scrollbar max-h-[calc(100vh-2rem)] w-[95vw] overflow-y-auto p-4 sm:max-w-xl sm:p-6">
           <DialogHeader>
             <DialogTitle>Editar Produto</DialogTitle>
@@ -848,10 +933,10 @@ export default function InventarioPage() {
       <Dialog
         open={bulkSaidaDialogOpen}
         onOpenChange={(open) => {
-          setBulkSaidaDialogOpen(open)
+          setBulkSaidaDialogOpen(open);
           if (!open) {
-            setBulkSaidaQuantidade(1)
-            setBulkActionError('')
+            setBulkSaidaQuantidade(1);
+            setBulkActionError("");
           }
         }}
       >
@@ -862,7 +947,8 @@ export default function InventarioPage() {
 
           <div className="space-y-4">
             <p className="text-sm text-muted-foreground">
-              A quantidade informada será aplicada em todos os {selectedProducts.length} produto(s) selecionados.
+              A quantidade informada será aplicada em todos os{" "}
+              {selectedProducts.length} produto(s) selecionados.
             </p>
 
             <div>
@@ -874,8 +960,8 @@ export default function InventarioPage() {
                 min={1}
                 value={bulkSaidaQuantidade}
                 onChange={(event) => {
-                  setBulkSaidaQuantidade(event.target.value)
-                  setBulkActionError('')
+                  setBulkSaidaQuantidade(event.target.value);
+                  setBulkActionError("");
                 }}
               />
             </div>
@@ -886,7 +972,12 @@ export default function InventarioPage() {
                   key={produto.id}
                   className="flex min-w-0 items-center justify-between gap-3 py-1"
                 >
-                  <span className="min-w-0 truncate" title={produto.nome || '-'}>{produto.nome}</span>
+                  <span
+                    className="min-w-0 truncate"
+                    title={produto.nome || "-"}
+                  >
+                    {produto.nome}
+                  </span>
                   <span className="shrink-0 text-muted-foreground">
                     Estoque: {produto.estoque}
                   </span>
@@ -922,11 +1013,11 @@ export default function InventarioPage() {
         open={compraDialog.open}
         onOpenChange={(open) => {
           if (!open) {
-            setCompraDialog({ open: false, produto: null, quantidade: 0 })
-            setCompraForm({ centro_custo_id: '', solicitante_id: '' })
-            setSelectedCompraProductIds([])
+            setCompraDialog({ open: false, produto: null, quantidade: 0 });
+            setCompraForm({ centro_custo_id: "", solicitante_id: "" });
+            setSelectedCompraProductIds([]);
           } else {
-            setCompraDialog((prev) => ({ ...prev, open: true }))
+            setCompraDialog((prev) => ({ ...prev, open: true }));
           }
         }}
       >
@@ -944,7 +1035,8 @@ export default function InventarioPage() {
                 <div>
                   <p className="font-semibold">Lista de reposicao</p>
                   <p className="text-muted-foreground">
-                    {selectedCompraProductIds.length} de {availableLowStockProducts.length} produto(s) selecionado(s)
+                    {selectedCompraProductIds.length} de{" "}
+                    {availableLowStockProducts.length} produto(s) selecionado(s)
                   </p>
                 </div>
 
@@ -955,22 +1047,26 @@ export default function InventarioPage() {
                   className="w-full sm:w-auto"
                   onClick={() =>
                     setSelectedCompraProductIds(
-                      selectedCompraProductIds.length === availableLowStockProducts.length
+                      selectedCompraProductIds.length ===
+                        availableLowStockProducts.length
                         ? []
-                        : availableLowStockProducts.map((produto) => produto.id)
+                        : availableLowStockProducts.map(
+                            (produto) => produto.id,
+                          ),
                     )
                   }
                 >
-                  {selectedCompraProductIds.length === availableLowStockProducts.length
-                    ? 'Limpar selecao'
-                    : 'Selecionar todos'}
+                  {selectedCompraProductIds.length ===
+                  availableLowStockProducts.length
+                    ? "Limpar selecao"
+                    : "Selecionar todos"}
                 </Button>
               </div>
 
               <div className="ige-scrollbar max-h-[42vh] overflow-y-auto rounded-lg border sm:max-h-80">
                 {availableLowStockProducts.map((produto) => {
-                  const quantidade = getCompraQuantidade(produto)
-                  const checked = selectedCompraProductIds.includes(produto.id)
+                  const quantidade = getCompraQuantidade(produto);
+                  const checked = selectedCompraProductIds.includes(produto.id);
 
                   return (
                     <label
@@ -983,18 +1079,24 @@ export default function InventarioPage() {
                           setSelectedCompraProductIds((prev) =>
                             value === true
                               ? Array.from(new Set([...prev, produto.id]))
-                              : prev.filter((id) => id !== produto.id)
-                          )
+                              : prev.filter((id) => id !== produto.id),
+                          );
                         }}
                         className="mt-1"
                       />
 
                       <span className="min-w-0 flex-1">
-                        <span className="block break-words font-medium sm:truncate" title={produto.nome || '-'}>
-                          {produto.cod ? `${produto.cod} - ${produto.nome}` : produto.nome}
+                        <span
+                          className="block break-words font-medium sm:truncate"
+                          title={produto.nome || "-"}
+                        >
+                          {produto.cod
+                            ? `${produto.cod} - ${produto.nome}`
+                            : produto.nome}
                         </span>
                         <span className="block text-xs text-muted-foreground sm:text-sm">
-                          Estoque: {produto.estoque || 0} | Min: {produto.min || 0} | Max: {produto.max || 0}
+                          Estoque: {produto.estoque || 0} | Min:{" "}
+                          {produto.min || 0} | Max: {produto.max || 0}
                         </span>
                       </span>
 
@@ -1002,16 +1104,23 @@ export default function InventarioPage() {
                         Qtd: {quantidade}
                       </span>
                     </label>
-                  )
+                  );
                 })}
               </div>
             </div>
             <div className="grid gap-3 sm:grid-cols-2 sm:gap-4">
               <div className="grid min-w-0 gap-2">
-                <label className="truncate text-sm font-medium" title="Centro de custo">Centro de custo</label>
+                <label
+                  className="truncate text-sm font-medium"
+                  title="Centro de custo"
+                >
+                  Centro de custo
+                </label>
                 <Select
                   value={compraForm.centro_custo_id}
-                  onValueChange={(value) => updateCompraField('centro_custo_id', value)}
+                  onValueChange={(value) =>
+                    updateCompraField("centro_custo_id", value)
+                  }
                 >
                   <SelectTrigger className="w-full min-w-0 overflow-hidden">
                     <SelectValue placeholder="Selecione" />
@@ -1032,10 +1141,17 @@ export default function InventarioPage() {
               </div>
 
               <div className="grid min-w-0 gap-2">
-                <label className="truncate text-sm font-medium" title="Solicitante">Solicitante</label>
+                <label
+                  className="truncate text-sm font-medium"
+                  title="Solicitante"
+                >
+                  Solicitante
+                </label>
                 <Select
                   value={compraForm.solicitante_id}
-                  onValueChange={(value) => updateCompraField('solicitante_id', value)}
+                  onValueChange={(value) =>
+                    updateCompraField("solicitante_id", value)
+                  }
                 >
                   <SelectTrigger className="w-full min-w-0 overflow-hidden">
                     <SelectValue placeholder="Selecione" />
@@ -1047,13 +1163,21 @@ export default function InventarioPage() {
                           className="block max-w-[min(34rem,calc(100vw-4rem))] truncate"
                           title={[
                             solicitante.nome,
-                            getCentroCustoLabel(getSolicitanteCentroCusto(solicitante))
-                          ].filter(Boolean).join(' - ')}
+                            getCentroCustoLabel(
+                              getSolicitanteCentroCusto(solicitante),
+                            ),
+                          ]
+                            .filter(Boolean)
+                            .join(" - ")}
                         >
                           {[
                             solicitante.nome,
-                            getCentroCustoLabel(getSolicitanteCentroCusto(solicitante))
-                          ].filter(Boolean).join(' - ')}
+                            getCentroCustoLabel(
+                              getSolicitanteCentroCusto(solicitante),
+                            ),
+                          ]
+                            .filter(Boolean)
+                            .join(" - ")}
                         </span>
                       </SelectItem>
                     ))}
@@ -1066,9 +1190,13 @@ export default function InventarioPage() {
               <Button
                 variant="outline"
                 onClick={() => {
-                  setCompraDialog({ open: false, produto: null, quantidade: 0 })
-                  setCompraForm({ centro_custo_id: '', solicitante_id: '' })
-                  setSelectedCompraProductIds([])
+                  setCompraDialog({
+                    open: false,
+                    produto: null,
+                    quantidade: 0,
+                  });
+                  setCompraForm({ centro_custo_id: "", solicitante_id: "" });
+                  setSelectedCompraProductIds([]);
                 }}
                 disabled={isSolicitandoCompra}
               >
@@ -1079,7 +1207,7 @@ export default function InventarioPage() {
                 onClick={handleSolicitarCompra}
                 disabled={isSolicitandoCompra}
               >
-                {isSolicitandoCompra ? 'Solicitando...' : 'Criar solicitação'}
+                {isSolicitandoCompra ? "Solicitando..." : "Criar solicitação"}
               </Button>
             </div>
           </div>
@@ -1095,7 +1223,7 @@ export default function InventarioPage() {
         <DialogContent className="w-[95vw] max-w-[420px] p-4 sm:p-6">
           <DialogHeader>
             <DialogTitle>
-              {movimentoDialog.tipo === 'entrada' ? 'Entrada' : 'Saída'}
+              {movimentoDialog.tipo === "entrada" ? "Entrada" : "Saída"}
             </DialogTitle>
           </DialogHeader>
 
@@ -1110,21 +1238,39 @@ export default function InventarioPage() {
 
       <Dialog
         open={printDialog.open}
-        onOpenChange={() => setPrintDialog({ open: false, produto: null, produtos: [], bulk: false })}
+        onOpenChange={() =>
+          setPrintDialog({
+            open: false,
+            produto: null,
+            produtos: [],
+            bulk: false,
+          })
+        }
       >
         <DialogContent className="w-[95vw] max-w-[420px] p-4 sm:p-6">
           <DialogHeader>
-            <DialogTitle>{printDialog.bulk ? 'Baixar etiquetas selecionadas' : 'Baixar etiqueta'}</DialogTitle>
+            <DialogTitle>
+              {printDialog.bulk
+                ? "Baixar etiquetas selecionadas"
+                : "Baixar etiqueta"}
+            </DialogTitle>
           </DialogHeader>
 
           <PrintDialogContent
             produto={printDialog.produto || (printDialog.produtos ?? [])[0]}
             produtos={printDialog.produtos ?? []}
             bulk={printDialog.bulk}
-            onCancel={() => setPrintDialog({ open: false, produto: null, produtos: [], bulk: false })}
+            onCancel={() =>
+              setPrintDialog({
+                open: false,
+                produto: null,
+                produtos: [],
+                bulk: false,
+              })
+            }
           />
         </DialogContent>
       </Dialog>
     </div>
-  )
+  );
 }

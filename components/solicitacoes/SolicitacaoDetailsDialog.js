@@ -1,8 +1,8 @@
-'use client'
+﻿'use client'
 
 import { useState } from 'react'
 import { motion } from 'motion/react'
-import { toast } from 'sonner'
+import { toast } from '@/lib/notifications/toast'
 import { Copy } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'

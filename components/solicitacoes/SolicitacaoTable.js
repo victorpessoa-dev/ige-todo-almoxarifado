@@ -1,7 +1,7 @@
 'use client'
 
 import { useMemo, useRef, useState } from 'react'
-import { toast } from 'sonner'
+import { toast } from '@/lib/notifications/toast'
 import { getUserMessage } from '@/lib/messaging/user-messages'
 import {
   Table,

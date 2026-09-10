@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { PublicFooter } from '@/components/layout/Copyright'
 import Link from 'next/link'
@@ -6,7 +6,7 @@ import { motion } from 'motion/react'
 import { useEffect, useMemo, useState } from 'react'
 import Image from 'next/image'
 import { CheckCircle2, Copy, LogIn, PackageSearch, Plus, Search, Send, X } from 'lucide-react'
-import { toast } from 'sonner'
+import { toast } from '@/lib/notifications/toast'
 
 import {
   SolicitacaoForm,
