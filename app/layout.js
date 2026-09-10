@@ -4,6 +4,7 @@ import { AuthProvider } from '@/contexts/auth-context'
 import { PwaRegister } from '@/components/pwa/PwaRegister'
 import { NotificationToaster } from '@/components/notifications/NotificationToaster'
 import { PageTransition } from '@/components/animations/Motion'
+import { MotionScrollRegistry } from '@/components/animations/MotionScrollRegistry'
 
 export const metadata = {
   title: 'IGE Almoxarifado',
@@ -35,6 +36,7 @@ export default function RootLayout({ children }) {
         <AuthProvider>
           <PwaRegister />
           <NotificationToaster />
+          <MotionScrollRegistry />
           <PageTransition>{children}</PageTransition>
         </AuthProvider>
       </body>

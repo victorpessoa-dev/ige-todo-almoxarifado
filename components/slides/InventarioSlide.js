@@ -1,61 +1,61 @@
-'use client'
+"use client";
 
-import { useMemo, useRef, useEffect } from 'react'
-import { AlertTriangle } from 'lucide-react'
-import { Badge } from '@/components/ui/badge'
-import { useAutoScroll } from '@/lib/hooks/useAutoScroll'
-import { MotionScrollIndicator } from '@/components/animations/MotionScrollIndicator'
+import { useMemo, useRef, useEffect } from "react";
+import { AlertTriangle } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { useAutoScroll } from "@/lib/hooks/useAutoScroll";
+import { MotionScrollIndicator } from "@/components/animations/MotionScrollIndicator";
 
 function getNivel(produto) {
-  const { estoque, min } = produto
+  const { estoque, min } = produto;
 
-  if (estoque <= min * 0.5) return 'critico'
-  if (estoque <= min) return 'baixo'
-  return 'atencao'
+  if (estoque <= min * 0.5) return "critico";
+  if (estoque <= min) return "baixo";
+  return "atencao";
 }
 
 function getNivelInfo(nivel) {
   switch (nivel) {
-    case 'critico':
+    case "critico":
       return {
-        label: 'Critico',
-        productClass: 'text-red-700',
-        estoqueClass: 'text-red-700',
-        badgeClass: 'border-red-200 bg-red-100 text-red-700'
-      }
-    case 'baixo':
+        label: "Critico",
+        productClass: "text-red-700",
+        estoqueClass: "text-red-700",
+        badgeClass: "border-red-200 bg-red-100 text-red-700",
+      };
+    case "baixo":
       return {
-        label: 'Baixo',
-        productClass: 'text-orange-700',
-        estoqueClass: 'text-orange-700',
-        badgeClass: 'border-orange-200 bg-orange-100 text-orange-700'
-      }
+        label: "Baixo",
+        productClass: "text-orange-700",
+        estoqueClass: "text-orange-700",
+        badgeClass: "border-orange-200 bg-orange-100 text-orange-700",
+      };
     default:
       return {
-        label: 'Atencao',
-        productClass: 'text-amber-700',
-        estoqueClass: 'text-amber-700',
-        badgeClass: 'border-amber-200 bg-amber-100 text-amber-700'
-      }
+        label: "Atencao",
+        productClass: "text-amber-700",
+        estoqueClass: "text-amber-700",
+        badgeClass: "border-amber-200 bg-amber-100 text-amber-700",
+      };
   }
 }
 
 export default function InventarioSlide({ produtos, active, onEnd }) {
-  const ref = useRef(null)
+  const ref = useRef(null);
 
   const produtosOrdenados = useMemo(() => {
     return produtos
       .filter((p) => p.estoque <= p.min)
-      .sort((a, b) => a.estoque - a.min - (b.estoque - b.min))
-  }, [produtos])
+      .sort((a, b) => a.estoque - a.min - (b.estoque - b.min));
+  }, [produtos]);
 
-  useAutoScroll(ref, onEnd, active)
+  useAutoScroll(ref, onEnd, active);
 
   useEffect(() => {
     if (active && ref.current) {
-      ref.current.scrollTo({ top: 0 })
+      ref.current.scrollTop = 0;
     }
-  }, [active])
+  }, [active]);
 
   if (produtosOrdenados.length === 0) {
     return (
@@ -64,7 +64,7 @@ export default function InventarioSlide({ produtos, active, onEnd }) {
           Nenhum produto com estoque baixo
         </p>
       </div>
-    )
+    );
   }
 
   return (
@@ -88,7 +88,7 @@ export default function InventarioSlide({ produtos, active, onEnd }) {
 
         <div className="divide-y divide-border/70">
           {produtosOrdenados.map((produto) => {
-            const nivelInfo = getNivelInfo(getNivel(produto))
+            const nivelInfo = getNivelInfo(getNivel(produto));
 
             return (
               <div
@@ -96,7 +96,9 @@ export default function InventarioSlide({ produtos, active, onEnd }) {
                 className="grid grid-cols-[minmax(0,1.4fr)_auto_auto_auto] items-center gap-3 px-4 py-3 text-sm font-medium sm:px-5 sm:py-4 sm:text-base"
               >
                 <div className="min-w-0">
-                  <p className={`break-words font-semibold ${nivelInfo.productClass}`}>
+                  <p
+                    className={`break-words font-semibold ${nivelInfo.productClass}`}
+                  >
                     {produto.nome}
                   </p>
                 </div>
@@ -105,10 +107,10 @@ export default function InventarioSlide({ produtos, active, onEnd }) {
                   {produto.estoque}
                 </span>
               </div>
-            )
+            );
           })}
         </div>
       </div>
     </div>
-  )
+  );
 }

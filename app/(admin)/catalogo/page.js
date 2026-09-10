@@ -1,7 +1,7 @@
-'use client'
+﻿'use client'
 
 import { useMemo, useState } from 'react'
-import { toast } from 'sonner'
+import { toast } from '@/lib/notifications/toast'
 
 import { useData } from '@/contexts/data-context'
 import {

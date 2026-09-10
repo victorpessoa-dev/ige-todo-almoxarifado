@@ -1,8 +1,8 @@
-'use client'
+"use client";
 
-import JsBarcode from 'jsbarcode'
-import { useEffect, useMemo, useRef, useState } from 'react'
-import { Button } from '@/components/ui/button'
+import JsBarcode from "jsbarcode";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Button } from "@/components/ui/button";
 
 const LABEL_MODELS = {
   A4249: { width: 2.6, height: 1.5, scale: 0.7 },
@@ -11,194 +11,201 @@ const LABEL_MODELS = {
   A4256: { width: 6.35, height: 2.54, scale: 0.95 },
   A4260: { width: 6.35, height: 3.81, scale: 1.1 },
   A4262: { width: 9.9, height: 3.39, scale: 1.2 },
-  A4263: { width: 9.9, height: 3.81, scale: 1.3 }
-}
+  A4263: { width: 9.9, height: 3.81, scale: 1.3 },
+};
 
 function loadLogo() {
   return new Promise((resolve) => {
-    const img = new Image()
-    img.onload = () => resolve(img)
-    img.onerror = () => resolve(null)
-    img.src = '/ige-supergesso.svg'
-  })
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = () => resolve(null);
+    img.src = "/ige-supergesso.svg";
+  });
 }
 
 async function createLabelImage(produto, model) {
-  const { width, height, scale } = LABEL_MODELS[model]
-  const pxScale = 180
-  const widthPx = Math.round(width * pxScale)
-  const heightPx = Math.round(height * pxScale)
-  const canvas = document.createElement('canvas')
-  const ctx = canvas.getContext('2d')
+  const { width, height, scale } = LABEL_MODELS[model];
+  const pxScale = 180;
+  const widthPx = Math.round(width * pxScale);
+  const heightPx = Math.round(height * pxScale);
+  const canvas = document.createElement("canvas");
+  const ctx = canvas.getContext("2d");
 
-  canvas.width = widthPx
-  canvas.height = heightPx
-  ctx.imageSmoothingEnabled = true
-  ctx.imageSmoothingQuality = 'high'
-  ctx.fillStyle = '#fff'
-  ctx.fillRect(0, 0, widthPx, heightPx)
+  canvas.width = widthPx;
+  canvas.height = heightPx;
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = "high";
+  ctx.fillStyle = "#fff";
+  ctx.fillRect(0, 0, widthPx, heightPx);
 
-  const logo = await loadLogo()
+  const logo = await loadLogo();
   if (logo) {
-    ctx.save()
-    ctx.globalAlpha = 0.22
-    ctx.drawImage(logo, 0, 0, widthPx, heightPx)
-    ctx.restore()
+    ctx.save();
+    ctx.globalAlpha = 0.22;
+    ctx.drawImage(logo, 0, 0, widthPx, heightPx);
+    ctx.restore();
   }
 
+  ctx.fillStyle = "#000";
+  ctx.textAlign = "center";
 
-  ctx.fillStyle = '#000'
-  ctx.textAlign = 'center'
-
-  const maxWidth = widthPx * 0.9
-  let fontSize = heightPx * 0.22 * scale
-  const minFont = 10
+  const maxWidth = widthPx * 0.9;
+  let fontSize = heightPx * 0.22 * scale;
+  const minFont = 10;
 
   while (fontSize > minFont) {
-    ctx.font = `bold ${fontSize}px Arial`
-    if (ctx.measureText(String(produto.nome || '')).width <= maxWidth) break
-    fontSize -= 1
+    ctx.font = `bold ${fontSize}px Arial`;
+    if (ctx.measureText(String(produto.nome || "")).width <= maxWidth) break;
+    fontSize -= 1;
   }
 
-  ctx.lineWidth = Math.max(1, Math.round(fontSize * 0.08))
-  ctx.strokeStyle = '#ffffff'
-  ctx.strokeText(String(produto.nome || ''), widthPx / 2, heightPx * 0.36)
-  ctx.fillText(String(produto.nome || ''), widthPx / 2, heightPx * 0.36)
+  ctx.lineWidth = Math.max(1, Math.round(fontSize * 0.08));
+  ctx.strokeStyle = "#ffffff";
+  ctx.strokeText(String(produto.nome || ""), widthPx / 2, heightPx * 0.36);
+  ctx.fillText(String(produto.nome || ""), widthPx / 2, heightPx * 0.36);
 
-  const barcodeCanvas = document.createElement('canvas')
-  JsBarcode(barcodeCanvas, String(produto.cod || produto.cod_barra || produto.id), {
-    format: 'CODE128',
-    width: Math.max(2, Math.round(widthPx / 210)),
-    height: heightPx * 0.38,
-    displayValue: false,
-    margin: Math.max(3, Math.round(widthPx * 0.008)),
-    background: '#ffffff',
-    lineColor: '#111111'
-  })
+  const barcodeCanvas = document.createElement("canvas");
+  JsBarcode(
+    barcodeCanvas,
+    String(produto.cod || produto.cod_barra || produto.id),
+    {
+      format: "CODE128",
+      width: Math.max(2, Math.round(widthPx / 210)),
+      height: heightPx * 0.38,
+      displayValue: false,
+      margin: Math.max(3, Math.round(widthPx * 0.008)),
+      background: "#ffffff",
+      lineColor: "#111111",
+    },
+  );
 
-  ctx.save()
-  ctx.imageSmoothingEnabled = false
-  ctx.drawImage(barcodeCanvas, widthPx * 0.1, heightPx * 0.48, widthPx * 0.8, heightPx * 0.34)
-  ctx.restore()
+  ctx.save();
+  ctx.imageSmoothingEnabled = false;
+  ctx.drawImage(
+    barcodeCanvas,
+    widthPx * 0.1,
+    heightPx * 0.48,
+    widthPx * 0.8,
+    heightPx * 0.34,
+  );
+  ctx.restore();
 
+  ctx.font = `bold ${Math.max(10, Math.round(heightPx * 0.08 * scale))}px monospace`;
+  ctx.textAlign = "right";
+  ctx.fillText(String(produto.cod || ""), widthPx * 0.95, heightPx * 0.95);
 
-  ctx.font = `bold ${Math.max(10, Math.round(heightPx * 0.08 * scale))}px monospace`
-  ctx.textAlign = 'right'
-  ctx.fillText(String(produto.cod || ''), widthPx * 0.95, heightPx * 0.95)
-
-
-
-  return canvas
+  return canvas;
 }
 
-
-function sanitizeFilePart(value, fallback = 'produto') {
-  const sanitized = String(value ?? '')
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[<>:"/\\|?*\x00-\x1F]/g, '')
-    .replace(/\s+/g, ' ')
+function sanitizeFilePart(value, fallback = "produto") {
+  const sanitized = String(value ?? "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[<>:"/\\|?*\x00-\x1F]/g, "")
+    .replace(/\s+/g, " ")
     .trim()
-    .replace(/[. ]+$/g, '')
+    .replace(/[. ]+$/g, "");
 
-  return sanitized || fallback
+  return sanitized || fallback;
 }
 
 function getLabelFileName(produto) {
-  const nome = sanitizeFilePart(produto?.nome, 'produto')
-  const codigo = sanitizeFilePart(produto?.cod || produto?.cod_barra || produto?.id, 'sem-codigo')
-  return `${nome} - ${codigo}.png`
+  const nome = sanitizeFilePart(produto?.nome, "produto");
+  const codigo = sanitizeFilePart(
+    produto?.cod || produto?.cod_barra || produto?.id,
+    "sem-codigo",
+  );
+  return `${nome} - ${codigo}.png`;
 }
 
-
 function getCategoryName(produto) {
-  return String(produto?.categoria || '').trim() || 'Sem categoria'
+  return String(produto?.categoria || "").trim() || "Sem categoria";
 }
 
 function getCategoryKey(produto) {
   return getCategoryName(produto)
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .toLocaleLowerCase('pt-BR')
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLocaleLowerCase("pt-BR");
 }
 
 function makeUniqueFileName(originalName, usedNames) {
-  const count = usedNames.get(originalName) || 0
-  usedNames.set(originalName, count + 1)
+  const count = usedNames.get(originalName) || 0;
+  usedNames.set(originalName, count + 1);
 
   return count === 0
     ? originalName
-    : originalName.replace(/\.png$/i, ` (${count + 1}).png`)
+    : originalName.replace(/\.png$/i, ` (${count + 1}).png`);
 }
 
 async function createLabelZip(products, model) {
-  const files = []
-  const usedNames = new Map()
+  const files = [];
+  const usedNames = new Map();
 
   for (const item of products) {
-    const labelCanvas = await createLabelImage(item, model)
+    const labelCanvas = await createLabelImage(item, model);
     const blob = await new Promise((resolve, reject) => {
       labelCanvas.toBlob((result) => {
-        if (result) resolve(result)
-        else reject(new Error('Não foi possível gerar uma das etiquetas.'))
-      }, 'image/png')
-    })
+        if (result) resolve(result);
+        else reject(new Error("Não foi possível gerar uma das etiquetas."));
+      }, "image/png");
+    });
 
     files.push({
       name: makeUniqueFileName(getLabelFileName(item), usedNames),
-      data: new Uint8Array(await blob.arrayBuffer())
-    })
+      data: new Uint8Array(await blob.arrayBuffer()),
+    });
   }
 
-  return createZipBlob(files)
+  return createZipBlob(files);
 }
 
 function groupProductsForZip(products) {
-  const categories = new Map()
+  const categories = new Map();
 
   for (const produto of products) {
-    const key = getCategoryKey(produto)
-    const existing = categories.get(key)
+    const key = getCategoryKey(produto);
+    const existing = categories.get(key);
 
     if (existing) {
-      existing.products.push(produto)
+      existing.products.push(produto);
     } else {
       categories.set(key, {
         name: getCategoryName(produto),
-        products: [produto]
-      })
+        products: [produto],
+      });
     }
   }
 
-  const separate = []
-  const unified = []
+  const separate = [];
+  const unified = [];
 
   for (const category of categories.values()) {
     if (category.products.length > 5) {
-      separate.push(category)
+      separate.push(category);
     } else {
-      unified.push(...category.products)
+      unified.push(...category.products);
     }
   }
 
-  return { separate, unified }
+  return { separate, unified };
 }
 
 function crc32(bytes) {
-  let crc = 0xffffffff
+  let crc = 0xffffffff;
 
   for (let index = 0; index < bytes.length; index += 1) {
-    crc ^= bytes[index]
+    crc ^= bytes[index];
     for (let bit = 0; bit < 8; bit += 1) {
-      crc = (crc >>> 1) ^ (0xedb88320 & -(crc & 1))
+      crc = (crc >>> 1) ^ (0xedb88320 & -(crc & 1));
     }
   }
 
-  return (crc ^ 0xffffffff) >>> 0
+  return (crc ^ 0xffffffff) >>> 0;
 }
 
 function uint16(value) {
-  return new Uint8Array([value & 0xff, (value >>> 8) & 0xff])
+  return new Uint8Array([value & 0xff, (value >>> 8) & 0xff]);
 }
 
 function uint32(value) {
@@ -206,33 +213,33 @@ function uint32(value) {
     value & 0xff,
     (value >>> 8) & 0xff,
     (value >>> 16) & 0xff,
-    (value >>> 24) & 0xff
-  ])
+    (value >>> 24) & 0xff,
+  ]);
 }
 
 function concatBytes(parts) {
-  const size = parts.reduce((total, part) => total + part.length, 0)
-  const output = new Uint8Array(size)
-  let offset = 0
+  const size = parts.reduce((total, part) => total + part.length, 0);
+  const output = new Uint8Array(size);
+  let offset = 0;
 
   for (const part of parts) {
-    output.set(part, offset)
-    offset += part.length
+    output.set(part, offset);
+    offset += part.length;
   }
 
-  return output
+  return output;
 }
 
 async function createZipBlob(files) {
-  const encoder = new TextEncoder()
-  const localParts = []
-  const centralParts = []
-  let localOffset = 0
+  const encoder = new TextEncoder();
+  const localParts = [];
+  const centralParts = [];
+  let localOffset = 0;
 
   for (const file of files) {
-    const nameBytes = encoder.encode(file.name)
-    const data = file.data
-    const checksum = crc32(data)
+    const nameBytes = encoder.encode(file.name);
+    const data = file.data;
+    const checksum = crc32(data);
 
     const localHeader = concatBytes([
       uint32(0x04034b50),
@@ -246,10 +253,10 @@ async function createZipBlob(files) {
       uint32(data.length),
       uint16(nameBytes.length),
       uint16(0),
-      nameBytes
-    ])
+      nameBytes,
+    ]);
 
-    localParts.push(localHeader, data)
+    localParts.push(localHeader, data);
 
     const centralHeader = concatBytes([
       uint32(0x02014b50),
@@ -269,15 +276,15 @@ async function createZipBlob(files) {
       uint16(0),
       uint32(0),
       uint32(localOffset),
-      nameBytes
-    ])
+      nameBytes,
+    ]);
 
-    centralParts.push(centralHeader)
-    localOffset += localHeader.length + data.length
+    centralParts.push(centralHeader);
+    localOffset += localHeader.length + data.length;
   }
 
-  const localData = concatBytes(localParts)
-  const centralDirectory = concatBytes(centralParts)
+  const localData = concatBytes(localParts);
+  const centralDirectory = concatBytes(centralParts);
   const endRecord = concatBytes([
     uint32(0x06054b50),
     uint16(0),
@@ -286,111 +293,113 @@ async function createZipBlob(files) {
     uint16(files.length),
     uint32(centralDirectory.length),
     uint32(localData.length),
-    uint16(0)
-  ])
+    uint16(0),
+  ]);
 
-  return new Blob([localData, centralDirectory, endRecord], { type: 'application/zip' })
+  return new Blob([localData, centralDirectory, endRecord], {
+    type: "application/zip",
+  });
 }
 
 function downloadBlob(blob, fileName) {
-  const url = URL.createObjectURL(blob)
-  const link = document.createElement('a')
-  link.download = fileName
-  link.href = url
-  document.body.appendChild(link)
-  link.click()
-  link.remove()
-  window.setTimeout(() => URL.revokeObjectURL(url), 1000)
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.download = fileName;
+  link.href = url;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  window.setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
 export default function PrintDialogContent({
   produto,
   produtos = [],
   bulk = false,
-  onCancel
+  onCancel,
 }) {
-  const canvasRef = useRef(null)
-  const [image, setImage] = useState(null)
-  const [model, setModel] = useState('A4263')
-  const [isDownloading, setIsDownloading] = useState(false)
+  const canvasRef = useRef(null);
+  const [image, setImage] = useState(null);
+  const [model, setModel] = useState("A4263");
+  const [isDownloading, setIsDownloading] = useState(false);
 
   const selectedProducts = useMemo(() => {
-    if (Array.isArray(produtos) && produtos.length > 0) return produtos.filter(Boolean)
-    return produto ? [produto] : []
-  }, [produto, produtos])
+    if (Array.isArray(produtos) && produtos.length > 0)
+      return produtos.filter(Boolean);
+    return produto ? [produto] : [];
+  }, [produto, produtos]);
 
   useEffect(() => {
-    let active = true
+    let active = true;
 
     async function renderPreview() {
-      const firstProduct = selectedProducts[0]
+      const firstProduct = selectedProducts[0];
       if (!firstProduct) {
-        setImage(null)
-        return
+        setImage(null);
+        return;
       }
 
-      const labelCanvas = await createLabelImage(firstProduct, model)
-      if (!active) return
+      const labelCanvas = await createLabelImage(firstProduct, model);
+      if (!active) return;
 
-      const canvas = canvasRef.current
+      const canvas = canvasRef.current;
       if (canvas) {
-        canvas.width = labelCanvas.width
-        canvas.height = labelCanvas.height
-        canvas.getContext('2d').drawImage(labelCanvas, 0, 0)
+        canvas.width = labelCanvas.width;
+        canvas.height = labelCanvas.height;
+        canvas.getContext("2d").drawImage(labelCanvas, 0, 0);
       }
-      setImage(labelCanvas.toDataURL('image/png'))
+      setImage(labelCanvas.toDataURL("image/png"));
     }
 
-    renderPreview()
+    renderPreview();
     return () => {
-      active = false
-    }
-  }, [selectedProducts, model])
+      active = false;
+    };
+  }, [selectedProducts, model]);
 
   const handleDownload = async () => {
-    if (selectedProducts.length === 0) return
+    if (selectedProducts.length === 0) return;
 
-    setIsDownloading(true)
+    setIsDownloading(true);
     try {
       // Fluxo unitário: baixa diretamente um PNG.
       if (selectedProducts.length === 1) {
-        const item = selectedProducts[0]
-        const labelCanvas = await createLabelImage(item, model)
+        const item = selectedProducts[0];
+        const labelCanvas = await createLabelImage(item, model);
         const blob = await new Promise((resolve, reject) => {
           labelCanvas.toBlob((result) => {
-            if (result) resolve(result)
-            else reject(new Error('Não foi possível gerar a etiqueta.'))
-          }, 'image/png')
-        })
+            if (result) resolve(result);
+            else reject(new Error("Não foi possível gerar a etiqueta."));
+          }, "image/png");
+        });
 
-        downloadBlob(blob, getLabelFileName(item))
-        return
+        downloadBlob(blob, getLabelFileName(item));
+        return;
       }
 
       // Fluxo múltiplo: categorias com mais de 5 itens recebem ZIP próprio.
       // Categorias com até 5 itens são reunidas em um ZIP unificado.
-      const { separate, unified } = groupProductsForZip(selectedProducts)
+      const { separate, unified } = groupProductsForZip(selectedProducts);
 
       for (const category of separate) {
-        const zipBlob = await createLabelZip(category.products, model)
-        const categoryName = sanitizeFilePart(category.name, 'Sem categoria')
-        downloadBlob(zipBlob, `Etiqueta ${categoryName}.zip`)
+        const zipBlob = await createLabelZip(category.products, model);
+        const categoryName = sanitizeFilePart(category.name, "Sem categoria");
+        downloadBlob(zipBlob, `Etiqueta ${categoryName}.zip`);
       }
 
       if (unified.length > 0) {
-        const zipBlob = await createLabelZip(unified, model)
-        downloadBlob(zipBlob, 'Etiquetas Diversas.zip')
+        const zipBlob = await createLabelZip(unified, model);
+        downloadBlob(zipBlob, "Etiquetas Diversas.zip");
       }
     } finally {
-      setIsDownloading(false)
+      setIsDownloading(false);
     }
-  }
+  };
 
-  if (selectedProducts.length === 0) return null
+  if (selectedProducts.length === 0) return null;
 
   return (
     <div className="space-y-4">
-
       <div>
         <label className="text-sm font-medium">Modelo Pimaco</label>
         <select
@@ -399,7 +408,9 @@ export default function PrintDialogContent({
           className="mt-1 w-full rounded border bg-transparent px-2 py-2"
         >
           {Object.keys(LABEL_MODELS).map((key) => (
-            <option key={key} value={key}>{key}</option>
+            <option key={key} value={key}>
+              {key}
+            </option>
           ))}
         </select>
       </div>
@@ -409,20 +420,22 @@ export default function PrintDialogContent({
       {image && (
         <div className="flex justify-center rounded border bg-slate-100 p-4">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={image} alt="PrÃ©via da etiqueta" />
+          <img src={image} alt="Prévia da etiqueta" />
         </div>
       )}
 
       <div className="grid gap-2 sm:grid-cols-2">
         <Button onClick={handleDownload} disabled={!image || isDownloading}>
           {isDownloading
-            ? 'Gerando arquivo...'
-            : bulk ? `Baixar ${selectedProducts.length} etiqueta(s)` : 'Baixar etiqueta'}
+            ? "Gerando arquivo..."
+            : bulk
+              ? `Baixar ${selectedProducts.length} etiqueta(s)`
+              : "Baixar etiqueta"}
         </Button>
         <Button variant="outline" onClick={onCancel}>
           Cancelar
         </Button>
       </div>
     </div>
-  )
+  );
 }

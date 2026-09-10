@@ -1,8 +1,8 @@
-'use client'
+﻿'use client'
 
 import { useMemo, useState } from 'react'
 import { flushSync } from 'react-dom'
-import { toast } from 'sonner'
+import { toast } from '@/lib/notifications/toast'
 import { Download, Plus, ShoppingCart } from 'lucide-react'
 
 import { useData } from '@/contexts/data-context'
