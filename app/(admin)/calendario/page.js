@@ -18,6 +18,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { listRevisoesCalendario } from "@/lib/services/revisoes-service";
+import { clampReviewDateToBusinessHours } from "@/lib/revisoes/priority";
 
 const FullCalendar = dynamic(() => import("@fullcalendar/react"), {
   ssr: false,
@@ -28,9 +29,23 @@ const FullCalendar = dynamic(() => import("@fullcalendar/react"), {
   ),
 });
 
-const PAST_COLOR = "#64748b";
-const FUTURE_COLOR = "#2563eb";
-const MANUAL_COLOR = "#7c3aed";
+const REVIEW_TYPE_STYLES = {
+  produtos: {
+    label: "Produtos",
+    color: "#2563eb",
+    className: "border-blue-200 bg-blue-50 text-blue-700",
+  },
+  checklist: {
+    label: "Checklist",
+    color: "#7c3aed",
+    className: "border-violet-200 bg-violet-50 text-violet-700",
+  },
+  atrasada: {
+    label: "Atrasadas",
+    color: "#dc2626",
+    className: "border-red-200 bg-red-50 text-red-700",
+  },
+};
 
 function dayKey(value) {
   const date = new Date(value);
@@ -52,6 +67,18 @@ function getReviewTitle(review) {
 
 function getReviewItemCount(review) {
   return review.revisoes_estoque_itens?.length || 0;
+}
+
+function getCalendarReviewDate(review) {
+  return clampReviewDateToBusinessHours(review.agendada_para);
+}
+
+function getReviewTypeStyle(review) {
+  if (review.status === "atrasada") return REVIEW_TYPE_STYLES.atrasada;
+  return (
+    REVIEW_TYPE_STYLES[review.rotinas_revisao?.tipo] ||
+    REVIEW_TYPE_STYLES.produtos
+  );
 }
 
 function useCompactCalendar() {
@@ -101,36 +128,34 @@ export default function CalendarPage() {
       revisoes
         .filter((revisao) => revisao.agendada_para)
         .map((revisao) => {
-          const isPast = new Date(revisao.agendada_para).getTime() < now;
-          const isManual = revisao.rotinas_revisao?.tipo === "checklist";
-          const color = isPast
-            ? PAST_COLOR
-            : isManual
-              ? MANUAL_COLOR
-              : FUTURE_COLOR;
+          const start = getCalendarReviewDate(revisao);
+          const typeStyle = getReviewTypeStyle(revisao);
 
           return {
             id: revisao.id,
             title: getReviewTitle(revisao),
-            start: revisao.agendada_para,
-            backgroundColor: color,
-            borderColor: color,
+            start,
+            backgroundColor: typeStyle.color,
+            borderColor: typeStyle.color,
             textColor: "#fff",
             extendedProps: {
               total: getReviewItemCount(revisao),
               status: revisao.status,
               tipo: revisao.rotinas_revisao?.tipo,
+              tipoLabel: typeStyle.label,
+              originalStart: revisao.agendada_para,
             },
           };
         }),
-    [revisoes, now],
+    [revisoes],
   );
 
   const selectedReviews = useMemo(() => {
     if (!selectedDate) return [];
     return revisoes.filter(
       (revisao) =>
-        revisao.agendada_para && dayKey(revisao.agendada_para) === selectedDate,
+        revisao.agendada_para &&
+        dayKey(getCalendarReviewDate(revisao)) === selectedDate,
     );
   }, [revisoes, selectedDate]);
 
@@ -138,7 +163,8 @@ export default function CalendarPage() {
     const today = dayKey(new Date().toISOString());
     return revisoes.filter(
       (revisao) =>
-        revisao.agendada_para && dayKey(revisao.agendada_para) === today,
+        revisao.agendada_para &&
+        dayKey(getCalendarReviewDate(revisao)) === today,
     );
   }, [revisoes]);
 
@@ -154,24 +180,12 @@ export default function CalendarPage() {
           <p className="text-sm text-muted-foreground">Revisões programadas.</p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Badge
-            variant="outline"
-            className="border-blue-200 bg-blue-50 text-blue-700"
-          >
-            Automáticas
-          </Badge>
-          <Badge
-            variant="outline"
-            className="border-violet-200 bg-violet-50 text-violet-700"
-          >
-            Manuais
-          </Badge>
-          <Badge
-            variant="outline"
-            className="border-slate-200 bg-slate-50 text-slate-700"
-          >
-            Passadas
-          </Badge>
+          {Object.values(REVIEW_TYPE_STYLES).map((style) => (
+            <Badge key={style.label} variant="outline" className={style.className}>
+              {style.label}
+            </Badge>
+          ))}
+          <Badge variant="outline">08:00-17:00</Badge>
         </div>
       </header>
 
@@ -202,8 +216,8 @@ export default function CalendarPage() {
               day: "Dia",
             }}
             allDayText="Dia todo"
-            slotMinTime="06:00:00"
-            slotMaxTime="22:00:00"
+            slotMinTime="08:00:00"
+            slotMaxTime="18:00:00"
             nowIndicator
             expandRows
             events={events}
@@ -274,7 +288,8 @@ export default function CalendarPage() {
                     {getReviewTitle(review)}
                   </span>
                   <span className="mt-1 block text-sm text-muted-foreground">
-                    {getReviewItemCount(review)} itens · {review.status}
+                  {getReviewItemCount(review)} itens ·{" "}
+                  {getReviewTypeStyle(review).label} · {review.status}
                   </span>
                 </button>
               ))
@@ -314,7 +329,8 @@ export default function CalendarPage() {
                       {getReviewTitle(review)}
                     </p>
                     <p className="text-sm text-muted-foreground">
-                      {getReviewItemCount(review)} itens · {review.status}
+                      {getReviewItemCount(review)} itens ·{" "}
+                      {getReviewTypeStyle(review).label} · {review.status}
                     </p>
                   </div>
                   <Button

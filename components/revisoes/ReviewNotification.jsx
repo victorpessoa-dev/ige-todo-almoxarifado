@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useRef } from "react";
 import { toast } from "@/lib/notifications/toast";
@@ -21,6 +21,7 @@ export function ReviewNotification() {
       try {
         const reviews = await listRevisoesAbertas();
         const now = Date.now();
+
         for (const review of reviews) {
           const notifyAt = new Date(
             review.adiada_ate || review.notificar_em || review.agendada_para,
@@ -34,28 +35,21 @@ export function ReviewNotification() {
             review.rotinas_revisao?.repetir_notificacao_minutos || 10;
           await registrarNotificacaoRevisao(review.id, repeat);
 
-          const description = `${review.rotinas_revisao?.nome || "Rotina"} possui ${(review.revisoes_estoque_itens || []).length} itens aguardando revisão.`;
+          const description = `${review.rotinas_revisao?.nome || "Rotina"} possui ${
+            (review.revisoes_estoque_itens || []).length
+          } itens aguardando revisao.`;
+
           notifyPush({
-<<<<<<< HEAD
-            title: "Revisão de estoque disponível",
+            title: "Revisao de estoque disponivel",
             body: description,
             url: `/revisoes?revisao=${review.id}`,
           }).catch(() => {});
           playNotificationSound();
 
           let notificationToast;
-          notificationToast = toast.warning("Revisão de estoque disponível", {
-            description,
-=======
-            title: 'Revisão de estoque disponível',
-            body: `${review.rotinas_revisao?.nome || 'Rotina'} possui ${(review.revisoes_estoque_itens || []).length} itens aguardando revisão.`,
-            url: `/revisoes?revisao=${review.id}`
-          }).catch(() => {})
-          playNotificationSound()
-          toast.info('Revisão de estoque disponível', {
+          notificationToast = toast.warning("Revisao de estoque disponivel", {
             id: `review-${review.id}`,
-            description: `${review.rotinas_revisao?.nome || 'Rotina'} possui ${(review.revisoes_estoque_itens || []).length} itens aguardando revisão.`,
->>>>>>> cf9bfd381ed01be019ac1b6239f1b3f515cbf074
+            description,
             duration: Infinity,
             action: (
               <div className="col-span-full grid min-w-0 gap-2 sm:grid-cols-2">
