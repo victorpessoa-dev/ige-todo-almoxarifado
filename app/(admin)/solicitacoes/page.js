@@ -300,6 +300,7 @@ export default function SolicitacoesPage() {
           solicitacoes={filteredSolicitacoes}
           onOpen={openDetails}
           onTogglePublic={handleTogglePublic}
+          onChangeStatus={(solicitacao, status) => handleUpdateSolicitacao(solicitacao.id, { status_geral: status })}
         />
       )}
 

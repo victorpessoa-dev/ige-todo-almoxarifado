@@ -1,5 +1,6 @@
 ﻿'use client'
 
+import { PublicFooter } from '@/components/layout/Copyright'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
@@ -56,8 +57,8 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-background to-muted p-4">
-      <Card className="w-full max-w-md">
+    <div className="flex min-h-dvh flex-col items-center gap-6 bg-gradient-to-br from-background to-muted p-4">
+      <Card className="my-auto w-full max-w-md">
         <CardHeader className="text-center">
           <Image
             src="/ige-supergesso.svg"
@@ -131,6 +132,7 @@ export default function LoginPage() {
           </form>
         </CardContent>
       </Card>
+      <PublicFooter />
     </div>
   )
 }

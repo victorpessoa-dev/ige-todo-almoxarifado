@@ -1,5 +1,6 @@
 "use client";
 
+<<<<<<< HEAD
 import Link from "next/link";
 import { useRef } from "react";
 import { motion, useReducedMotion } from "motion/react";
@@ -9,6 +10,17 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { MotionScrollIndicator } from "@/components/animations/MotionScrollIndicator";
 import Image from "next/image";
+=======
+import Link from 'next/link'
+import { Copyright } from '@/components/layout/Copyright'
+import { useRef } from 'react'
+import { usePathname, useRouter } from 'next/navigation'
+import { useAuth } from '@/contexts/auth-context'
+import { Button } from '@/components/ui/button'
+import { cn } from '@/lib/utils'
+import { MotionScrollIndicator } from '@/components/animations/MotionScrollIndicator'
+import Image from 'next/image'
+>>>>>>> cf9bfd381ed01be019ac1b6239f1b3f515cbf074
 import {
   CalendarDays,
   BookOpen,
@@ -24,6 +36,7 @@ import {
 } from "lucide-react";
 
 const menuItems = [
+<<<<<<< HEAD
   {
     href: "/painel",
     label: "Painel",
@@ -38,6 +51,17 @@ const menuItems = [
   { href: "/contagem", label: "Contagem", icon: Camera },
   { href: "/analise-giro", label: "Análise de Giro", icon: ChartColumn },
 ];
+=======
+  { href: '/painel', label: 'Painel', icon: LayoutDashboard, desktopOnly: true },
+  { href: '/revisoes', label: 'Revisões', icon: ClipboardCheck },
+  { href: '/calendario', label: 'Calendário', icon: CalendarDays },
+  { href: '/inventario', label: 'Inventário', icon: Package },
+  { href: '/catalogo', label: 'Catálogo', icon: BookOpen },
+  { href: '/solicitacoes', label: 'Solicitações', icon: ShoppingCart },
+  { href: '/contagem', label: 'Contagem', icon: Camera },
+  { href: '/analise-giro', label: 'Análise de Giro', icon: ChartColumn }
+]
+>>>>>>> cf9bfd381ed01be019ac1b6239f1b3f515cbf074
 
 export function Sidebar({
   onNavigate,
@@ -116,6 +140,7 @@ export function Sidebar({
         </Link>
       </div>
 
+<<<<<<< HEAD
       <nav
         ref={navRef}
         className={cn(
@@ -123,6 +148,9 @@ export function Sidebar({
           collapsed && "px-3 pr-2",
         )}
       >
+=======
+      <nav ref={navRef} className="sidebar-scroll motion-scroll-container relative min-h-0 flex-1 overflow-y-auto px-4 pb-4">
+>>>>>>> cf9bfd381ed01be019ac1b6239f1b3f515cbf074
         <ul className="flex flex-col gap-2">
           {menuItems.map((item) => {
             const Icon = item.icon;
@@ -157,12 +185,16 @@ export function Sidebar({
         <MotionScrollIndicator targetRef={navRef} />
       </nav>
 
+<<<<<<< HEAD
       <div
         className={cn(
           "border-t border-sidebar-border px-4 py-4",
           collapsed && "px-3",
         )}
       >
+=======
+      <div className="shrink-0 border-t border-sidebar-border px-4 py-4">
+>>>>>>> cf9bfd381ed01be019ac1b6239f1b3f515cbf074
         <Button
           variant="ghost"
           className={cn(
@@ -175,6 +207,7 @@ export function Sidebar({
           <LogOut className="h-5 w-5" />
           {!collapsed && <span>Sair</span>}
         </Button>
+        <Copyright className="mt-4 leading-relaxed text-sidebar-foreground/60" />
       </div>
     </motion.aside>
   );

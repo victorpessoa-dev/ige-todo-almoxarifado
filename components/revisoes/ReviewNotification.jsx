@@ -36,6 +36,7 @@ export function ReviewNotification() {
 
           const description = `${review.rotinas_revisao?.nome || "Rotina"} possui ${(review.revisoes_estoque_itens || []).length} itens aguardando revisão.`;
           notifyPush({
+<<<<<<< HEAD
             title: "Revisão de estoque disponível",
             body: description,
             url: `/revisoes?revisao=${review.id}`,
@@ -45,6 +46,16 @@ export function ReviewNotification() {
           let notificationToast;
           notificationToast = toast.warning("Revisão de estoque disponível", {
             description,
+=======
+            title: 'Revisão de estoque disponível',
+            body: `${review.rotinas_revisao?.nome || 'Rotina'} possui ${(review.revisoes_estoque_itens || []).length} itens aguardando revisão.`,
+            url: `/revisoes?revisao=${review.id}`
+          }).catch(() => {})
+          playNotificationSound()
+          toast.info('Revisão de estoque disponível', {
+            id: `review-${review.id}`,
+            description: `${review.rotinas_revisao?.nome || 'Rotina'} possui ${(review.revisoes_estoque_itens || []).length} itens aguardando revisão.`,
+>>>>>>> cf9bfd381ed01be019ac1b6239f1b3f515cbf074
             duration: Infinity,
             action: (
               <div className="col-span-full grid min-w-0 gap-2 sm:grid-cols-2">

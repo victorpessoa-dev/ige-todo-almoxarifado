@@ -64,6 +64,7 @@ export function DataProvider({ children }) {
   }, [produtos])
 
   useEffect(() => {
+    isMounted.current = true
     return () => {
       isMounted.current = false
     }
@@ -172,7 +173,8 @@ export function DataProvider({ children }) {
   /**
    * Carrega o estado administrativo inicial em paralelo.
    */
-  const loadData = useCallback(async () => {
+  const loadInFlight = useRef(null)
+  const fetchData = useCallback(async () => {
     setIsLoading(true)
     setError(null)
 
@@ -256,6 +258,15 @@ export function DataProvider({ children }) {
     }
   }, [])
 
+  const loadData = useCallback(() => {
+    if (!loadInFlight.current) {
+      loadInFlight.current = fetchData().finally(() => {
+        loadInFlight.current = null
+      })
+    }
+    return loadInFlight.current
+  }, [fetchData])
+
   /**
    * Cria produto de inventario vinculado ao usuario autenticado.
    */
@@ -598,19 +609,21 @@ export function DataProvider({ children }) {
     // 1. Carrega dados iniciais.
     // 2. Recarrega ao voltar para a aba ou ficar online.
     // 3. Assina realtime para manter listas administrativas atualizadas.
-    queueMicrotask(() => {
-      loadData()
-    })
+    let disposed = false
+    const reload = () => {
+      if (!disposed) void loadData().catch(() => {})
+    }
+    queueMicrotask(reload)
 
 
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
-        loadData()
+        reload()
       }
     }
 
     const handleOnline = () => {
-      loadData()
+      reload()
     }
 
     document.addEventListener('visibilitychange', handleVisibilityChange)
@@ -623,7 +636,7 @@ export function DataProvider({ children }) {
         .subscribe((status) => {
           if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
             logger.warn('Realtime connection issue, reloading data')
-            loadData()
+            reload()
           }
         })
 
@@ -737,6 +750,7 @@ export function DataProvider({ children }) {
     ]
 
     return () => {
+      disposed = true
       activeChannels.current.forEach(channel => {
         supabase.removeChannel(channel)
       })

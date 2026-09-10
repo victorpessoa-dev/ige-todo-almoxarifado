@@ -25,6 +25,7 @@ export function AuthProvider({ children }) {
   const authSubscription = useRef(null)
 
   useEffect(() => {
+    isMounted.current = true
     return () => {
       isMounted.current = false
       if (authSubscription.current) {
