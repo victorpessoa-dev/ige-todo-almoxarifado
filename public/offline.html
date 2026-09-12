@@ -3,8 +3,98 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Sem conexão — IGE Almoxarifado</title>
-  <style>body{font:1rem system-ui,sans-serif;margin:0;min-height:100dvh;display:grid;place-items:center;background:#f8fafc;color:#0f172a}main{max-width:30rem;padding:2rem}a{color:#1d4ed8}</style>
+  <title>Sem conexao | IGE Almoxarifado</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --background: #0f172a;
+      --card: #111827;
+      --foreground: #e5e7eb;
+      --muted: #1f2937;
+      --muted-foreground: #9ca3af;
+      --border: #1f2937;
+      --primary: #3b82f6;
+      --primary-foreground: #ffffff;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100dvh;
+      display: grid;
+      place-items: center;
+      padding: 2rem 1rem;
+      background: var(--background);
+      color: var(--foreground);
+      font-family: Arial, Helvetica, sans-serif;
+    }
+    main {
+      width: min(100%, 28rem);
+      border: 1px solid var(--border);
+      border-radius: 0.75rem;
+      background: var(--card);
+      padding: 2rem;
+      text-align: center;
+      box-shadow: 0 24px 80px rgb(0 0 0 / 0.28);
+    }
+    img {
+      width: 8.25rem;
+      height: auto;
+      margin-bottom: 1.25rem;
+    }
+    .icon {
+      width: 4rem;
+      height: 4rem;
+      margin: 0 auto 1.25rem;
+      display: grid;
+      place-items: center;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      background: var(--muted);
+      color: var(--primary);
+      font-size: 1.75rem;
+      font-weight: 700;
+    }
+    .eyebrow {
+      margin: 0;
+      color: var(--muted-foreground);
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+    }
+    h1 {
+      margin: 0.5rem 0 0;
+      font-size: 1.5rem;
+      line-height: 1.2;
+    }
+    p {
+      margin: 0.75rem 0 0;
+      color: var(--muted-foreground);
+      line-height: 1.45;
+    }
+    a {
+      display: inline-flex;
+      min-height: 2.5rem;
+      align-items: center;
+      justify-content: center;
+      margin-top: 1.5rem;
+      border-radius: 0.5rem;
+      background: var(--primary);
+      color: var(--primary-foreground);
+      padding: 0 1rem;
+      font-weight: 700;
+      text-decoration: none;
+    }
+  </style>
 </head>
-<body><main><h1>Você está sem conexão</h1><p>Verifique sua conexão com a internet para acessar os dados atualizados do almoxarifado.</p><a href="">Tentar novamente</a><footer><p>© 2026 Victor Pessoa. Todos os direitos reservados.</p></footer></main></body>
+<body>
+  <main>
+    <div class="icon">!</div>
+    <img src="/ige-supergesso.svg" alt="IGE Supergesso">
+    <p class="eyebrow">Conexao</p>
+    <h1>Sem conexao com o sistema</h1>
+    <p>Verifique a internet e tente novamente. Algumas telas precisam de conexao para consultar dados atualizados.</p>
+    <a href="">Tentar novamente</a>
+  </main>
+</body>
 </html>
