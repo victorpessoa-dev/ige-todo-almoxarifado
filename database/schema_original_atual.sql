@@ -663,8 +663,7 @@ revoke all on function public.registrar_movimentacao_estoque(uuid, text, numeric
 grant execute on function public.registrar_movimentacao_estoque(uuid, text, numeric, text) to authenticated;
 
 notify pgrst, 'reload schema';
--- Module retained from migration 20260827200000_add_revisoes_estoque.sql after removing stock reviews.
--- public.solicitacoes_compra_itens remains part of purchase requests.
+-- Itens de solicitacao de compra.
 
 create table if not exists public.solicitacoes_compra_itens (
   id uuid primary key default gen_random_uuid(),
@@ -700,14 +699,5 @@ alter table public.solicitacoes_compra_itens enable row level security;
 drop policy if exists "Users manage own purchase request items" on public.solicitacoes_compra_itens;
 create policy "Users manage own purchase request items" on public.solicitacoes_compra_itens for all to authenticated using (true) with check (true);
 grant select, insert, update, delete on public.solicitacoes_compra_itens to authenticated;
-
--- Module removed by migration 20260912100000_drop_revisoes_estoque.sql.
-drop table if exists public.revisoes_estoque_itens_historico cascade;
-drop table if exists public.revisoes_estoque_itens cascade;
-drop table if exists public.revisoes_estoque cascade;
-drop table if exists public.itens_checklist_revisao cascade;
-drop table if exists public.rotinas_revisao cascade;
-drop function if exists public.registrar_historico_item_revisao() cascade;
-drop function if exists public.proximo_dia_util_revisao(timestamptz, smallint[]) cascade;
 
 notify pgrst, 'reload schema';
