@@ -9,6 +9,7 @@ import {
   BookOpen,
   Camera,
   ChartColumn,
+  ClipboardCheck,
   ChevronLeft,
   ChevronRight,
   LayoutDashboard,
@@ -26,15 +27,83 @@ const menuItems = [
   {
     href: "/painel",
     label: "Painel",
+    mobileLabel: "Painel",
     icon: LayoutDashboard,
     desktopOnly: true,
   },
-  { href: "/inventario", label: "Inventario", icon: Package },
-  { href: "/catalogo", label: "Catalogo", icon: BookOpen },
-  { href: "/solicitacoes", label: "Solicitacoes", icon: ShoppingCart },
-  { href: "/contagem", label: "Contagem", icon: Camera },
-  { href: "/analise-giro", label: "Analise de Giro", icon: ChartColumn },
+  {
+    href: "/inventario",
+    label: "Inventario",
+    mobileLabel: "Estoque",
+    icon: Package,
+  },
+  {
+    href: "/revisoes",
+    label: "Revisoes",
+    mobileLabel: "Revisoes",
+    icon: ClipboardCheck,
+  },
+  {
+    href: "/catalogo",
+    label: "Catalogo",
+    mobileLabel: "Catalogo",
+    icon: BookOpen,
+  },
+  {
+    href: "/solicitacoes",
+    label: "Solicitacoes",
+    mobileLabel: "Pedidos",
+    icon: ShoppingCart,
+  },
+  {
+    href: "/contagem",
+    label: "Contagem",
+    mobileLabel: "Contagem",
+    icon: Camera,
+  },
+  {
+    href: "/analise-giro",
+    label: "Analise de Giro",
+    mobileLabel: "Giro",
+    icon: ChartColumn,
+  },
 ];
+
+export function MobileBottomNav() {
+  const pathname = usePathname();
+  const mobileItems = menuItems.filter((item) => !item.desktopOnly);
+
+  return (
+    <nav className="fixed inset-x-0 bottom-0 z-50 border-t border-border bg-background/95 px-2 pb-[calc(env(safe-area-inset-bottom)+0.375rem)] pt-2 shadow-[0_-10px_30px_rgba(0,0,0,0.25)] backdrop-blur supports-[backdrop-filter]:bg-background/85 lg:hidden print:hidden">
+      <ul className="grid grid-cols-6 gap-1">
+        {mobileItems.map((item) => {
+          const Icon = item.icon;
+          const isActive = pathname === item.href;
+
+          return (
+            <li key={item.href} className="min-w-0">
+              <Link
+                href={item.href}
+                aria-label={item.label}
+                className={cn(
+                  "group relative flex h-12 min-w-0 items-center justify-center rounded-lg px-1 text-[10px] font-medium transition-colors",
+                  isActive
+                    ? "bg-primary text-primary-foreground"
+                    : "text-muted-foreground hover:bg-muted hover:text-foreground",
+                )}
+              >
+                <Icon className="h-5 w-5 shrink-0" />
+                <span className="pointer-events-none absolute bottom-full left-1/2 mb-2 hidden max-w-24 -translate-x-1/2 truncate rounded-md border bg-popover px-2 py-1 text-xs leading-none text-popover-foreground shadow-md group-hover:block group-focus-visible:block">
+                  {item.mobileLabel}
+                </span>
+              </Link>
+            </li>
+          );
+        })}
+      </ul>
+    </nav>
+  );
+}
 
 export function Sidebar({
   onNavigate,
@@ -59,7 +128,7 @@ export function Sidebar({
 
   return (
     <motion.aside
-      className="fixed inset-y-0 left-0 z-40 flex h-dvh flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground shadow-lg"
+      className="fixed inset-y-0 left-0 z-40 flex h-dvh flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground shadow-lg print:hidden"
       initial={false}
       animate={{ width: collapsed ? 80 : 256 }}
       transition={

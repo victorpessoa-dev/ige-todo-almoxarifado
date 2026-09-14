@@ -635,15 +635,15 @@ export default function InventarioPage() {
 
   return (
     <div className="mx-auto flex w-full max-w-7xl flex-col gap-4 pb-4 sm:gap-6 sm:pb-6">
-      <div className="flex flex-col gap-3 rounded-2xl border bg-card/70 p-4 shadow-sm lg:flex-row lg:items-center lg:justify-between sm:p-5">
-        <div className="space-y-1">
-          <h1 className="flex items-center gap-3 text-xl font-bold sm:text-2xl md:text-3xl">
+      <div className="flex min-w-0 flex-col gap-3 rounded-2xl border bg-card/70 p-4 shadow-sm lg:flex-row lg:items-center lg:justify-between sm:p-5">
+        <div className="min-w-0 space-y-1">
+          <h1 className="flex min-w-0 items-center gap-3 text-xl font-bold sm:text-2xl md:text-3xl">
             <Package className="h-7 w-7 text-primary" />
-            Inventario
+            <span className="min-w-0 truncate">Inventario</span>
           </h1>
         </div>
 
-        <div className="grid gap-2 sm:grid-cols-2">
+        <div className="grid min-w-0 gap-2 sm:grid-cols-2">
           <Button
             className="w-full sm:w-auto md:px-6"
             variant="outline"

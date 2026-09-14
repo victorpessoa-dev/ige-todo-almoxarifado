@@ -37,7 +37,7 @@ export function ProductList({
     <MotionReveal>
       <Card className="border-primary/20">
       <CardHeader className="flex flex-col gap-3 pb-2 sm:flex-row sm:items-center sm:justify-between">
-        <CardTitle className="text-lg text-primary">
+        <CardTitle className="break-words text-lg text-primary">
           Estoque ({products.length} produtos, {totalItems} itens)
         </CardTitle>
 
@@ -66,16 +66,16 @@ export function ProductList({
         {products.map((product, index) => (
           <div
             key={`${product.nome || product.name}-${index}`}
-            className="flex flex-col gap-3 rounded-lg border border-primary/10 bg-card p-3 sm:flex-row sm:items-center"
+            className="flex w-full min-w-0 flex-col gap-3 overflow-hidden rounded-lg border border-primary/10 bg-card p-3 sm:flex-row sm:items-center"
           >
             <div className="min-w-0 flex-1">
               <p className="truncate font-medium text-foreground">
                 {product.nome || product.name}
               </p>
-              <div className="mt-1 flex flex-wrap gap-2 text-xs text-muted-foreground">
-                <span>Cod: {product.cod || '-'}</span>
-                <span>Min: {product.min ?? 0}</span>
-                <span>Max: {product.max ?? 0}</span>
+              <div className="mt-1 flex min-w-0 flex-wrap gap-2 text-xs text-muted-foreground">
+                <span className="min-w-0 max-w-full truncate">Cod: {product.cod || '-'}</span>
+                <span className="shrink-0">Min: {product.min ?? 0}</span>
+                <span className="shrink-0">Max: {product.max ?? 0}</span>
                 {product.matchedByName && (
                   <span>
                     Sistema: {product.estoqueSistema ?? 0}

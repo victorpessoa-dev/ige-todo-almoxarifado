@@ -71,7 +71,7 @@ import {
 } from '@/constants/solicitacoes-config'
 import { formatDateBR, getLocalDateTime } from '@/lib/date/date-utils'
 
-const DEFAULT_PAGE_SIZE = 25
+const DEFAULT_PAGE_SIZE = 50
 const MONTH_OPTIONS = [
   { value: '01', label: 'Janeiro' },
   { value: '02', label: 'Fevereiro' },
@@ -891,8 +891,8 @@ export default function SolicitarPage() {
   return (
     <main className="min-h-screen bg-muted/30 px-3 py-4 sm:px-6 sm:py-6 lg:px-8">
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-5">
-        <div className="flex flex-col gap-4 rounded-2xl border bg-card p-4 shadow-sm lg:flex-row lg:items-center lg:justify-between">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
+        <div className="flex min-w-0 flex-col gap-4 overflow-hidden rounded-2xl border bg-card p-4 shadow-sm lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
             <Image
               src="/ige-supergesso.svg"
               alt="IGE Supergesso"
@@ -900,8 +900,8 @@ export default function SolicitarPage() {
               height={90}
               className="h-auto w-32 sm:w-[150px]"
             />
-            <div>
-              <h1 className="text-2xl font-bold sm:text-3xl">
+            <div className="min-w-0">
+              <h1 className="break-words text-2xl font-bold sm:text-3xl">
                 Solicitação de Compra
               </h1>
               <p className="mt-1 text-sm text-muted-foreground">
@@ -910,7 +910,7 @@ export default function SolicitarPage() {
             </div>
           </div>
 
-          <div className="grid gap-2 sm:grid-cols-2 lg:flex">
+          <div className="grid min-w-0 gap-2 sm:grid-cols-2 lg:flex">
             <Button className="w-full lg:w-auto" onClick={() => setPedidoDialogOpen(true)}>
               <Plus className="h-4 w-4" />
               Fazer pedido
@@ -967,7 +967,7 @@ export default function SolicitarPage() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <form onSubmit={handleSearchStatus} className="grid w-full gap-2 rounded-xl border bg-card p-3 shadow-sm sm:grid-cols-[minmax(0,1fr)_auto] sm:gap-3 sm:p-4">
+            <form onSubmit={handleSearchStatus} className="grid w-full min-w-0 gap-2 overflow-hidden rounded-xl border bg-card p-3 shadow-sm sm:grid-cols-[minmax(0,1fr)_auto] sm:gap-3 sm:p-4">
               <Input
                 className="h-10"
                 value={codigoBusca}
@@ -982,7 +982,7 @@ export default function SolicitarPage() {
               </Button>
             </form>
 
-            <div className="grid w-full gap-2 rounded-xl border bg-card p-3 shadow-sm sm:grid-cols-2 sm:gap-3 sm:p-4 lg:grid-cols-5">
+            <div className="grid w-full min-w-0 gap-2 overflow-hidden rounded-xl border bg-card p-3 shadow-sm sm:grid-cols-2 sm:gap-3 sm:p-4 lg:grid-cols-5">
               <CheckboxFilter
                 label="status"
                 allLabel="Todos os status"

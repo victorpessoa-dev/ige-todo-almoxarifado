@@ -38,6 +38,44 @@ import {
 } from '@/lib/data/context-utils'
 
 const DataContext = createContext()
+const ADMIN_DATA_CACHE_KEY = 'ige:admin-data:v1'
+const ADMIN_DATA_CACHE_TTL_MS = 5 * 60 * 1000
+
+function getCachedAdminData() {
+  if (typeof window === 'undefined') return null
+
+  try {
+    const rawCache = window.sessionStorage.getItem(ADMIN_DATA_CACHE_KEY)
+    if (!rawCache) return null
+
+    const cached = JSON.parse(rawCache)
+    if (!cached?.expiresAt || cached.expiresAt <= Date.now()) {
+      window.sessionStorage.removeItem(ADMIN_DATA_CACHE_KEY)
+      return null
+    }
+
+    return cached.data || null
+  } catch {
+    window.sessionStorage.removeItem(ADMIN_DATA_CACHE_KEY)
+    return null
+  }
+}
+
+function setCachedAdminData(data) {
+  if (typeof window === 'undefined') return
+
+  try {
+    window.sessionStorage.setItem(
+      ADMIN_DATA_CACHE_KEY,
+      JSON.stringify({
+        data,
+        expiresAt: Date.now() + ADMIN_DATA_CACHE_TTL_MS
+      })
+    )
+  } catch {
+    // Cache e apenas otimizacao; falhas de storage nao bloqueiam o app.
+  }
+}
 
 /**
  * Provedor dos dados administrativos compartilhados.
@@ -62,6 +100,18 @@ export function DataProvider({ children }) {
   useEffect(() => {
     produtosRef.current = produtos
   }, [produtos])
+
+  useEffect(() => {
+    if (!isLoaded) return
+
+    setCachedAdminData({
+      produtos,
+      movimentacoes,
+      solicitacoesCompra,
+      solicitantesCompra,
+      centrosCusto
+    })
+  }, [centrosCusto, isLoaded, movimentacoes, produtos, solicitacoesCompra, solicitantesCompra])
 
   useEffect(() => {
     isMounted.current = true
@@ -170,11 +220,45 @@ export function DataProvider({ children }) {
     )
   }, [])
 
+  const applyDataSnapshot = useCallback((snapshot) => {
+    const nextProdutos = sortProdutosByNomeAsc(snapshot.produtos || [])
+    setProdutos(nextProdutos)
+    produtosRef.current = nextProdutos
+    previousLowStockRef.current = new Map(nextProdutos.map((produto) => [
+      produto.id,
+      Number(produto.estoque || 0) <= Number(produto.min || 0)
+    ]))
+    hasInitialProductsRef.current = true
+    setMovimentacoes(
+      sortByCreatedAtDesc((snapshot.movimentacoes || []).map((item) => normalizeMovimentacao(item, nextProdutos)))
+    )
+    setSolicitacoesCompra(
+      sortByCreatedAtDesc(
+        (snapshot.solicitacoesCompra || []).map((item) =>
+          normalizeSolicitacao(item, nextProdutos)
+        )
+      )
+    )
+    setSolicitantesCompra(snapshot.solicitantesCompra || [])
+    setCentrosCusto(snapshot.centrosCusto || [])
+    setIsLoaded(true)
+  }, [])
+
   /**
    * Carrega o estado administrativo inicial em paralelo.
    */
   const loadInFlight = useRef(null)
-  const fetchData = useCallback(async () => {
+  const fetchData = useCallback(async ({ force = false } = {}) => {
+    if (!force) {
+      const cachedData = getCachedAdminData()
+      if (cachedData) {
+        applyDataSnapshot(cachedData)
+        setError(null)
+        setIsLoading(false)
+        return
+      }
+    }
+
     setIsLoading(true)
     setError(null)
 
@@ -222,28 +306,17 @@ export function DataProvider({ children }) {
         logger.warn('Erro ao carregar centros de custo:', centrosCustoResult.error)
       }
 
+      const nextSnapshot = {
+        produtos: produtosData || [],
+        movimentacoes: movimentacoesData || [],
+        solicitacoesCompra: solicitacoesResult.data || [],
+        solicitantesCompra: solicitantesResult.data || [],
+        centrosCusto: centrosCustoResult.data || []
+      }
+      setCachedAdminData(nextSnapshot)
+
       if (isMounted.current) {
-        const nextProdutos = sortProdutosByNomeAsc(produtosData || [])
-        setProdutos(nextProdutos)
-        produtosRef.current = nextProdutos
-        previousLowStockRef.current = new Map(nextProdutos.map((produto) => [
-          produto.id,
-          Number(produto.estoque || 0) <= Number(produto.min || 0)
-        ]))
-        hasInitialProductsRef.current = true
-        setMovimentacoes(
-          sortByCreatedAtDesc((movimentacoesData || []).map((item) => normalizeMovimentacao(item, nextProdutos)))
-        )
-        setSolicitacoesCompra(
-          sortByCreatedAtDesc(
-            (solicitacoesResult.data || []).map((item) =>
-              normalizeSolicitacao(item, nextProdutos)
-            )
-          )
-        )
-        setSolicitantesCompra(solicitantesResult.data || [])
-        setCentrosCusto(centrosCustoResult.data || [])
-        setIsLoaded(true)
+        applyDataSnapshot(nextSnapshot)
       }
     } catch (err) {
       logger.error('Erro ao carregar dados:', err)
@@ -256,11 +329,11 @@ export function DataProvider({ children }) {
         setIsLoading(false)
       }
     }
-  }, [])
+  }, [applyDataSnapshot])
 
-  const loadData = useCallback(() => {
+  const loadData = useCallback((options) => {
     if (!loadInFlight.current) {
-      loadInFlight.current = fetchData().finally(() => {
+      loadInFlight.current = fetchData(options).finally(() => {
         loadInFlight.current = null
       })
     }
@@ -610,20 +683,20 @@ export function DataProvider({ children }) {
     // 2. Recarrega ao voltar para a aba ou ficar online.
     // 3. Assina realtime para manter listas administrativas atualizadas.
     let disposed = false
-    const reload = () => {
-      if (!disposed) void loadData().catch(() => {})
+    const reload = (options) => {
+      if (!disposed) void loadData(options).catch(() => {})
     }
     queueMicrotask(reload)
 
 
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
-        reload()
+        reload({ force: true })
       }
     }
 
     const handleOnline = () => {
-      reload()
+      reload({ force: true })
     }
 
     document.addEventListener('visibilitychange', handleVisibilityChange)
@@ -636,7 +709,7 @@ export function DataProvider({ children }) {
         .subscribe((status) => {
           if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
             logger.warn('Realtime connection issue, reloading data')
-            reload()
+            reload({ force: true })
           }
         })
 

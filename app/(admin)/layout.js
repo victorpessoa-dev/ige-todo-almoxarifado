@@ -7,9 +7,8 @@ import { usePathname, useRouter } from "next/navigation";
 import { toast } from "@/lib/notifications/toast";
 import { useAuth } from "@/contexts/auth-context";
 import { DataProvider, useData } from "@/contexts/data-context";
-import { Sidebar } from "@/components/layout/Sidebar";
+import { MobileBottomNav, Sidebar } from "@/components/layout/Sidebar";
 import { LoadingState } from "@/components/ui/spinner";
-import { Menu } from "lucide-react";
 import Image from "next/image";
 import { formatSolicitacaoItem } from "@/lib/solicitacoes/format";
 import { MotionScrollIndicator } from "@/components/animations/MotionScrollIndicator";
@@ -20,7 +19,6 @@ function AdminShell({ children }) {
   const { solicitacoesCompra = [], isLoaded, error, loadData } = useData();
   const router = useRouter();
   const pathname = usePathname();
-  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const shouldReduceMotion = useReducedMotion();
   const notifiedSolicitacoesRef = useRef(new Set());
@@ -40,20 +38,6 @@ function AdminShell({ children }) {
 
     router.replace("/solicitacoes");
   }, [isAuthenticated, isLoading, pathname, router]);
-
-  useEffect(() => {
-    const body = document.body;
-
-    if (sidebarOpen) {
-      body.style.overflow = "hidden";
-    } else {
-      body.style.overflow = "";
-    }
-
-    return () => {
-      body.style.overflow = "";
-    };
-  }, [sidebarOpen]);
 
   useEffect(() => {
     if (!isAuthenticated || isLoading || !isLoaded) return;
@@ -118,7 +102,7 @@ function AdminShell({ children }) {
   if (!isAuthenticated) return null;
 
   return (
-    <div className="flex h-dvh w-full overflow-hidden bg-background">
+    <div className="flex h-dvh w-full overflow-hidden bg-background print:block print:h-auto print:overflow-visible print:bg-white">
       <motion.div
         className="hidden shrink-0 lg:block"
         aria-hidden="true"
@@ -139,29 +123,8 @@ function AdminShell({ children }) {
         />
       </div>
 
-      {sidebarOpen && (
-        <div className="fixed inset-0 z-50 lg:hidden">
-          <div
-            className="absolute inset-0 bg-black/50"
-            onClick={() => setSidebarOpen(false)}
-          />
-
-          <div className="relative h-full w-72 max-w-[85vw]">
-            <Sidebar onNavigate={() => setSidebarOpen(false)} />
-          </div>
-        </div>
-      )}
-
-      <main className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
-        <div className="sticky top-0 z-30 flex items-center justify-between border-b bg-background/95 px-4 py-4 backdrop-blur supports-[backdrop-filter]:bg-background/80 lg:hidden">
-          <button
-            type="button"
-            aria-label="Abrir menu"
-            onClick={() => setSidebarOpen(true)}
-          >
-            <Menu className="h-6 w-6" />
-          </button>
-
+      <main className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden print:block print:overflow-visible">
+        <div className="sticky top-0 z-30 flex items-center justify-center border-b bg-background/95 px-4 py-3 backdrop-blur supports-[backdrop-filter]:bg-background/80 lg:hidden print:hidden">
           <Link href="/solicitacoes" aria-label="Ir para solicitacoes">
             <Image
               src="/ige-supergesso.svg"
@@ -171,13 +134,11 @@ function AdminShell({ children }) {
               className="mx-auto"
             />
           </Link>
-
-          <div className="w-6" aria-hidden="true" />
         </div>
 
         <div
           ref={mainScrollRef}
-          className="admin-main-scroll motion-scroll-container scrollbar-soft relative min-h-0 flex-1 overflow-y-auto overflow-x-hidden px-3 py-3 sm:px-5 sm:py-5 md:px-6 md:py-5 lg:px-8 lg:py-6"
+          className="admin-main-scroll motion-scroll-container scrollbar-soft relative min-h-0 flex-1 overflow-y-auto overflow-x-hidden px-3 pb-20 pt-3 sm:px-5 sm:pb-20 sm:pt-5 md:px-6 md:pb-20 md:pt-5 lg:px-8 lg:py-6 print:block print:overflow-visible print:p-0"
         >
           <motion.div
             key={pathname}
@@ -212,6 +173,7 @@ function AdminShell({ children }) {
           <MotionScrollIndicator targetRef={mainScrollRef} />
         </div>
       </main>
+      <MobileBottomNav />
     </div>
   );
 }

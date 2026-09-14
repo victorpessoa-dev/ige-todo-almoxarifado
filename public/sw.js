@@ -1,4 +1,4 @@
-const CACHE_NAME = 'ige-pwa-v4'
+const CACHE_NAME = 'ige-pwa-v5'
 const PRECACHE_URLS = ['/offline.html', '/manifest.json', '/ige-supergesso.svg']
 
 self.addEventListener('install', (event) => {
@@ -34,13 +34,15 @@ self.addEventListener('fetch', (event) => {
   }
 
   if (request.headers.get('rsc') || request.headers.get('next-router-prefetch') || url.searchParams.has('_rsc')) return
-  const immutable = url.pathname.startsWith('/_next/static/')
-  if (!immutable && !PRECACHE_URLS.includes(url.pathname)) return
 
-  // Hashed build assets never change: avoid fetching them again on every hit.
+  // Next chunks belong to the browser/Next HTTP cache. Caching them here can
+  // mix files from different builds and produce stale module-factory errors.
+  if (url.pathname.startsWith('/_next/')) return
+
+  if (!PRECACHE_URLS.includes(url.pathname)) return
+
   const response = caches.open(CACHE_NAME).then(async (cache) => {
     const cached = await cache.match(request)
-    if (cached && immutable) return cached
     try {
       const fresh = await fetch(request)
       if (fresh.ok && fresh.type === 'basic') {
