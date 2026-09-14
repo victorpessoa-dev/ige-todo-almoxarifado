@@ -33,7 +33,7 @@ import {
 } from '@/constants/solicitacoes-config'
 import { formatDateBR, getLocalDateTime } from '@/lib/date/date-utils'
 
-const DEFAULT_PAGE_SIZE = 25
+const DEFAULT_PAGE_SIZE = 50
 
 const SOLICITACAO_TABLE_COLUMNS = [
   { key: 'codigo', width: 110, minWidth: 80 },
@@ -165,7 +165,7 @@ function StatusSelect({ solicitacao, disabled, onChange }) {
   const situacao = getSolicitacaoSituacao(solicitacao)
 
   return (
-    <div className="min-w-0 space-y-1">
+    <div className="min-w-0 w-full space-y-1">
       <select
         value={solicitacao.status_geral || ''}
         disabled={disabled}
@@ -341,9 +341,9 @@ export function SolicitacaoTable({
                 tabIndex={0}
                 onClick={() => onOpen(solicitacao)}
                 onKeyDown={(event) => handleCardKeyDown(event, solicitacao)}
-                className="min-w-0 rounded-xl border bg-card p-4 text-left shadow-sm transition hover:border-primary/40"
+                className="w-full min-w-0 overflow-hidden rounded-xl border bg-card p-3 text-left shadow-sm transition hover:border-primary/40 sm:p-4"
               >
-                <div className="flex items-start justify-between gap-3">
+                <div className="flex min-w-0 items-start justify-between gap-3">
                   <div className="min-w-0 flex-1">
                     <p className="flex min-w-0 items-center gap-2 font-semibold">
                       <span className={`h-2.5 w-2.5 rounded-full ${getStatusDotClass(solicitacao.status_geral)}`} />
@@ -366,7 +366,7 @@ export function SolicitacaoTable({
                   />
                 </div>
 
-                <div className="mt-3 flex flex-wrap gap-2">
+                <div className="mt-3 grid min-w-0 gap-2 min-[360px]:grid-cols-[auto_minmax(0,1fr)]">
                   <SolicitacaoStatusBadge
                     type="prioridade"
                     value={solicitacao.prioridade}

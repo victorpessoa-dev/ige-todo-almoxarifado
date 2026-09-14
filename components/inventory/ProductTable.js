@@ -46,7 +46,7 @@ import {
 } from "@/components/ui/resizable-table-columns";
 import SortableTableHead from "@/components/ui/sortable-table-head";
 
-const DEFAULT_PAGE_SIZE = 25;
+const DEFAULT_PAGE_SIZE = 50;
 const STATUS_ORDER = {
   baixo: 0,
   normal: 1,
@@ -445,7 +445,7 @@ export default function ProductTable({
                   role="button"
                   tabIndex={0}
                   data-state={isSelected ? "selected" : undefined}
-                  className="rounded-xl border bg-card p-3 text-left shadow-sm transition hover:border-primary/40 data-[state=selected]:border-primary data-[state=selected]:bg-primary/5"
+                  className="w-full min-w-0 overflow-hidden rounded-xl border bg-card p-3 text-left shadow-sm transition hover:border-primary/40 data-[state=selected]:border-primary data-[state=selected]:bg-primary/5"
                   onClick={() => openActionDialog(produto)}
                   onKeyDown={(event) => {
                     if (event.key === "Enter" || event.key === " ") {
@@ -454,7 +454,7 @@ export default function ProductTable({
                     }
                   }}
                 >
-                  <div className="flex items-start gap-3">
+                  <div className="flex min-w-0 items-start gap-3">
                     <Checkbox
                       checked={isSelected}
                       onCheckedChange={() => onToggleSelect?.(produto.id)}
@@ -482,15 +482,15 @@ export default function ProductTable({
                         {renderActionMenu(produto, canSolicitarCompra)}
                       </div>
 
-                      <div className="mt-3 grid grid-cols-3 gap-2 text-xs text-muted-foreground">
-                        <span>
+                      <div className="mt-3 grid grid-cols-[repeat(3,minmax(0,1fr))] gap-2 text-xs text-muted-foreground">
+                        <span className="min-w-0 truncate">
                           Estoque:{" "}
                           <strong className="text-foreground">
                             {produto.estoque}
                           </strong>
                         </span>
-                        <span>Min: {produto.min}</span>
-                        <span>Max: {produto.max}</span>
+                        <span className="min-w-0 truncate">Min: {produto.min}</span>
+                        <span className="min-w-0 truncate">Max: {produto.max}</span>
                       </div>
 
                       <div className="mt-3">

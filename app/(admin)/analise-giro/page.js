@@ -49,7 +49,7 @@ const PERIOD_OPTIONS = [
 ]
 
 const MAX_TURNOVER_ANALYSIS_PRODUCTS = 5
-const DEFAULT_PAGE_SIZE = 25
+const DEFAULT_PAGE_SIZE = 50
 function normalizeCategory(value) {
   return String(value || '')
     .trim()
@@ -359,15 +359,15 @@ export default function AnaliseGiroPage() {
 
   return (
     <div className="mx-auto flex w-full max-w-7xl flex-col gap-4 pb-4 sm:gap-6 sm:pb-6">
-      <div className="flex flex-col gap-3 rounded-2xl border bg-card/70 p-4 shadow-sm lg:flex-row lg:items-center lg:justify-between sm:p-5">
-        <div className="space-y-1">
-          <h1 className="flex items-center gap-3 text-xl font-bold sm:text-2xl md:text-3xl">
+      <div className="flex min-w-0 flex-col gap-3 rounded-2xl border bg-card/70 p-4 shadow-sm lg:flex-row lg:items-center lg:justify-between sm:p-5">
+        <div className="min-w-0 space-y-1">
+          <h1 className="flex min-w-0 items-center gap-3 text-xl font-bold sm:text-2xl md:text-3xl">
             <BarChart3 className="h-7 w-7 text-primary" />
-            Análise de Giro
+            <span className="min-w-0 truncate">Análise de Giro</span>
           </h1>
         </div>
 
-        <div className="flex flex-col gap-2 sm:flex-row">
+        <div className="flex min-w-0 flex-col gap-2 sm:flex-row">
           <Select
             value={selectedPeriod}
             onValueChange={(value) => {
@@ -513,12 +513,12 @@ export default function AnaliseGiroPage() {
                         openProductDialog(item.productId)
                       }
                     }}
-                    className={`flex w-full flex-col gap-2 rounded-xl border p-3 text-left transition-colors hover:bg-muted/40 ${selectedItem?.productId === item.productId
+                    className={`flex w-full min-w-0 flex-col gap-2 overflow-hidden rounded-xl border p-3 text-left transition-colors hover:bg-muted/40 ${selectedItem?.productId === item.productId
                       ? 'border-primary bg-primary/5'
                       : ''
                       }`}
                   >
-                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                       <div className="flex min-w-0 items-start gap-3">
                         <span
                           className="pt-1"
@@ -530,9 +530,9 @@ export default function AnaliseGiroPage() {
                             aria-label={`Selecionar ${item.name} para análise por IA`}
                           />
                         </span>
-                        <div className="min-w-0">
+                        <div className="min-w-0 flex-1">
                           <p className="truncate font-semibold">{item.name}</p>
-                          <p className="text-xs text-muted-foreground">
+                          <p className="break-words text-xs text-muted-foreground">
                             Cod: {item.cod} | Categoria: {item.category} | Estoque: {item.currentStock} | Min: {item.min} | Max: {item.max}
                           </p>
                         </div>
@@ -548,10 +548,10 @@ export default function AnaliseGiroPage() {
                         Giro {item.turnoverLabel}
                       </span>
                     </div>
-                    <div className="grid gap-2 text-xs text-muted-foreground sm:grid-cols-3">
-                      <span>Saída {item.periodDays}d: {item.saida30}</span>
-                      <span>Entrada {item.periodDays}d: {item.entrada30}</span>
-                      <span>Média mensal: {item.avgMonthlyOut}</span>
+                    <div className="grid min-w-0 gap-2 text-xs text-muted-foreground sm:grid-cols-3">
+                      <span className="min-w-0 truncate">Saída {item.periodDays}d: {item.saida30}</span>
+                      <span className="min-w-0 truncate">Entrada {item.periodDays}d: {item.entrada30}</span>
+                      <span className="min-w-0 truncate">Média mensal: {item.avgMonthlyOut}</span>
                     </div>
                   </div>
                 ))}

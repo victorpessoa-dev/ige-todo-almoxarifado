@@ -41,7 +41,7 @@ export function SolicitacaoFilters({ filters, setFilters, yearOptions = [] }) {
   }
 
   return (
-    <div className="grid gap-3 rounded-xl border bg-card p-3 shadow-sm sm:p-4">
+    <div className="grid w-full min-w-0 gap-3 overflow-hidden rounded-xl border bg-card p-3 shadow-sm sm:p-4">
       <Input
         value={filters.search}
         onChange={(event) => updateFilter('search', event.target.value)}
@@ -49,7 +49,7 @@ export function SolicitacaoFilters({ filters, setFilters, yearOptions = [] }) {
         className="h-10 w-full"
       />
 
-      <div className="grid w-full gap-2 rounded-xl border bg-card p-3 shadow-sm sm:grid-cols-2 sm:gap-3 sm:p-4 lg:grid-cols-4">
+      <div className="grid w-full min-w-0 gap-2 overflow-hidden rounded-xl border bg-card p-3 shadow-sm sm:grid-cols-2 sm:gap-3 sm:p-4 lg:grid-cols-4">
         <CheckboxFilter
           label="status"
           allLabel="Todos os status"
