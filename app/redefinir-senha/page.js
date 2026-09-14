@@ -85,6 +85,9 @@ export default function ResetPasswordPage() {
           setLinkError('O link de redefinicao nao e valido ou expirou. Solicite um novo link pelo Supabase.')
         }
       } catch (error) {
+        if (/invalid refresh token|refresh token not found/i.test(error?.message || '')) {
+          await supabase.auth.signOut({ scope: 'local' }).catch(() => {})
+        }
         setLinkError(
           getUserMessage(
             error,

@@ -48,3 +48,12 @@ test('cards mobile criticos contem textos longos sem estourar a tela', async () 
   assert.match(giroPage, /w-full min-w-0 flex-col gap-2 overflow-hidden rounded-xl border/)
   assert.match(giroPage, /break-words text-xs text-muted-foreground/)
 })
+
+test('redefinicao usa o dominio atual e trata refresh token invalido', async () => {
+  const login = await readText('app/login/page.js')
+  const auth = await readText('contexts/auth-context.js')
+
+  assert.match(login, /Esqueci minha senha/)
+  assert.match(auth, /window\.location\.origin\}\/redefinir-senha/)
+  assert.match(auth, /signOut\(\{ scope: 'local' \}\)/)
+})
