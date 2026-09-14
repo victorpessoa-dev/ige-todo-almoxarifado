@@ -73,7 +73,12 @@ jobs:
       - name: Application smoke audit
         env:
           APP_BASE_URL: http://127.0.0.1:3000
+          APP_EXPECT_PRODUCTION_CSP: "true"
         run: npm run audit:app:smoke
+
+      - name: Print production server logs on failure
+        if: failure()
+        run: test ! -f /tmp/ige-next.log || cat /tmp/ige-next.log
 
       - name: Stop production server
         if: always()

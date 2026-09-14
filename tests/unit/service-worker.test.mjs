@@ -65,11 +65,10 @@ test('offline navigation shows neutral fallback instead of old administrative da
   assert.equal(await (await sw.fetch('/inventario', { mode: 'navigate' })).text(), 'offline')
 })
 
-test('hashed assets are reused without a redundant network request', async () => {
+test('Next.js chunks bypass the service worker cache', async () => {
   const sw = worker()
-  await sw.fetch('/_next/static/chunk-123.js')
-  assert.equal(await (await sw.fetch('/_next/static/chunk-123.js')).text(), 'network')
-  assert.equal(sw.requests, 1)
+  assert.equal(await sw.fetch('/_next/static/chunk-123.js'), undefined)
+  assert.equal(sw.requests, 0)
 })
 
 test('API and React navigation payloads bypass the cache', async () => {
