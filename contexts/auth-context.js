@@ -13,6 +13,10 @@ import { logger } from '@/lib/logging/logger'
 
 const AuthContext = createContext(undefined)
 
+function isInvalidRefreshTokenError(error) {
+  return /invalid refresh token|refresh token not found/i.test(error?.message || '')
+}
+
 /**
  * Provedor de sessao administrativa.
  */
@@ -51,6 +55,9 @@ export function AuthProvider({ children }) {
 
         if (error) {
           logger.error('Erro ao obter sessao:', error)
+          if (isInvalidRefreshTokenError(error)) {
+            await supabase.auth.signOut({ scope: 'local' })
+          }
           if (!cancelled && isMounted.current) {
             setAuthError('Não foi possível validar seu acesso agora.')
           }
@@ -62,6 +69,9 @@ export function AuthProvider({ children }) {
         }
       } catch (error) {
         logger.error('Erro inesperado ao inicializar sessao:', error)
+        if (isInvalidRefreshTokenError(error)) {
+          await supabase.auth.signOut({ scope: 'local' }).catch(() => {})
+        }
         if (!cancelled && isMounted.current) {
           setAuthError('Não foi possível validar seu acesso agora.')
         }
@@ -139,6 +149,28 @@ export function AuthProvider({ children }) {
     }
   }, [])
 
+  const requestPasswordReset = useCallback(async (email) => {
+    if (!email?.trim()) {
+      return { success: false, error: 'Informe seu email para redefinir a senha.' }
+    }
+
+    try {
+      const redirectTo = `${window.location.origin}/redefinir-senha`
+      const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+        redirectTo
+      })
+
+      if (error) throw error
+      return { success: true }
+    } catch (error) {
+      logger.error('Erro ao solicitar redefinicao de senha:', error)
+      return {
+        success: false,
+        error: getUserMessage(error, 'Nao foi possivel enviar o link de redefinicao.')
+      }
+    }
+  }, [])
+
   /**
    * Encerra sessao e limpa estado local mesmo quando o Supabase falha.
    */
@@ -204,6 +236,7 @@ export function AuthProvider({ children }) {
     login,
     logout,
     refreshSession,
+    requestPasswordReset,
     clearError: () => setAuthError(null)
   }
 

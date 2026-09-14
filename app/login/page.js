@@ -19,7 +19,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
 
-  const { login, isAuthenticated, isLoading } = useAuth()
+  const { login, requestPasswordReset, isAuthenticated, isLoading } = useAuth()
   const router = useRouter()
 
   useEffect(() => {
@@ -43,6 +43,16 @@ export default function LoginPage() {
       toast.error(
         getUserMessage(result.error, 'Não foi possível entrar agora.')
       )
+    }
+  }
+
+  const handlePasswordReset = async () => {
+    const result = await requestPasswordReset(email)
+
+    if (result.success) {
+      toast.success('Link de redefinicao enviado para seu email.')
+    } else {
+      toast.error(getUserMessage(result.error, 'Nao foi possivel enviar o link agora.'))
     }
   }
 
@@ -120,6 +130,10 @@ export default function LoginPage() {
 
             <Button type="submit" className="mt-2 w-full">
               Entrar
+            </Button>
+
+            <Button type="button" variant="link" className="h-auto p-0" onClick={handlePasswordReset}>
+              Esqueci minha senha
             </Button>
 
             <Button type="button" variant="ghost" asChild>
