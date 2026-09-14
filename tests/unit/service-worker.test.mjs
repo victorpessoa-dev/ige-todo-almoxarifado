@@ -74,7 +74,7 @@ test('hashed assets are reused without a redundant network request', async () =>
 
 test('API and React navigation payloads bypass the cache', async () => {
   const sw = worker()
-  assert.equal(await sw.fetch('/api/revisoes'), undefined)
+  assert.equal(await sw.fetch('/api/analyze'), undefined)
   assert.equal(await sw.fetch('/inventario?_rsc=123'), undefined)
   assert.equal(await sw.fetch('/_next/static/test.js', { headers: new Headers({ rsc: '1' }) }), undefined)
   assert.equal(sw.requests, 0)
@@ -83,5 +83,5 @@ test('API and React navigation payloads bypass the cache', async () => {
 test('activation removes only obsolete caches owned by this app', async () => {
   const sw = worker()
   await sw.activate()
-  assert.deepEqual(sw.deleted, ['ige-pwa-v2'])
+  assert.deepEqual(sw.deleted, ['ige-pwa-v2', 'ige-pwa-v3'])
 })

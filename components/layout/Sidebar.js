@@ -1,28 +1,26 @@
 "use client";
 
 import Link from "next/link";
-import { Copyright } from "@/components/layout/Copyright";
+import Image from "next/image";
 import { useRef } from "react";
 import { motion, useReducedMotion } from "motion/react";
 import { usePathname, useRouter } from "next/navigation";
-import { useAuth } from "@/contexts/auth-context";
-import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
-import { MotionScrollIndicator } from "@/components/animations/MotionScrollIndicator";
-import Image from "next/image";
 import {
-  CalendarDays,
   BookOpen,
   Camera,
   ChartColumn,
   ChevronLeft,
   ChevronRight,
   LayoutDashboard,
-  ClipboardCheck,
   LogOut,
   Package,
   ShoppingCart,
 } from "lucide-react";
+import { useAuth } from "@/contexts/auth-context";
+import { Button } from "@/components/ui/button";
+import { Copyright } from "@/components/layout/Copyright";
+import { MotionScrollIndicator } from "@/components/animations/MotionScrollIndicator";
+import { cn } from "@/lib/utils";
 
 const menuItems = [
   {
@@ -31,13 +29,11 @@ const menuItems = [
     icon: LayoutDashboard,
     desktopOnly: true,
   },
-  { href: "/revisoes", label: "Revisões", icon: ClipboardCheck },
-  { href: "/calendario", label: "Calendário", icon: CalendarDays },
-  { href: "/inventario", label: "Inventário", icon: Package },
-  { href: "/catalogo", label: "Catálogo", icon: BookOpen },
-  { href: "/solicitacoes", label: "Solicitações", icon: ShoppingCart },
+  { href: "/inventario", label: "Inventario", icon: Package },
+  { href: "/catalogo", label: "Catalogo", icon: BookOpen },
+  { href: "/solicitacoes", label: "Solicitacoes", icon: ShoppingCart },
   { href: "/contagem", label: "Contagem", icon: Camera },
-  { href: "/analise-giro", label: "Análise de Giro", icon: ChartColumn },
+  { href: "/analise-giro", label: "Analise de Giro", icon: ChartColumn },
 ];
 
 export function Sidebar({

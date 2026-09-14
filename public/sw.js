@@ -1,4 +1,4 @@
-const CACHE_NAME = 'ige-pwa-v3'
+const CACHE_NAME = 'ige-pwa-v4'
 const PRECACHE_URLS = ['/offline.html', '/manifest.json', '/ige-supergesso.svg']
 
 self.addEventListener('install', (event) => {
@@ -26,7 +26,7 @@ self.addEventListener('fetch', (event) => {
   // HTML and authenticated data must never survive in the offline cache.
   if (request.mode === 'navigate') {
     event.respondWith(fetch(request).catch(async () =>
-      (await caches.match('/offline.html')) || new Response('Sem conexão.', {
+      (await caches.match('/offline.html')) || new Response('Sem conexao.', {
         status: 503, headers: { 'Content-Type': 'text/plain; charset=utf-8' }
       })
     ))
@@ -60,18 +60,18 @@ self.addEventListener('push', (event) => {
   try { data = event.data ? event.data.json() : {} } catch { data = { body: event.data?.text() || '' } }
   const title = data.title || 'IGE Almoxarifado'
   event.waitUntil(self.registration.showNotification(title, {
-    body: data.body || 'Você possui uma revisão de estoque pendente.',
+    body: data.body || 'Voce possui uma atualizacao no almoxarifado.',
     icon: '/ige-supergesso.svg',
     badge: '/ige-supergesso.svg',
-    tag: data.reviewId ? `revisao-${data.reviewId}` : 'revisao-estoque',
-    data: { url: data.url || '/revisoes' },
+    tag: data.tag || 'ige-almoxarifado',
+    data: { url: data.url || '/solicitacoes' },
     renotify: true
   }))
 })
 
 self.addEventListener('notificationclick', (event) => {
   event.notification.close()
-  const target = new URL(event.notification.data?.url || '/revisoes', self.location.origin).href
+  const target = new URL(event.notification.data?.url || '/solicitacoes', self.location.origin).href
   event.waitUntil(clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windows) => {
     const current = windows.find((window) => window.url.startsWith(self.location.origin))
     if (current) { current.focus(); return current.navigate(target) }

@@ -139,20 +139,6 @@ async function testAiRateLimitIsDistributedAndUserScoped() {
   assert.match(schema, /grant execute on function public\.check_api_rate_limit\(text\) to authenticated/)
 }
 
-async function testReviewPageUsesCachedUpdatesAndConfirmation() {
-  const page = await readText('app/(admin)/revisoes/page.js')
-  const reviewApi = await readText('app/(admin)/api/revisoes/route.js')
-
-  assert.match(page, /AlertDialog/)
-  assert.doesNotMatch(page, /window\.confirm/)
-  assert.match(page, /setRotinas\(\(current\)/)
-  assert.match(page, /setRevisoes\(\(current\)/)
-  assert.match(page, /setPendencias\(\(current\)/)
-  assert.match(page, /toggleCategory/)
-  assert.match(reviewApi, /getReviewCategories\(routine\)/)
-  assert.match(reviewApi, /\.in\('categoria', categories\)/)
-}
-
 await testManifestUsesSvgLogo()
 await testPublicPurchaseRequestsDoNotGrantAnonInsert()
 await testPublicListServicesUseMemoryCache()
@@ -162,7 +148,6 @@ await testAuditFilesStayOrganizedByUse()
 await testDomainFilesStayOrganizedByUse()
 await testAiRoutesRequireAuthenticatedUser()
 await testAiRateLimitIsDistributedAndUserScoped()
-await testReviewPageUsesCachedUpdatesAndConfirmation()
 
 
 
